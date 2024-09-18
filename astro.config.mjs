@@ -7,4 +7,5 @@ import sitemap from "@astrojs/sitemap";
 export default defineConfig({
   site: "https://www.ericminassian.com",
   integrations: [tailwind(), sitemap()],
+  devToolbar: { enabled: false },
 });
