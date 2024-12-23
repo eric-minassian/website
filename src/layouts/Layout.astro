@@ -1,5 +1,5 @@
 ---
-
+import { siteConfig } from "../config";
 ---
 
 <html lang="en" class="text-black bg-white dark:text-white dark:bg-[#111010]">
@@ -7,21 +7,15 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
-    <title>Eric Minassian</title>
-    <meta
-      name="description"
-      content="SDE Intern at Amazon. Previously at Walmart. Studying CS + Business Administration at the University of California, Irvine."
-    />
-    <meta name="author" content="Eric Minassian" />
-    <meta name="canonical" content="https://www.ericminassian.com" />
-    <meta name="og:title" content="Eric Minassian" />
-    <meta
-      name="og:description"
-      content="SDE Intern at Amazon. Previously at Walmart. Studying CS + Business Administration at the University of California, Irvine."
-    />
-    <meta name="og:url" content="https://www.ericminassian.com" />
-    <meta name="og:site_name" content="Eric Minassian" />
-    <meta name="theme-color" content="#111010" />
+    <title>{siteConfig.title}</title>
+    <meta name="description" content={siteConfig.description} />
+    <meta name="author" content={siteConfig.author} />
+    <meta name="canonical" content={siteConfig.url} />
+    <meta name="og:title" content={siteConfig.title} />
+    <meta name="og:description" content={siteConfig.description} />
+    <meta name="og:url" content={siteConfig.url} />
+    <meta name="og:site_name" content={siteConfig.title} />
+    <meta name="theme-color" content={siteConfig.themeColor} />
     <meta name="darkreader-lock" />
   </head>
 
