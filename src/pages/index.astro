@@ -19,7 +19,8 @@ import { parseDescription } from "../lib/utils";
             return part;
           }
           try {
-            const Logo = (await import(`../assets/${part.logo}.astro`)).default;
+            const Logo = (await import(`../assets/logos/${part.logo}.astro`))
+              .default;
             return (
               <Badge href={part.href}>
                 <Logo />
