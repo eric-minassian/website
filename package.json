@@ -20,5 +20,9 @@
     "astro": "^5.4.1",
     "tailwindcss": "^4.0.9",
     "typescript": "^5.8.2"
+  },
+  "packageManager": "pnpm@10.7.1",
+  "engines": {
+    "node": ">=22"
   }
 }
