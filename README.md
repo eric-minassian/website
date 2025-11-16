@@ -1,48 +1,43 @@
-# ericminassian.com
+# Astro Starter Kit: Minimal
 
-Personal website with relevant information about me and my projects.
-
-## Customization
-
-The website can be easily customized by modifying the configuration in `src/config.ts`:
-
-### Site Configuration
-
-Update `siteConfig` with your website's basic information:
-
-```typescript
-export const siteConfig = {
-  title: "Your Name",
-  description: "Your meta description",
-  author: "Your Name",
-  url: "https://yourdomain.com",
-  themeColor: "#111010",
-};
+```sh
+bun create astro@latest -- --template minimal
 ```
 
-### Personal Configuration
+> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
 
-Modify `personalConfig` to customize your homepage:
+## 🚀 Project Structure
 
-```typescript
-export const personalConfig = {
-  name: "your name",
-  emoji: "👋",
-  description: `Your description here. You can include links with logos like this:
-  [Company Name](https://company-url)`,
-  externalLinks: [
-    { href: "https://linkedin.com/in/yourprofile", text: "linkedin" },
-    { href: "/your-resume.pdf", text: "resume" },
-    // Add more links as needed
-  ],
-};
+Inside of your Astro project, you'll see the following folders and files:
+
+```text
+/
+├── public/
+├── src/
+│   └── pages/
+│       └── index.astro
+└── package.json
 ```
 
-### Adding Company Logos
+Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
 
-To add logos for companies mentioned in your description:
+There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
 
-1. Create a new `.astro` file in `src/assets/logos/` with your company name (no spaces)
-2. When you mention a company in the description using `[Company Name](url)`, the logo will automatically be loaded from `CompanyName.astro`
+Any static assets, like images, can be placed in the `public/` directory.
 
-Example: `[Walmart Global Tech](https://tech.walmart.com)` will look for `WalmartGlobalTech.astro`
+## 🧞 Commands
+
+All commands are run from the root of the project, from a terminal:
+
+| Command                   | Action                                           |
+| :------------------------ | :----------------------------------------------- |
+| `bun install`             | Installs dependencies                            |
+| `bun dev`             | Starts local dev server at `localhost:4321`      |
+| `bun build`           | Build your production site to `./dist/`          |
+| `bun preview`         | Preview your build locally, before deploying     |
+| `bun astro ...`       | Run CLI commands like `astro add`, `astro check` |
+| `bun astro -- --help` | Get help using the Astro CLI                     |
+
+## 👀 Want to learn more?
+
+Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
