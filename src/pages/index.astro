@@ -1,16 +1,17 @@
 ---
+import Layout from "../components/layouts/Layout.astro";
 
+const session = () => {
+  if (Astro.locals.session) {
+    return Astro.locals.session;
+  } else {
+    // Redirect to login page if the user is not authenticated
+    return Astro.redirect("/login");
+  }
+};
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout>
+  <span>Hello</span>
+  <span>{JSON.stringify(session)}</span>
+</Layout>
