@@ -10,7 +10,7 @@ test("meta is correct", async ({ page }) => {
 });
 
 test("main heading is correct", async ({ page }) => {
-  const mainHeadingSelector = "h1";
+  const mainHeadingSelector = "main h1";
   await expect(page.locator(mainHeadingSelector)).toHaveText(
     `hey, i'm ${personalConfig.name} ${personalConfig.emoji}`
   );
