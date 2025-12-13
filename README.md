@@ -1,48 +1,29 @@
 # ericminassian.com
 
-Personal website with relevant information about me and my projects.
+Personal website built with Astro 5, MDX, and Tailwind CSS v4.
 
-## Customization
+## Development
 
-The website can be easily customized by modifying the configuration in `src/config.ts`:
-
-### Site Configuration
-
-Update `siteConfig` with your website's basic information:
-
-```typescript
-export const siteConfig = {
-  title: "Your Name",
-  description: "Your meta description",
-  author: "Your Name",
-  url: "https://yourdomain.com",
-  themeColor: "#111010",
-};
+```bash
+pnpm dev               # Start development server (localhost:4321)
+pnpm build             # Type-check and build for production
+pnpm preview           # Preview production build
+pnpm test:visual       # Run visual regression tests
+pnpm test:visual:update # Update visual regression snapshots
 ```
 
-### Personal Configuration
+## Structure
 
-Modify `personalConfig` to customize your homepage:
+- `src/pages/index.mdx` - Home page
+- `src/pages/work.mdx` - Work experience page
+- `src/pages/404.astro` - 404 error page
+- `src/layouts/Layout.astro` - Base HTML layout
+- `src/components/` - Reusable components
+- `src/styles/globals.css` - Global styles and Tailwind config
 
-```typescript
-export const personalConfig = {
-  name: "your name",
-  emoji: "👋",
-  description: `Your description here. You can include links with logos like this:
-  [Company Name](https://company-url)`,
-  externalLinks: [
-    { href: "https://linkedin.com/in/yourprofile", text: "linkedin" },
-    { href: "/your-resume.pdf", text: "resume" },
-    // Add more links as needed
-  ],
-};
-```
+## Tech Stack
 
-### Adding Company Logos
-
-To add logos for companies mentioned in your description:
-
-1. Create a new `.astro` file in `src/assets/logos/` with your company name (no spaces)
-2. When you mention a company in the description using `[Company Name](url)`, the logo will automatically be loaded from `CompanyName.astro`
-
-Example: `[Walmart Global Tech](https://tech.walmart.com)` will look for `WalmartGlobalTech.astro`
+- [Astro 5](https://astro.build) - Static site generator
+- [MDX](https://mdxjs.com) - Markdown with JSX
+- [Tailwind CSS v4](https://tailwindcss.com) - Styling
+- [Playwright](https://playwright.dev) - Visual regression testing

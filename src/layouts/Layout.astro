@@ -3,6 +3,9 @@ import { ClientRouter } from "astro:transitions";
 import ThemeToggle from "../components/ThemeToggle.astro";
 import "../styles/globals.css";
 
+// Import font files with ?url to get hashed URLs for preloading
+import latinNormal from "@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2?url";
+
 interface Props {
   title?: string;
   description?: string;
@@ -20,6 +23,13 @@ const siteUrl = "https://www.ericminassian.com";
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href={latinNormal}
+      crossorigin="anonymous"
+    />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
     <meta name="description" content={description} />
