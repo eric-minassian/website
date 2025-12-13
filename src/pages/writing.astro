@@ -1,0 +1,27 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+import ThemeToggle from "../components/ThemeToggle.astro";
+
+const posts = await getCollection("writing");
+---
+
+<Layout title="Writing - Eric Minassian" description="Essays and thoughts on software engineering, technology, and life.">
+  <h1>writing</h1>
+  <p class="my-5"><a href="/">by eric minassian</a></p>
+  <p class="my-5">Here's a collection of my writing:</p>
+  {posts.length > 0 ? (
+    <ul>
+      {posts.map((post) => (
+        <li>
+          <a href={`/writing/${post.id}`}>{post.data.title}</a>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p class="my-5 text-neutral-500 dark:text-neutral-400 italic">No posts yet. Check back soon.</p>
+  )}
+  <div class="mt-8 flex justify-center">
+    <ThemeToggle />
+  </div>
+</Layout>

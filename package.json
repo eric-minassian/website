@@ -4,11 +4,10 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "start": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
-    "astro": "astro",
-    "test:e2e": "playwright test"
+    "test:visual": "playwright test",
+    "test:visual:update": "playwright test --update-snapshots"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.6",
@@ -24,5 +23,8 @@
   "packageManager": "pnpm@10.25.0",
   "engines": {
     "node": ">=22"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4.3.13"
   }
 }
