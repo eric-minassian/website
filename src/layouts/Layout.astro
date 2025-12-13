@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from "astro:transitions";
+import ThemeToggle from "../components/ThemeToggle.astro";
 import "../styles/globals.css";
 
 interface Props {
@@ -20,12 +21,6 @@ const siteUrl = "https://www.ericminassian.com";
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap"
-      rel="stylesheet"
-    />
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="author" content="Eric Minassian" />
@@ -36,116 +31,39 @@ const siteUrl = "https://www.ericminassian.com";
     <meta property="og:site_name" content="Eric Minassian" />
     <meta
       name="theme-color"
-      content="#ffffff"
+      content="#f8f5ed"
       media="(prefers-color-scheme: light)"
     />
     <meta
       name="theme-color"
-      content="#111111"
+      content="#171717"
       media="(prefers-color-scheme: dark)"
     />
     <ClientRouter />
+    <!-- Prevent FOUC: Apply dark class before render -->
     <script is:inline>
-      (function () {
-        // Get stored theme: 'light', 'dark', or 'system' (null defaults to system)
-        function getStoredTheme() {
-          return localStorage.getItem("theme") || "system";
-        }
-
-        // Check if system prefers dark mode
-        function systemPrefersDark() {
-          return window.matchMedia("(prefers-color-scheme: dark)").matches;
-        }
-
-        // Apply dark/light class to document
-        function applyDarkClass() {
-          var theme = getStoredTheme();
-          var isDark =
-            theme === "dark" || (theme === "system" && systemPrefersDark());
-
-          if (isDark) {
-            document.documentElement.classList.add("dark");
-          } else {
-            document.documentElement.classList.remove("dark");
-          }
-        }
-
-        // Update which icon is visible
-        function updateIcons() {
-          var theme = getStoredTheme();
-          var icons = document.querySelectorAll("[data-theme-icon]");
-          icons.forEach(function (icon) {
-            var iconTheme = icon.getAttribute("data-theme-icon");
-            if (iconTheme === theme) {
-              icon.classList.remove("hidden");
-              icon.classList.add("block");
-            } else {
-              icon.classList.add("hidden");
-              icon.classList.remove("block");
-            }
-          });
-        }
-
-        // Full theme application
-        function applyTheme() {
-          applyDarkClass();
-          updateIcons();
-        }
-
-        // Cycle through themes: system → dark → light → system
-        function cycleTheme() {
-          var current = getStoredTheme();
-          var next;
-
-          if (current === "system") {
-            next = "dark";
-          } else if (current === "dark") {
-            next = "light";
-          } else {
-            next = "system";
-          }
-
-          localStorage.setItem("theme", next);
-          applyTheme();
-        }
-
-        // Apply dark class immediately (before DOM is ready)
-        applyDarkClass();
-
-        // Update icons when DOM is ready
-        if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", updateIcons);
-        } else {
-          updateIcons();
-        }
-
-        // Listen for system theme changes
-        window
-          .matchMedia("(prefers-color-scheme: dark)")
-          .addEventListener("change", function () {
-            if (getStoredTheme() === "system") {
-              applyTheme();
-            }
-          });
-
-        // Re-apply after view transitions
-        document.addEventListener("astro:after-swap", applyTheme);
-
-        // Use event delegation for theme toggle (works across view transitions)
-        document.addEventListener("click", function (e) {
-          var toggle = e.target.closest("[data-theme-toggle]");
-          if (toggle) {
-            e.preventDefault();
-            cycleTheme();
-          }
-        });
-      })();
+      {
+        const t = localStorage.getItem("theme") || "system";
+        const d =
+          t === "dark" ||
+          (t === "system" &&
+            matchMedia("(prefers-color-scheme: dark)").matches);
+        if (d) document.documentElement.classList.add("dark");
+      }
+    </script>
+    <!-- Theme toggle logic -->
+    <script>
+      import { initTheme } from "../scripts/theme";
+      initTheme();
     </script>
   </head>
 
-  <body>
-    <main class="w-full max-w-2xl mx-auto px-6 mt-8 md:mt-16 mb-24">
+  <body class="mx-auto max-w-[650px] px-8 py-16">
+    <main class="w-full mt-0 md:mt-16">
       <slot />
     </main>
+    <footer class="mt-16 flex justify-center">
+      <ThemeToggle />
+    </footer>
   </body>
 </html>
