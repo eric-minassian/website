@@ -1,35 +1,151 @@
 ---
-import { siteConfig } from "../config";
+import { ClientRouter } from "astro:transitions";
 import "../styles/globals.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Eric Minassian",
+  description = "Software engineer at Amazon, working on Project Kuiper. Previously at Walmart. Studying CS + Business at UC Irvine.",
+} = Astro.props;
+
+const siteUrl = "https://www.ericminassian.com";
 ---
 
-<html lang="en" class="text-black bg-white dark:text-white dark:bg-[#111010]">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      rel="preload"
-      href="/fonts/Geist.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap"
+      rel="stylesheet"
     />
-    <title>{siteConfig.title}</title>
-    <meta name="description" content={siteConfig.description} />
-    <meta name="author" content={siteConfig.author} />
-    <meta name="canonical" content={siteConfig.url} />
-    <meta name="og:title" content={siteConfig.title} />
-    <meta name="og:description" content={siteConfig.description} />
-    <meta name="og:url" content={siteConfig.url} />
-    <meta name="og:site_name" content={siteConfig.title} />
-    <meta name="theme-color" content={siteConfig.themeColor} />
-    <meta name="darkreader-lock" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content="Eric Minassian" />
+    <link rel="canonical" href={siteUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={siteUrl} />
+    <meta property="og:site_name" content="Eric Minassian" />
+    <meta
+      name="theme-color"
+      content="#ffffff"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#111111"
+      media="(prefers-color-scheme: dark)"
+    />
+    <ClientRouter />
+    <script is:inline>
+      (function () {
+        // Get stored theme: 'light', 'dark', or 'system' (null defaults to system)
+        function getStoredTheme() {
+          return localStorage.getItem("theme") || "system";
+        }
+
+        // Check if system prefers dark mode
+        function systemPrefersDark() {
+          return window.matchMedia("(prefers-color-scheme: dark)").matches;
+        }
+
+        // Apply dark/light class to document
+        function applyDarkClass() {
+          var theme = getStoredTheme();
+          var isDark =
+            theme === "dark" || (theme === "system" && systemPrefersDark());
+
+          if (isDark) {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
+        }
+
+        // Update which icon is visible
+        function updateIcons() {
+          var theme = getStoredTheme();
+          var icons = document.querySelectorAll("[data-theme-icon]");
+          icons.forEach(function (icon) {
+            var iconTheme = icon.getAttribute("data-theme-icon");
+            if (iconTheme === theme) {
+              icon.classList.remove("hidden");
+              icon.classList.add("block");
+            } else {
+              icon.classList.add("hidden");
+              icon.classList.remove("block");
+            }
+          });
+        }
+
+        // Full theme application
+        function applyTheme() {
+          applyDarkClass();
+          updateIcons();
+        }
+
+        // Cycle through themes: system → dark → light → system
+        function cycleTheme() {
+          var current = getStoredTheme();
+          var next;
+
+          if (current === "system") {
+            next = "dark";
+          } else if (current === "dark") {
+            next = "light";
+          } else {
+            next = "system";
+          }
+
+          localStorage.setItem("theme", next);
+          applyTheme();
+        }
+
+        // Apply dark class immediately (before DOM is ready)
+        applyDarkClass();
+
+        // Update icons when DOM is ready
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", updateIcons);
+        } else {
+          updateIcons();
+        }
+
+        // Listen for system theme changes
+        window
+          .matchMedia("(prefers-color-scheme: dark)")
+          .addEventListener("change", function () {
+            if (getStoredTheme() === "system") {
+              applyTheme();
+            }
+          });
+
+        // Re-apply after view transitions
+        document.addEventListener("astro:after-swap", applyTheme);
+
+        // Use event delegation for theme toggle (works across view transitions)
+        document.addEventListener("click", function (e) {
+          var toggle = e.target.closest("[data-theme-toggle]");
+          if (toggle) {
+            e.preventDefault();
+            cycleTheme();
+          }
+        });
+      })();
+    </script>
   </head>
 
-  <body
-    class="antialiased max-w-2xl mb-40 flex flex-col md:flex-row mx-4 mt-8 lg:mx-auto font-geist"
-  >
-    <slot />
+  <body>
+    <main class="w-full max-w-2xl mx-auto px-6 mt-8 md:mt-16 mb-24">
+      <slot />
+    </main>
   </body>
 </html>

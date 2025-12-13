@@ -5,27 +5,39 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-pnpm dev          # Start development server (localhost:4321)
-pnpm build        # Type-check and build for production
-pnpm preview      # Preview production build
-pnpm test:e2e     # Run Playwright e2e tests (starts dev server automatically)
+pnpm dev               # Start development server (localhost:4321)
+pnpm build             # Type-check and build for production
+pnpm preview           # Preview production build
+pnpm test:visual       # Run visual regression tests
+pnpm test:visual:update # Update visual regression snapshots
 ```
 
 ## Architecture
 
-This is a personal portfolio website built with Astro 5, Tailwind CSS v4, and TypeScript.
+A minimalist personal website built with Astro 5, MDX, Tailwind CSS v4, and TypeScript.
 
-### Key Files
+### Pages
 
-- `src/config.ts` - Site metadata and personal content (name, description, external links). The description uses markdown-style links `[text](url)` which are parsed into Badge components.
-- `src/layouts/Layout.astro` - Base HTML layout with meta tags sourced from `siteConfig`
-- `src/lib/utils.ts` - `parseDescription()` parses markdown links from config into structured chunks for rendering. Logo names are derived by removing spaces/commas from link text.
-- `src/assets/logos/*.astro` - SVG logo components. Filename must match the processed link text (e.g., "University of California, Irvine" → `UniversityofCaliforniaIrvine.astro`)
+- `src/pages/index.mdx` - Home page with intro and links
+- `src/pages/work.mdx` - Work experience page
+- `src/pages/writing.astro` - Writing list page (queries content collection)
+- `src/pages/writing/[...slug].astro` - Individual post pages
+- `src/pages/404.astro` - 404 error page
+
+### Content
+
+- `src/content/writing/*.mdx` - Blog posts (MDX files with `title` and optional `description` frontmatter)
+- `src/content.config.ts` - Content collection schema
+
+### Components
+
+- `src/layouts/Layout.astro` - Base HTML layout with meta tags
+- `src/components/Link.astro` - Styled link with underline hover effect
 
 ### Styling
 
-Tailwind CSS v4 configured via Vite plugin. Custom Geist font defined in `src/styles/globals.css`. Uses `@tailwindcss/typography` for prose styling.
+Tailwind CSS v4 via Vite plugin. Custom Geist font and base styles in `src/styles/globals.css`. Uses `@tailwindcss/typography` for prose styling. Supports light/dark themes via system preference.
 
 ### Testing
 
-Playwright e2e tests in `tests/`. Tests run against dev server at localhost:4321 and cover multiple browsers/devices.
+Playwright visual regression tests in `tests/visual.spec.ts`. Tests capture full-page screenshots of all pages across desktop and mobile viewports.
