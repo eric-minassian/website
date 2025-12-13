@@ -1,53 +1,65 @@
 @import "tailwindcss";
+@import "@fontsource-variable/newsreader/wght.css";
+@import "@fontsource-variable/newsreader/wght-italic.css";
 
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-serif: "Newsreader", ui-serif, Georgia, Cambria, "Times New Roman",
-    Times, serif;
-  --leading-relaxed: 1.75;
+  /* Typography */
+  --font-serif: "Newsreader Variable", ui-serif, Georgia, Cambria,
+    "Times New Roman", Times, serif;
+
+  /* Colors - semantic tokens */
+  --color-bg: #f8f5ed;
+  --color-bg-dark: var(--color-neutral-900);
+  --color-text: var(--color-neutral-800);
+  --color-text-dark: var(--color-neutral-200);
+  --color-muted: var(--color-neutral-500);
+  --color-muted-dark: var(--color-neutral-400);
+  --color-border: var(--color-neutral-200);
+  --color-border-dark: var(--color-neutral-800);
 }
 
 @layer base {
-  * {
-    @apply border-neutral-200 dark:border-neutral-800;
-  }
-
   html {
-    @apply bg-white text-neutral-800 dark:bg-[#111] dark:text-neutral-200;
+    @apply bg-[var(--color-bg)] text-[var(--color-text)] dark:bg-[var(--color-bg-dark)] dark:text-[var(--color-text-dark)];
   }
 
   body {
-    @apply antialiased font-serif text-base leading-relaxed;
+    @apply font-serif antialiased;
   }
 
+  /* Typography */
   h1 {
-    @apply text-xl md:text-2xl font-normal tracking-normal leading-tight mb-8;
+    @apply mb-1 text-xl font-medium leading-tight md:text-2xl;
   }
 
   h2 {
-    @apply text-lg md:text-xl font-normal tracking-normal leading-tight mt-12 mb-4;
+    @apply mt-12 mb-2 text-lg font-normal leading-tight md:text-xl;
   }
 
   p {
     @apply my-5;
   }
 
+  /* Links */
   a {
-    @apply underline decoration-neutral-500 decoration-1 underline-offset-[2.5px] transition-colors hover:decoration-neutral-400 dark:hover:decoration-neutral-600;
+    @apply underline decoration-1 underline-offset-2 transition-[text-decoration-color] duration-150 decoration-[var(--color-muted)] hover:decoration-[var(--color-text)] dark:decoration-[var(--color-muted-dark)] dark:hover:decoration-[var(--color-text-dark)];
   }
 
-  hr {
-    @apply border-neutral-200 dark:border-neutral-800 my-8;
-  }
-
+  /* Lists */
   ul {
-    @apply list-none pl-0 space-y-1;
+    @apply list-none space-y-1 pl-0;
   }
 
   li {
     @apply pl-1;
+  }
+
+  /* Dividers */
+  hr {
+    @apply my-8 border-[var(--color-border)] dark:border-[var(--color-border-dark)];
   }
 }

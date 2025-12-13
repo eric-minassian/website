@@ -2,18 +2,18 @@
 interface Props {
   href: string;
   external?: boolean;
+  class?: string;
 }
 
-const { href, external = false } = Astro.props;
+const { href, external = false, class: className } = Astro.props;
 
-const isExternal = external || href.startsWith("http") || href.startsWith("mailto:");
-const linkProps = isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {};
+const isExternal =
+  external || href.startsWith("http") || href.startsWith("mailto:");
+const externalProps = isExternal
+  ? { target: "_blank", rel: "noopener noreferrer" }
+  : {};
 ---
 
-<a
-  href={href}
-  class="underline decoration-neutral-400 dark:decoration-neutral-600 underline-offset-2 transition-colors hover:decoration-neutral-600 dark:hover:decoration-neutral-400"
-  {...linkProps}
->
+<a href={href} class={className} {...externalProps}>
   <slot />
 </a>
