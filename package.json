@@ -25,6 +25,8 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@astrojs/mdx": "^4.3.13"
+    "@astrojs/mdx": "^4.3.13",
+    "@fontsource-variable/newsreader": "^5.2.10",
+    "rehype-external-links": "^3.0.0"
   }
 }

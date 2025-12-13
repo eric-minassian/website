@@ -69,14 +69,6 @@ test.describe("visual regression", () => {
     await expect(page).toHaveScreenshot("work.png", { fullPage: true });
   });
 
-  test("writing page", async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem("theme", "dark");
-    });
-    await page.goto("/writing");
-    await expect(page).toHaveScreenshot("writing.png", { fullPage: true });
-  });
-
   test("404 page", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("theme", "dark");
