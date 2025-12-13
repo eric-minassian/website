@@ -1,0 +1,30 @@
+---
+import { getCollection, render } from "astro:content";
+import ThemeToggle from "../../components/ThemeToggle.astro";
+import Layout from "../../layouts/Layout.astro";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("writing");
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<Layout
+  title={`${post.data.title} - Eric Minassian`}
+  {...post.data.description && { description: post.data.description }}
+>
+  <h1>{post.data.title}</h1>
+  <p class="my-5"><a href="/writing">back to writing</a></p>
+  <article class="prose prose-neutral dark:prose-invert mt-8">
+    <Content />
+  </article>
+  <div class="mt-8 flex justify-center">
+    <ThemeToggle />
+  </div>
+</Layout>
