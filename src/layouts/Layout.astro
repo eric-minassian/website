@@ -1,6 +1,7 @@
 ---
 import { ClientRouter } from "astro:transitions";
 import ThemeToggle from "../components/ThemeToggle.astro";
+import { getThemeScript } from "../scripts/theme";
 import "../styles/globals.css";
 
 // Import font files with ?url to get hashed URLs for preloading
@@ -51,16 +52,7 @@ const siteUrl = "https://www.ericminassian.com";
     />
     <ClientRouter />
     <!-- Prevent FOUC: Apply dark class before render -->
-    <script is:inline>
-      {
-        const t = localStorage.getItem("theme") || "system";
-        const d =
-          t === "dark" ||
-          (t === "system" &&
-            matchMedia("(prefers-color-scheme: dark)").matches);
-        if (d) document.documentElement.classList.add("dark");
-      }
-    </script>
+    <script is:inline set:html={getThemeScript()}></script>
     <!-- Theme toggle logic -->
     <script>
       import { initTheme } from "../scripts/theme";
