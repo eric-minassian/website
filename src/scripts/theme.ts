@@ -17,6 +17,15 @@ export const prefersDark = (): boolean =>
 export const isDark = (theme: Theme = getTheme()): boolean =>
   theme === "dark" || (theme === "system" && prefersDark());
 
+/** Inline script to prevent FOUC - must be called before page render */
+export const getThemeScript = (): string => `
+{
+  const t = localStorage.getItem("${STORAGE_KEY}") || "system";
+  const d = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+  if (d) document.documentElement.classList.add("dark");
+}
+`;
+
 export const applyDarkClass = (): void => {
   document.documentElement.classList.toggle("dark", isDark());
 };
