@@ -6,6 +6,9 @@
 import MonitorIcon from "./icons/MonitorIcon.astro";
 import MoonIcon from "./icons/MoonIcon.astro";
 import SunIcon from "./icons/SunIcon.astro";
+
+const iconClass =
+  "absolute inset-0 m-auto size-5 opacity-0 transition-opacity duration-150";
 ---
 
 <button
@@ -14,18 +17,9 @@ import SunIcon from "./icons/SunIcon.astro";
   aria-label="Toggle theme"
   class="relative size-9 cursor-pointer text-[var(--color-muted)] transition-colors hover:text-[var(--color-text)] dark:text-[var(--color-muted-dark)] dark:hover:text-[var(--color-text-dark)]"
 >
-  <MonitorIcon
-    data-theme-icon="system"
-    class="absolute inset-0 m-auto size-5 opacity-0 transition-opacity duration-150"
-  />
-  <MoonIcon
-    data-theme-icon="dark"
-    class="absolute inset-0 m-auto size-5 opacity-0 transition-opacity duration-150"
-  />
-  <SunIcon
-    data-theme-icon="light"
-    class="absolute inset-0 m-auto size-5 opacity-0 transition-opacity duration-150"
-  />
+  <MonitorIcon data-theme-icon="system" class={iconClass} />
+  <MoonIcon data-theme-icon="dark" class={iconClass} />
+  <SunIcon data-theme-icon="light" class={iconClass} />
 </button>
 
 <style>
