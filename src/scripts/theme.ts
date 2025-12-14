@@ -30,15 +30,13 @@ export const applyDarkClass = (): void => {
   document.documentElement.classList.toggle("dark", isDark());
 };
 
-const updateIcons = (): void => {
+const updateUI = (): void => {
   const theme = getTheme();
+  // Update icons
   document.querySelectorAll<HTMLElement>("[data-theme-icon]").forEach((el) => {
     el.classList.toggle("active", el.dataset.themeIcon === theme);
   });
-};
-
-const updateAriaLabels = (): void => {
-  const theme = getTheme();
+  // Update aria labels
   document.querySelectorAll("[data-theme-toggle]").forEach((btn) => {
     btn.setAttribute("aria-label", `Theme: ${theme} (click to change)`);
   });
@@ -46,8 +44,7 @@ const updateAriaLabels = (): void => {
 
 export const applyTheme = (): void => {
   applyDarkClass();
-  updateIcons();
-  updateAriaLabels();
+  updateUI();
 };
 
 const cycleTheme = (): void => {
@@ -59,8 +56,7 @@ const cycleTheme = (): void => {
 /** Initialize theme system - call once on page load */
 export const initTheme = (): void => {
   // Update UI (dark class already applied by inline script)
-  updateIcons();
-  updateAriaLabels();
+  updateUI();
 
   // Listen for system preference changes
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
