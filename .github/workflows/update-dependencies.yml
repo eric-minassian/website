@@ -3,7 +3,7 @@ name: Update Dependencies
 on:
   schedule:
     # Runs every Monday at 2am UTC
-    - cron: '0 2 * * 1'
+    - cron: "0 2 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -24,7 +24,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: package.json
-          cache: pnpm
 
       - name: Install npm-check-updates
         run: npm install -g npm-check-updates
@@ -33,7 +32,7 @@ jobs:
         run: |
           echo "Updating all dependencies to latest versions..."
           ncu -u
-          pnpm install
+          pnpm install --no-frozen-lockfile
 
       - name: Check for changes
         id: changes
@@ -64,23 +63,23 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: update dependencies to latest versions'
-          title: 'chore: weekly dependency updates'
+          commit-message: "chore: update dependencies to latest versions"
+          title: "chore: weekly dependency updates"
           body: |
             ## Automated Dependency Updates
-            
+
             This PR updates all dependencies to their latest versions.
-            
+
             **Changes:**
             - All dependencies updated via `npm-check-updates`
             - Visual snapshots updated if needed
             - All tests passed successfully
-            
+
             **Validation:**
             - ✅ Type checking passed
             - ✅ Build succeeded
             - ✅ Visual regression tests passed
-            
+
             This PR will be automatically merged if all checks pass.
           branch: deps/weekly-update
           delete-branch: true
