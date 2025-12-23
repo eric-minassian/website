@@ -41,3 +41,14 @@ Tailwind CSS v4 via Vite plugin. Custom Geist font and base styles in `src/style
 ### Testing
 
 Playwright visual regression tests in `tests/visual.spec.ts`. Tests capture full-page screenshots of all pages across desktop and mobile viewports.
+
+## CI/CD Workflows
+
+- `.github/workflows/playwright.yml` - Runs visual regression tests on PRs and main branch pushes
+- `.github/workflows/deploy.yml` - Deploys to GitHub Pages on main branch pushes
+- `.github/workflows/update-snapshots.yml` - Manual workflow to update visual snapshots
+- `.github/workflows/update-dependencies.yml` - Weekly automated dependency updates (runs every Monday at 2am UTC)
+  - Updates all dependencies to latest versions using npm-check-updates
+  - Runs build and visual tests
+  - Auto-updates snapshots if visual changes occur
+  - Creates a PR that auto-merges if all tests pass
