@@ -19,14 +19,20 @@ export function CodeBlock({ children, className = "" }: CodeBlockProps) {
 interface DiagramButtonProps {
   onClick: () => void;
   children: ReactNode;
+  disabled?: boolean;
 }
 
 /** Interactive button for diagram controls */
-export function DiagramButton({ onClick, children }: DiagramButtonProps) {
+export function DiagramButton({
+  onClick,
+  children,
+  disabled,
+}: DiagramButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="rounded border border-neutral-300 bg-neutral-100 px-3 py-1 text-xs transition-colors hover:bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+      disabled={disabled}
+      className="rounded border border-neutral-300 bg-neutral-100 px-3 py-1 text-xs transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700"
     >
       {children}
     </button>

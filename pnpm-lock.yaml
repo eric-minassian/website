@@ -17,6 +17,9 @@ importers:
       '@fontsource-variable/newsreader':
         specifier: ^5.2.10
         version: 5.2.10
+      '@viz-js/viz':
+        specifier: ^3.24.0
+        version: 3.24.0
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -885,6 +888,9 @@ packages:
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+
+  '@viz-js/viz@3.24.0':
+    resolution: {integrity: sha512-sTRz2cFN6PwICVC7GVlF2aYNAZ/LwF7Y1mp3B+8LXQ7otyHrzQYSzNBwJ4lctL/aS3x97ppw59z6zIW+wPs6bQ==}
 
   '@volar/kit@2.4.27':
     resolution: {integrity: sha512-ilZoQDMLzqmSsImJRWx4YiZ4FcvvPrPnFVmL6hSsIWB6Bn3qc7k88J9yP32dagrs5Y8EXIlvvD/mAFaiuEOACQ==}
@@ -3267,6 +3273,8 @@ snapshots:
       vite: 6.4.1(@types/node@25.0.10)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.8.2)
     transitivePeerDependencies:
       - supports-color
+
+  '@viz-js/viz@3.24.0': {}
 
   '@volar/kit@2.4.27(typescript@5.9.3)':
     dependencies:
