@@ -1,9 +1,9 @@
 ---
 title: aws-tanstack-query
-description: Type-safe TanStack Query code generation for AWS SDK
+description: Type-safe TanStack Query code generation for Smithy clients
 github: https://github.com/eric-minassian/aws-tanstack-query
 date: 2024-12-01
-tags: [typescript, react, aws, tanstack-query, code-generation]
+tags: [typescript, react, smithy, tanstack-query, code-generation]
 status: active
 ---
 
@@ -13,17 +13,17 @@ import { CodeTransform } from "../../components/diagrams";
 
 [github](https://github.com/eric-minassian/aws-tanstack-query) · [npm](https://www.npmjs.com/package/aws-tanstack-query)
 
-Generate type-safe [TanStack Query](https://tanstack.com/query) options from AWS SDK v3 clients.
+Generate type-safe [TanStack Query](https://tanstack.com/query) options from any Smithy-generated TypeScript client.
 
 <CodeTransform client:load />
 
 ## Problem
 
-Using AWS services in React with TanStack Query means writing boilerplate for every operation: query keys, SDK wrappers, types. This library generates it all from the Smithy model embedded in AWS SDK clients.
+Using Smithy clients in React with TanStack Query means writing boilerplate for every operation: query keys, client wrappers, types. This library generates it all by reading the Smithy model embedded in the client package.
 
 ## Solution
 
-Point it at an SDK package, get typed `queryOptions`, `mutationOptions`, and a query key factory. Works with any AWS service.
+Point it at any Smithy-generated TypeScript client—AWS SDKs or your own—and get typed `queryOptions`, `mutationOptions`, and a query key factory.
 
 ---
 
