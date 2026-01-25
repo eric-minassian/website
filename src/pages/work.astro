@@ -2,7 +2,9 @@
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 
-const projects = await getCollection("work");
+const projects = (await getCollection("work")).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+);
 ---
 
 <Layout title="Work - Eric Minassian" description="Projects and open source work.">

@@ -10,14 +10,35 @@ import latinNormal from "@fontsource-variable/newsreader/files/newsreader-latin-
 interface Props {
   title?: string;
   description?: string;
+  type?: "website" | "article";
 }
 
 const {
   title = "Eric Minassian",
   description = "Software engineer at Amazon, working on Project Kuiper. Previously at Walmart. Studying CS + Business at UC Irvine.",
+  type = "website",
 } = Astro.props;
 
 const siteUrl = "https://www.ericminassian.com";
+const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
+const ogImage = `${siteUrl}/og-image.png`;
+
+// JSON-LD structured data
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: "Eric Minassian",
+  url: siteUrl,
+  jobTitle: "Software Engineer",
+  worksFor: {
+    "@type": "Organization",
+    name: "Amazon",
+  },
+  sameAs: [
+    "https://github.com/eric-minassian",
+    "https://linkedin.com/in/minassian-eric",
+  ],
+};
 ---
 
 <html lang="en">
@@ -35,11 +56,25 @@ const siteUrl = "https://www.ericminassian.com";
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="author" content="Eric Minassian" />
-    <link rel="canonical" href={siteUrl} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={type} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content={siteUrl} />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:site_name" content="Eric Minassian" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- Theme -->
     <meta
       name="theme-color"
       content="#f8f5ed"
@@ -50,6 +85,10 @@ const siteUrl = "https://www.ericminassian.com";
       content="#171717"
       media="(prefers-color-scheme: dark)"
     />
+
+    <!-- JSON-LD -->
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
     <ClientRouter />
     <!-- Prevent FOUC: Apply dark class before render -->
     <script is:inline set:html={getThemeScript()}></script>
