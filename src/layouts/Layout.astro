@@ -23,7 +23,8 @@ const {
 const siteUrl = "https://www.ericminassian.com";
 const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
 const ogImage = `${siteUrl}/og-image.png`;
-const ga4Id = "G-YWLR571NDY";
+const posthogApiKey = "phc_h24F6X3NCALDSyV7SpgjViZmYHm7lNddFNY4zsmDNZs";
+const posthogApiHost = "https://us.i.posthog.com";
 
 // JSON-LD structured data
 const jsonLd = {
@@ -91,9 +92,8 @@ const jsonLd = {
     <!-- JSON-LD -->
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
-    <!-- Google Analytics 4 -->
-    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}></script>
-    <script is:inline set:html={getAnalyticsScript(ga4Id)} />
+    <!-- PostHog Analytics -->
+    <script is:inline set:html={getAnalyticsScript(posthogApiKey, posthogApiHost)} />
 
     <ClientRouter />
     <!-- Prevent FOUC: Apply dark class before render -->
