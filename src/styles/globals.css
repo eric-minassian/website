@@ -20,6 +20,10 @@
   --color-muted-dark: var(--color-neutral-400);
   --color-border: var(--color-neutral-200);
   --color-border-dark: var(--color-neutral-800);
+
+  /* Code blocks */
+  --color-code-bg: color-mix(in srgb, var(--color-neutral-200) 50%, transparent);
+  --color-code-bg-dark: color-mix(in srgb, var(--color-neutral-800) 50%, transparent);
 }
 
 @layer base {
@@ -69,13 +73,23 @@
 
   /* Code */
   code {
-    @apply rounded bg-neutral-200/50 px-1 py-0.5 text-[0.9em] dark:bg-neutral-800/50;
+    @apply rounded px-1 py-0.5 text-[0.9em];
+    background: var(--color-code-bg);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
       "Liberation Mono", "Courier New", monospace;
   }
 
+  :is(.dark) code {
+    background: var(--color-code-bg-dark);
+  }
+
   pre {
-    @apply my-5 overflow-x-auto rounded-md bg-neutral-200/50 p-4 dark:bg-neutral-800/50;
+    @apply my-5 overflow-x-auto rounded-md p-4;
+    background: var(--color-code-bg);
+  }
+
+  :is(.dark) pre {
+    background: var(--color-code-bg-dark);
   }
 
   pre code {

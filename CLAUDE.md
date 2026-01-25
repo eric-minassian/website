@@ -14,29 +14,30 @@ pnpm test:visual:update # Update visual regression snapshots
 
 ## Architecture
 
-A minimalist personal website built with Astro 5, MDX, Tailwind CSS v4, and TypeScript.
+A minimalist personal website built with Astro 5, MDX, React, Tailwind CSS v4, and TypeScript.
 
 ### Pages
 
 - `src/pages/index.mdx` - Home page with intro and links
-- `src/pages/work.mdx` - Work experience page
-- `src/pages/writing.astro` - Writing list page (queries content collection)
-- `src/pages/writing/[...slug].astro` - Individual post pages
+- `src/pages/work.astro` - Work listing page (queries content collection)
+- `src/pages/work/[...slug].astro` - Individual project pages
 - `src/pages/404.astro` - 404 error page
 
 ### Content
 
-- `src/content/writing/*.mdx` - Blog posts (MDX files with `title` and optional `description` frontmatter)
+- `src/content/work/*.mdx` - Project pages (MDX files with `title`, `description`, `github`, `date`, and `tags` frontmatter)
 - `src/content.config.ts` - Content collection schema
 
 ### Components
 
-- `src/layouts/Layout.astro` - Base HTML layout with meta tags
-- `src/components/Link.astro` - Styled link with underline hover effect
+- `src/layouts/Layout.astro` - Base HTML layout with meta tags and SEO
+- `src/components/ThemeToggle.astro` - Theme toggle button (system/dark/light)
+- `src/components/diagrams/*.tsx` - React components for interactive project diagrams
+- `src/components/icons/*.astro` - Icon components
 
 ### Styling
 
-Tailwind CSS v4 via Vite plugin. Custom Geist font and base styles in `src/styles/globals.css`. Uses `@tailwindcss/typography` for prose styling. Supports light/dark themes via system preference.
+Tailwind CSS v4 via Vite plugin. Custom Newsreader font and base styles in `src/styles/globals.css`. Supports light/dark themes via system preference with manual override.
 
 ### Testing
 
