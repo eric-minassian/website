@@ -1,0 +1,46 @@
+---
+title: tiny
+description: A compiler for the Tiny language with SSA-based IR and control flow visualization
+github: https://github.com/eric-minassian/tiny
+date: 2024-01-15
+tags: [rust, compiler, wasm, ssa, ir]
+status: completed
+---
+
+import { TinyPlayground } from "../../components/diagrams";
+
+# tiny
+
+[github](https://github.com/eric-minassian/tiny)
+
+A compiler for the Tiny language that generates SSA-form intermediate representation with optimizations like common subexpression elimination and copy propagation.
+
+## Try it
+
+Write Tiny code below and compile it to see the control flow graph.
+
+<TinyPlayground client:load />
+
+## The Language
+
+Tiny is a simple imperative language with:
+
+- Variables and arithmetic expressions
+- Control flow (`if`/`then`/`else`/`fi`, `while`/`do`/`od`)
+- Functions with parameters and return values
+- Built-in I/O (`InputNum`, `OutputNum`, `OutputNewLine`)
+
+## The Compiler
+
+The compiler pipeline:
+
+1. **Lexer** - Tokenizes source into a stream of tokens
+2. **Parser** - Builds an AST from the token stream
+3. **IR Generator** - Converts AST to SSA-form IR with phi functions
+4. **Optimizations** - CSE, copy propagation, dead code elimination
+
+The visualization shows the control flow graph with basic blocks connected by edges (fall-through and branch). Each block contains SSA instructions with unique IDs.
+
+---
+
+[back to work](/work)
