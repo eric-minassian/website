@@ -2,6 +2,7 @@
 import { ClientRouter } from "astro:transitions";
 import ThemeToggle from "../components/ThemeToggle.astro";
 import { getThemeScript } from "../scripts/theme";
+import { getAnalyticsScript } from "../scripts/analytics";
 import "../styles/globals.css";
 
 // Import font files with ?url to get hashed URLs for preloading
@@ -22,6 +23,7 @@ const {
 const siteUrl = "https://www.ericminassian.com";
 const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
 const ogImage = `${siteUrl}/og-image.png`;
+const ga4Id = "G-YWLR571NDY";
 
 // JSON-LD structured data
 const jsonLd = {
@@ -89,6 +91,10 @@ const jsonLd = {
     <!-- JSON-LD -->
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
+    <!-- Google Analytics 4 -->
+    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}></script>
+    <script is:inline set:html={getAnalyticsScript(ga4Id)} />
+
     <ClientRouter />
     <!-- Prevent FOUC: Apply dark class before render -->
     <script is:inline set:html={getThemeScript()}></script>
@@ -96,6 +102,11 @@ const jsonLd = {
     <script>
       import { initTheme } from "../scripts/theme";
       initTheme();
+    </script>
+    <!-- Analytics initialization -->
+    <script>
+      import { initAnalytics } from "../scripts/analytics";
+      initAnalytics();
     </script>
   </head>
 
