@@ -1,0 +1,29 @@
+---
+title: ericgate
+description: Developer-focused CDN with granular access control
+github: https://github.com/eric-minassian/ericgate
+---
+
+import { AccessFlow } from "../../components/diagrams";
+
+# ericgate
+
+[github](https://github.com/eric-minassian/ericgate)
+
+An API for serving private files from static sites.
+
+<AccessFlow client:load />
+
+## Problem
+
+Static sites can't serve private content. You either make files public or build a backend. There's no simple API to gate access to files with approval workflows.
+
+## Solution
+
+Upload files, define access rules, integrate via API. Your static site calls the API with a user token—if approved, it gets a signed CloudFront URL. You control who gets access through a dashboard or API.
+
+Built with React, Rust Lambda, Smithy for type-safe client/server codegen, and AWS CDK.
+
+---
+
+[back to work](/work)

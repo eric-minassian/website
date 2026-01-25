@@ -1,0 +1,29 @@
+---
+title: ericfinance
+description: Client-side personal finance app with encrypted sync
+github: https://github.com/eric-minassian/ericfinance
+---
+
+import { SyncDiagram } from "../../components/diagrams";
+
+# ericfinance
+
+[github](https://github.com/eric-minassian/ericfinance)
+
+Personal finance tracking that runs in your browser.
+
+<SyncDiagram client:load />
+
+## Problem
+
+Finance apps want your data on their servers. Desktop apps don't sync. You shouldn't have to choose between privacy and convenience.
+
+## Solution
+
+SQLite compiled to WebAssembly runs in your browser. Data stays local. Optional sync encrypts the database client-side before uploading—the server never sees plaintext.
+
+Built with React, sql.js, Drizzle ORM, and AWS for hosting/sync.
+
+---
+
+[back to work](/work)

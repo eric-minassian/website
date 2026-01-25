@@ -1,0 +1,25 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+
+const projects = await getCollection("work");
+---
+
+<Layout title="Work - Eric Minassian" description="Projects and open source work.">
+  <h1>work</h1>
+  <p class="my-0 mb-5"><a href="/">by eric minassian</a></p>
+  <ul>
+    {
+      projects.map((project) => (
+        <li>
+          <a href={`/work/${project.id}`}>{project.data.title}</a>
+          {project.data.description && (
+            <span class="text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
+              {" "}&mdash; {project.data.description}
+            </span>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+</Layout>
