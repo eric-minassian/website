@@ -21,31 +21,25 @@ test.describe("visual regression", () => {
 
   test("home page - system", async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem("theme", "system");
+      localStorage.setItem("theme", "dark");
     });
     await page.goto("/");
-    await expect(page.locator("[data-theme-icon='system']")).toBeVisible();
+    await expect(page.locator("[data-theme-icon='dark']")).toBeVisible();
     await expect(page).toHaveScreenshot("home-system.png", { fullPage: true });
   });
 
-  test("theme toggle cycles through system, dark, and light", async ({
+  test("theme toggle cycles through dark and light", async ({
     page,
   }) => {
-    // Start with system
+    // Start with dark
     await page.addInitScript(() => {
-      localStorage.setItem("theme", "system");
+      localStorage.setItem("theme", "dark");
     });
     await page.goto("/");
 
-    // Verify system mode
-    await expect(page.locator("[data-theme-icon='system']")).toBeVisible();
-    let theme = await page.evaluate(() => localStorage.getItem("theme"));
-    expect(theme).toBe("system");
-
-    // Click to go to dark
-    await page.locator("[data-theme-toggle]").click();
+    // Verify dark mode
     await expect(page.locator("[data-theme-icon='dark']")).toBeVisible();
-    theme = await page.evaluate(() => localStorage.getItem("theme"));
+    let theme = await page.evaluate(() => localStorage.getItem("theme"));
     expect(theme).toBe("dark");
 
     // Click to go to light
@@ -54,11 +48,11 @@ test.describe("visual regression", () => {
     theme = await page.evaluate(() => localStorage.getItem("theme"));
     expect(theme).toBe("light");
 
-    // Click to go back to system
+    // Click to go back to dark
     await page.locator("[data-theme-toggle]").click();
-    await expect(page.locator("[data-theme-icon='system']")).toBeVisible();
+    await expect(page.locator("[data-theme-icon='dark']")).toBeVisible();
     theme = await page.evaluate(() => localStorage.getItem("theme"));
-    expect(theme).toBe("system");
+    expect(theme).toBe("dark");
   });
 
   test("work page", async ({ page }) => {
