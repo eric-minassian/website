@@ -1,27 +1,24 @@
 /**
  * Theme toggle logic
- * Supports three modes: 'system' | 'light' | 'dark'
+ * Supports two modes: 'light' | 'dark'
  */
 
-type Theme = "system" | "light" | "dark";
+type Theme = "light" | "dark";
 
 const STORAGE_KEY = "theme";
-const THEMES: Theme[] = ["system", "dark", "light"];
+const THEMES: Theme[] = ["dark", "light"];
 
 export const getTheme = (): Theme =>
-  (localStorage.getItem(STORAGE_KEY) as Theme) || "system";
-
-export const prefersDark = (): boolean =>
-  matchMedia("(prefers-color-scheme: dark)").matches;
+  (localStorage.getItem(STORAGE_KEY) as Theme) || "dark";
 
 export const isDark = (theme: Theme = getTheme()): boolean =>
-  theme === "dark" || (theme === "system" && prefersDark());
+  theme === "dark";
 
 /** Inline script to prevent FOUC - must be called before page render */
 export const getThemeScript = (): string => `
 {
-  const t = localStorage.getItem("${STORAGE_KEY}") || "system";
-  const d = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+  const t = localStorage.getItem("${STORAGE_KEY}") || "dark";
+  const d = t === "dark";
   if (d) document.documentElement.classList.add("dark");
 }
 `;
@@ -57,11 +54,6 @@ const cycleTheme = (): void => {
 export const initTheme = (): void => {
   // Update UI (dark class already applied by inline script)
   updateUI();
-
-  // Listen for system preference changes
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-    if (getTheme() === "system") applyTheme();
-  });
 
   // Handle Astro view transitions
   document.addEventListener("astro:after-swap", applyTheme);

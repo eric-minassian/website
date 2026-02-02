@@ -1,9 +1,8 @@
 ---
 /**
- * Theme toggle button that cycles through: system → dark → light
+ * Theme toggle button that cycles through: dark → light
  * Icons represent the CURRENT theme state (not the next state)
  */
-import MonitorIcon from "./icons/MonitorIcon.astro";
 import MoonIcon from "./icons/MoonIcon.astro";
 import SunIcon from "./icons/SunIcon.astro";
 
@@ -17,7 +16,6 @@ const iconClass =
   aria-label="Toggle theme"
   class="relative size-9 cursor-pointer text-[var(--color-muted)] transition-colors hover:text-[var(--color-text)] dark:text-[var(--color-muted-dark)] dark:hover:text-[var(--color-text-dark)]"
 >
-  <MonitorIcon data-theme-icon="system" class={iconClass} />
   <MoonIcon data-theme-icon="dark" class={iconClass} />
   <SunIcon data-theme-icon="light" class={iconClass} />
 </button>
