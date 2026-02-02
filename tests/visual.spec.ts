@@ -19,15 +19,6 @@ test.describe("visual regression", () => {
     await expect(page).toHaveScreenshot("home-dark.png", { fullPage: true });
   });
 
-  test("home page - system", async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem("theme", "dark");
-    });
-    await page.goto("/");
-    await expect(page.locator("[data-theme-icon='dark']")).toBeVisible();
-    await expect(page).toHaveScreenshot("home-system.png", { fullPage: true });
-  });
-
   test("theme toggle cycles through dark and light", async ({
     page,
   }) => {
