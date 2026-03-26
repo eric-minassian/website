@@ -10,7 +10,7 @@
     "test:visual:update": "playwright test --update-snapshots"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.6",
+    "@astrojs/check": "^0.9.8",
     "@astrojs/sitemap": "^3.7.0",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/typography": "^0.5.19",
