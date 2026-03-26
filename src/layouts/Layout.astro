@@ -85,6 +85,26 @@ const jsonLd = {
       media="(prefers-color-scheme: dark)"
     />
 
+    <!-- Google Analytics -->
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-YWLR571NDY"
+    ></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-YWLR571NDY", { send_page_view: false });
+
+      // Track pageviews on View Transitions navigation
+      document.addEventListener("astro:page-load", function () {
+        gtag("event", "page_view", {
+          page_title: document.title,
+          page_location: window.location.href,
+        });
+      });
+    </script>
+
     <!-- JSON-LD -->
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
