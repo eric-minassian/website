@@ -103,6 +103,33 @@ const jsonLd = {
           page_location: window.location.href,
         });
       });
+
+      // Track outbound link clicks
+      document.addEventListener("click", function (e) {
+        var link = e.target.closest("a[href]");
+        if (!link) return;
+        var href = link.getAttribute("href");
+        if (!href) return;
+        var isExternal = href.startsWith("http") || href.startsWith("mailto:");
+        if (!isExternal) return;
+        gtag("event", "click", {
+          event_category: href.startsWith("mailto:") ? "email" : "outbound",
+          event_label: link.textContent.trim(),
+          link_url: href,
+        });
+      });
+
+      // Track theme toggle
+      document.addEventListener("click", function (e) {
+        if (!e.target.closest("[data-theme-toggle]")) return;
+        var themes = ["system", "dark", "light"];
+        var current = localStorage.getItem("theme") || "system";
+        var next = themes[(themes.indexOf(current) + 1) % themes.length];
+        gtag("event", "theme_toggle", {
+          event_category: "engagement",
+          event_label: next,
+        });
+      });
     </script>
 
     <!-- JSON-LD -->
