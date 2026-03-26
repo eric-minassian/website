@@ -14,25 +14,17 @@ pnpm test:visual:update # Update visual regression snapshots
 
 ## Architecture
 
-A minimalist personal website built with Astro 5, MDX, React, Tailwind CSS v4, and TypeScript.
+A minimalist personal website built with Astro, MDX, Tailwind CSS v4, and TypeScript.
 
 ### Pages
 
 - `src/pages/index.mdx` - Home page with intro and links
-- `src/pages/work.astro` - Work listing page (queries content collection)
-- `src/pages/work/[...slug].astro` - Individual project pages
 - `src/pages/404.astro` - 404 error page
-
-### Content
-
-- `src/content/work/*.mdx` - Project pages (MDX files with `title`, `description`, `github`, `date`, and `tags` frontmatter)
-- `src/content.config.ts` - Content collection schema
 
 ### Components
 
 - `src/layouts/Layout.astro` - Base HTML layout with meta tags and SEO
 - `src/components/ThemeToggle.astro` - Theme toggle button (system/dark/light)
-- `src/components/diagrams/*.tsx` - React components for interactive project diagrams
 - `src/components/icons/*.astro` - Icon components
 
 ### Styling
@@ -41,7 +33,7 @@ Tailwind CSS v4 via Vite plugin. Custom Newsreader font and base styles in `src/
 
 ### Testing
 
-Playwright visual regression tests in `tests/visual.spec.ts`. Tests capture full-page screenshots of all pages across desktop and mobile viewports.
+Playwright visual regression tests in `tests/visual.spec.ts`. Tests capture full-page screenshots of the home page (light/dark/system themes), theme toggle cycling, and 404 page.
 
 ## CI/CD
 

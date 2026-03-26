@@ -2,8 +2,6 @@
 @import "@fontsource-variable/newsreader/wght.css";
 @import "@fontsource-variable/newsreader/wght-italic.css";
 
-@plugin "@tailwindcss/typography";
-
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
