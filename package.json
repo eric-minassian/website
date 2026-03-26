@@ -16,7 +16,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.1.18",
     "@types/node": "^25.5.0",
-    "@types/react": "^19.2.9",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "astro": "^5.18.1",
     "tailwindcss": "^4.2.2",
@@ -31,7 +31,7 @@
     "@astrojs/react": "^4.4.2",
     "@fontsource-variable/newsreader": "^5.2.10",
     "@viz-js/viz": "^3.25.0",
-    "react": "^19.2.3",
+    "react": "^19.2.4",
     "react-dom": "^19.2.3",
     "rehype-external-links": "^3.0.0"
   }
