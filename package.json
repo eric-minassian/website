@@ -30,7 +30,7 @@
     "@astrojs/mdx": "^4.3.14",
     "@astrojs/react": "^4.4.2",
     "@fontsource-variable/newsreader": "^5.2.10",
-    "@viz-js/viz": "^3.24.0",
+    "@viz-js/viz": "^3.25.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "rehype-external-links": "^3.0.0"
