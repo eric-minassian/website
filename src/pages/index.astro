@@ -3,19 +3,23 @@ import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout>
-  <h1 class="mb-1 text-xl font-medium leading-tight md:text-2xl">Eric Minassian</h1>
-  <p class="my-2">
-    Software engineer and tech lead at <a href="https://amazon.com" target="_blank" rel="noopener noreferrer">Amazon</a>,
-    working on <a href="https://leo.amazon.com/" target="_blank" rel="noopener noreferrer">Leo</a>.
-  </p>
-  <p class="my-2">
-    Previously led payments software at <a href="https://tech.walmart.com" target="_blank" rel="noopener noreferrer">Walmart</a>.
-    CS + Business from <a href="https://uci.edu" target="_blank" rel="noopener noreferrer">UC Irvine</a>, summa cum laude.
-  </p>
-  <ul class="mt-6 list-none space-y-1 pl-0">
-    <li><a href="https://github.com/eric-minassian" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-    <li><a href="https://linkedin.com/in/minassian-eric" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
-    <li><a href="mailto:eric@ericminassian.com?subject=hi">Email</a> <small>(put "hi" in the subject or I won't see it)</small></li>
-    <li><a href="mailto:eric@ericminassian.com?subject=hi">Request my resume</a></li>
-  </ul>
+  <article itemscope itemtype="https://schema.org/Person">
+    <h1 class="mb-1 text-xl font-medium leading-tight md:text-2xl" itemprop="name">Eric Minassian</h1>
+    <p class="my-2">
+      Software engineer and tech lead at <a href="https://amazon.com" target="_blank" rel="noopener noreferrer" itemprop="worksFor">Amazon</a>,
+      working on <a href="https://leo.amazon.com/" target="_blank" rel="noopener noreferrer">Leo</a>.
+    </p>
+    <p class="my-2">
+      Previously led payments software at <a href="https://tech.walmart.com" target="_blank" rel="noopener noreferrer">Walmart</a>.
+      CS + Business from <a href="https://uci.edu" target="_blank" rel="noopener noreferrer" itemprop="alumniOf">UC Irvine</a>, summa cum laude.
+    </p>
+    <nav aria-label="Social links and contact">
+      <ul class="mt-6 list-none space-y-1 pl-0">
+        <li><a href="https://github.com/eric-minassian" target="_blank" rel="noopener noreferrer me" itemprop="sameAs">GitHub</a></li>
+        <li><a href="https://linkedin.com/in/minassian-eric" target="_blank" rel="noopener noreferrer me" itemprop="sameAs">LinkedIn</a></li>
+        <li><a href="mailto:eric@ericminassian.com?subject=hi" itemprop="email">Email</a> <small>(put "hi" in the subject or I won't see it)</small></li>
+        <li><a href="mailto:eric@ericminassian.com?subject=hi">Request my resume</a></li>
+      </ul>
+    </nav>
+  </article>
 </Layout>
