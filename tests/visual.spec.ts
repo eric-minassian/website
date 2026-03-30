@@ -28,9 +28,7 @@ test.describe("visual regression", () => {
     await expect(page).toHaveScreenshot("home-system.png", { fullPage: true });
   });
 
-  test("theme toggle cycles through system, dark, and light", async ({
-    page,
-  }) => {
+  test("theme toggle cycles through system, dark, and light", async ({ page }) => {
     // Start with system
     await page.addInitScript(() => {
       localStorage.setItem("theme", "system");

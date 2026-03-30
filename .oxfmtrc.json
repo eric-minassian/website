@@ -1,0 +1,16 @@
+{
+  "semi": true,
+  "singleQuote": false,
+  "tabWidth": 2,
+  "useTabs": false,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "sortImports": {},
+  "sortTailwindcss": {
+    "stylesheet": "src/styles/globals.css"
+  },
+  "ignorePatterns": ["dist/**", ".astro/**", "pnpm-lock.yaml"]
+}

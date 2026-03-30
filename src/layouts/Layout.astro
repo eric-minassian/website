@@ -11,12 +11,14 @@ interface Props {
   title?: string;
   description?: string;
   type?: "website" | "article";
+  noindex?: boolean;
 }
 
 const {
   title = "Eric Minassian",
   description = "Software engineer and tech lead at Amazon, working on Leo. Previously led payments software at Walmart. CS + Business from UC Irvine, summa cum laude.",
   type = "website",
+  noindex = false,
 } = Astro.props;
 
 const siteUrl = "https://www.ericminassian.com";
@@ -56,6 +58,7 @@ const jsonLd = {
     <meta name="description" content={description} />
     <meta name="author" content="Eric Minassian" />
     <link rel="canonical" href={canonicalUrl} />
+    <meta name="robots" content={noindex ? "noindex, nofollow" : "index, follow"} />
 
     <!-- Open Graph -->
     <meta property="og:type" content={type} />
@@ -86,6 +89,7 @@ const jsonLd = {
     />
 
     <!-- Google Analytics -->
+    <link rel="preconnect" href="https://www.googletagmanager.com" />
     <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-YWLR571NDY"
     ></script>
     <script is:inline>

@@ -6,8 +6,7 @@
 
 @theme {
   /* Typography */
-  --font-serif: "Newsreader Variable", ui-serif, Georgia, Cambria,
-    "Times New Roman", Times, serif;
+  --font-serif: "Newsreader Variable", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 
   /* Colors - semantic tokens */
   --color-bg: #f8f5ed;
@@ -18,10 +17,6 @@
   --color-muted-dark: var(--color-neutral-400);
   --color-border: var(--color-neutral-200);
   --color-border-dark: var(--color-neutral-800);
-
-  /* Code blocks */
-  --color-code-bg: color-mix(in srgb, var(--color-neutral-200) 50%, transparent);
-  --color-code-bg-dark: color-mix(in srgb, var(--color-neutral-800) 50%, transparent);
 }
 
 @layer base {
@@ -33,64 +28,7 @@
     @apply font-serif antialiased;
   }
 
-  /* Typography */
-  h1 {
-    @apply mb-1 text-xl font-medium leading-tight md:text-2xl;
-  }
-
-  h2 {
-    @apply mt-12 mb-2 text-lg font-normal leading-tight md:text-xl;
-  }
-
-  p {
-    @apply my-5;
-  }
-
-  /* Links */
   a {
-    @apply underline decoration-1 underline-offset-2 transition-[text-decoration-color] duration-150 decoration-[var(--color-muted)] hover:decoration-[var(--color-text)] dark:decoration-[var(--color-muted-dark)] dark:hover:decoration-[var(--color-text-dark)];
-  }
-
-  /* Lists */
-  ul {
-    @apply list-none space-y-1 pl-0;
-  }
-
-  ol {
-    @apply list-decimal space-y-1 pl-5;
-  }
-
-  li {
-    @apply pl-1;
-  }
-
-  /* Dividers */
-  hr {
-    @apply my-8 border-[var(--color-border)] dark:border-[var(--color-border-dark)];
-  }
-
-  /* Code */
-  code {
-    @apply rounded px-1 py-0.5 text-[0.9em];
-    background: var(--color-code-bg);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-      "Liberation Mono", "Courier New", monospace;
-  }
-
-  :is(.dark) code {
-    background: var(--color-code-bg-dark);
-  }
-
-  pre {
-    @apply my-5 overflow-x-auto rounded-md p-4;
-    background: var(--color-code-bg);
-  }
-
-  :is(.dark) pre {
-    background: var(--color-code-bg-dark);
-  }
-
-  pre code {
-    @apply bg-transparent p-0;
+    @apply underline decoration-[var(--color-muted)] decoration-1 underline-offset-2 transition-[text-decoration-color] duration-150 hover:decoration-[var(--color-text)] dark:decoration-[var(--color-muted-dark)] dark:hover:decoration-[var(--color-text-dark)];
   }
 }
