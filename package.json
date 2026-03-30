@@ -6,8 +6,16 @@
     "dev": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "og:generate": "node scripts/generate-og.mjs",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots"
+  },
+  "dependencies": {
+    "@fontsource-variable/newsreader": "^5.2.10"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
@@ -16,14 +24,13 @@
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^25.5.0",
     "astro": "^6.0.8",
+    "oxfmt": "^0.42.0",
+    "oxlint": "^1.57.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3"
   },
-  "packageManager": "pnpm@10.25.0",
   "engines": {
     "node": ">=22"
   },
-  "dependencies": {
-    "@fontsource-variable/newsreader": "^5.2.10"
-  }
+  "packageManager": "pnpm@10.25.0"
 }

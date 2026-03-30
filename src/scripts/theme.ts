@@ -8,11 +8,9 @@ type Theme = "system" | "light" | "dark";
 const STORAGE_KEY = "theme";
 const THEMES: Theme[] = ["system", "dark", "light"];
 
-export const getTheme = (): Theme =>
-  (localStorage.getItem(STORAGE_KEY) as Theme) || "system";
+export const getTheme = (): Theme => (localStorage.getItem(STORAGE_KEY) as Theme) || "system";
 
-export const prefersDark = (): boolean =>
-  matchMedia("(prefers-color-scheme: dark)").matches;
+export const prefersDark = (): boolean => matchMedia("(prefers-color-scheme: dark)").matches;
 
 export const isDark = (theme: Theme = getTheme()): boolean =>
   theme === "dark" || (theme === "system" && prefersDark());
