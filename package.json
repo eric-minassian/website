@@ -11,6 +11,7 @@
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "og:generate": "node scripts/generate-og.mjs",
+    "test:lighthouse": "node scripts/run-lighthouse.mjs",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots"
   },

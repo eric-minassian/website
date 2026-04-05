@@ -1,6 +1,4 @@
 @import "tailwindcss";
-@import "@fontsource-variable/newsreader/wght.css";
-@import "@fontsource-variable/newsreader/wght-italic.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -20,6 +18,15 @@
 }
 
 @layer base {
+  @font-face {
+    font-family: "Newsreader Variable";
+    src: url("@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2")
+      format("woff2-variations");
+    font-style: normal;
+    font-display: swap;
+    font-weight: 300 800;
+  }
+
   html {
     @apply bg-[var(--color-bg)] text-[var(--color-text)] dark:bg-[var(--color-bg-dark)] dark:text-[var(--color-text-dark)];
   }

@@ -1,7 +1,6 @@
 ---
-import { ClientRouter } from "astro:transitions";
 import ThemeToggle from "../components/ThemeToggle.astro";
-import { getThemeScript } from "../scripts/theme";
+import { GA_ID, getThemeScript } from "../scripts/theme";
 import "../styles/globals.css";
 
 // Import font files with ?url to get hashed URLs for preloading
@@ -24,6 +23,7 @@ const {
 const siteUrl = "https://www.ericminassian.com";
 const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
 const ogImage = `${siteUrl}/og-image.png`;
+const gaId = GA_ID;
 // JSON-LD structured data
 const jsonLd = {
   "@context": "https://schema.org",
@@ -89,57 +89,96 @@ const jsonLd = {
     />
 
     <!-- Google Analytics -->
-    <link rel="preconnect" href="https://www.googletagmanager.com" />
-    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-YWLR571NDY"
-    ></script>
-    <script is:inline>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
+    <script is:inline define:vars={{ gaId }}>
+      function queueGtag() {
+        window.dataLayer.push(arguments);
       }
-      gtag("js", new Date());
-      gtag("config", "G-YWLR571NDY", { send_page_view: false });
 
-      // Track pageviews on View Transitions navigation
-      document.addEventListener("astro:page-load", function () {
-        gtag("event", "page_view", {
-          page_title: document.title,
-          page_location: window.location.href,
-        });
-      });
+      (() => {
+        const measurementId = gaId;
+        const isProduction = window.location.hostname === "www.ericminassian.com";
+        const isBot = navigator.webdriver === true;
+        if (!isProduction || isBot) return;
 
-      // Track outbound link clicks
-      document.addEventListener("click", function (e) {
-        var link = e.target.closest("a[href]");
-        if (!link) return;
-        var href = link.getAttribute("href");
-        if (!href) return;
-        var isExternal = href.startsWith("http") || href.startsWith("mailto:");
-        if (!isExternal) return;
-        gtag("event", "click", {
-          event_category: href.startsWith("mailto:") ? "email" : "outbound",
-          event_label: link.textContent.trim(),
-          link_url: href,
-        });
-      });
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = window.gtag || queueGtag;
 
-      // Track theme toggle
-      document.addEventListener("click", function (e) {
-        if (!e.target.closest("[data-theme-toggle]")) return;
-        var themes = ["system", "dark", "light"];
-        var current = localStorage.getItem("theme") || "system";
-        var next = themes[(themes.indexOf(current) + 1) % themes.length];
-        gtag("event", "theme_toggle", {
-          event_category: "engagement",
-          event_label: next,
+        let analyticsLoaded = false;
+
+        const loadAnalytics = () => {
+          if (analyticsLoaded) return;
+          analyticsLoaded = true;
+
+          const script = document.createElement("script");
+          script.async = true;
+          script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+          document.head.append(script);
+
+          window.gtag("js", new Date());
+          window.gtag("config", measurementId, { send_page_view: false });
+          window.gtag("event", "page_view", {
+            page_title: document.title,
+            page_location: window.location.href,
+          });
+        };
+
+        const scheduleAnalyticsLoad = () => {
+          if ("requestIdleCallback" in window) {
+            window.requestIdleCallback(loadAnalytics, { timeout: 3_000 });
+            return;
+          }
+
+          window.setTimeout(loadAnalytics, 2_000);
+        };
+
+        const loadOnInteraction = () => {
+          loadAnalytics();
+          window.removeEventListener("pointerdown", loadOnInteraction);
+          window.removeEventListener("keydown", loadOnInteraction);
+        };
+
+        window.addEventListener("load", scheduleAnalyticsLoad, { once: true });
+        window.addEventListener("pointerdown", loadOnInteraction, { once: true, passive: true });
+        window.addEventListener("keydown", loadOnInteraction, { once: true });
+
+        document.addEventListener("click", (event) => {
+          if (!(event.target instanceof Element)) return;
+
+          const link = event.target.closest("a[href]");
+          if (!link) return;
+
+          const href = link.getAttribute("href");
+          if (!href) return;
+
+          const isExternal = href.startsWith("http") || href.startsWith("mailto:");
+          if (!isExternal) return;
+
+          window.gtag("event", "click", {
+            event_category: href.startsWith("mailto:") ? "email" : "outbound",
+            event_label: link.textContent.trim(),
+            link_url: href,
+          });
         });
-      });
+
+        document.addEventListener("click", (event) => {
+          if (!(event.target instanceof Element)) return;
+          if (!event.target.closest("[data-theme-toggle]")) return;
+
+          const themes = ["system", "dark", "light"];
+          const current = localStorage.getItem("theme") || "system";
+          const next = themes[(themes.indexOf(current) + 1) % themes.length];
+
+          window.gtag("event", "theme_toggle", {
+            event_category: "engagement",
+            event_label: next,
+          });
+        });
+      })();
     </script>
 
     <!-- JSON-LD -->
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
-    <ClientRouter />
     <!-- Prevent FOUC: Apply dark class before render -->
     <script is:inline set:html={getThemeScript()}></script>
     <!-- Theme toggle logic -->
