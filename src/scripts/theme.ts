@@ -5,6 +5,8 @@
 
 type Theme = "system" | "light" | "dark";
 
+export const GA_ID = "G-YWLR571NDY";
+
 const STORAGE_KEY = "theme";
 const THEMES: Theme[] = ["system", "dark", "light"];
 
@@ -60,9 +62,6 @@ export const initTheme = (): void => {
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
     if (getTheme() === "system") applyTheme();
   });
-
-  // Handle Astro view transitions
-  document.addEventListener("astro:after-swap", applyTheme);
 
   // Event delegation for toggle clicks
   document.addEventListener("click", (e) => {
