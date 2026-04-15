@@ -6,6 +6,9 @@
 @theme {
   /* Typography */
   --font-serif: "Newsreader Variable", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono:
+    "JetBrains Mono Variable", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
 
   /* Colors - semantic tokens */
   --color-bg: #f8f5ed;
@@ -26,6 +29,15 @@
     font-style: normal;
     font-display: swap;
     font-weight: 300 800;
+  }
+
+  @font-face {
+    font-family: "JetBrains Mono Variable";
+    src: url("@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2")
+      format("woff2-variations");
+    font-style: normal;
+    font-display: swap;
+    font-weight: 100 800;
   }
 
   html {

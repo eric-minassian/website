@@ -20,22 +20,24 @@ const formattedDate = post.data.date.toLocaleDateString("en-US", {
 });
 ---
 
-<Layout title={`${post.data.title} — Eric Minassian`} description={post.data.description} type="article">
-  <nav class="mb-8">
-    <a href="/notes/" class="text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">&larr; Notes</a>
-  </nav>
-  <article>
-    <header class="mb-8">
-      <h1 class="mb-1 text-xl font-medium leading-tight md:text-2xl">{post.data.title}</h1>
-      <p class="text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
-        <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
-        {post.data.tags.length > 0 && <span> &middot; {post.data.tags.join(", ")}</span>}
-      </p>
-    </header>
-    <div class="prose max-w-none dark:prose-invert">
-      <Content />
-    </div>
-  </article>
+<Layout title={`${post.data.title} — Eric Minassian`} description={post.data.description} type="article" wide>
+  <div class="font-mono text-sm leading-relaxed">
+    <nav class="mb-8">
+      <a href="/notes/" class="text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">&larr; Notes</a>
+    </nav>
+    <article>
+      <header class="mb-8">
+        <h1 class="mb-1 text-xl font-semibold leading-tight md:text-2xl">{post.data.title}</h1>
+        <p class="text-xs text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
+          <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
+          {post.data.tags.length > 0 && <span> &middot; {post.data.tags.join(", ")}</span>}
+        </p>
+      </header>
+      <div class="notes-prose prose prose-sm max-w-none dark:prose-invert">
+        <Content />
+      </div>
+    </article>
+  </div>
 
   <script is:inline type="module">
     const pres = document.querySelectorAll('pre[data-language="mermaid"]');
@@ -58,3 +60,61 @@ const formattedDate = post.data.date.toLocaleDateString("en-US", {
     }
   </script>
 </Layout>
+
+<style>
+  .notes-prose {
+    font-family: var(--font-mono);
+  }
+
+  .notes-prose :global(h1),
+  .notes-prose :global(h2),
+  .notes-prose :global(h3),
+  .notes-prose :global(h4) {
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+
+  .notes-prose :global(h2) {
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  :global(.dark) .notes-prose :global(h2) {
+    border-bottom-color: var(--color-border-dark);
+  }
+
+  .notes-prose :global(code:not(pre code)) {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.06);
+  }
+
+  :global(.dark) .notes-prose :global(code:not(pre code)) {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .notes-prose :global(pre) {
+    font-family: var(--font-mono);
+    border-radius: 6px;
+    font-size: 0.85em;
+  }
+
+  .notes-prose :global(blockquote) {
+    border-left-width: 4px;
+    font-style: normal;
+  }
+
+  .notes-prose :global(table) {
+    font-size: 0.85em;
+  }
+
+  .notes-prose :global(th) {
+    font-weight: 600;
+  }
+
+  .notes-prose :global(img) {
+    border-radius: 6px;
+  }
+</style>
