@@ -22,8 +22,9 @@ jobs:
     steps:
       - name: Checkout your repository using git
         uses: actions/checkout@v6
-      - name: Fetch research content
+      - name: Fetch notes content
         run: |
+          rm -rf src/content/notes
           git clone --depth 1 https://github.com/eric-minassian/notes.git src/content/notes
           rm -rf src/content/notes/.git
       - name: Install, build, and upload your site
