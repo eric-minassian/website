@@ -1,0 +1,46 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { getCollection } from "astro:content";
+
+const posts = await getCollection("notes");
+const sorted = posts.toSorted(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+---
+
+<Layout title="Notes — Eric Minassian" description="Notes and explorations on various topics.">
+  <nav class="mb-8">
+    <a href="/" class="text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">&larr; Home</a>
+  </nav>
+  <h1 class="mb-1 text-xl font-medium leading-tight md:text-2xl">Notes</h1>
+  <p class="my-2 text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
+    Notes and explorations on various topics.
+  </p>
+  {
+    sorted.length === 0 ? (
+      <p class="mt-8">Nothing here yet.</p>
+    ) : (
+      <ul class="mt-8 list-none space-y-6 pl-0">
+        {sorted.map((post) => {
+          const formattedDate = post.data.date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          });
+          return (
+            <li>
+              <a href={`/notes/${post.id}/`} class="text-base font-medium no-underline hover:underline">
+                {post.data.title}
+              </a>
+              <p class="mt-0.5 text-sm text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
+                <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
+                {post.data.tags.length > 0 && <span> &middot; {post.data.tags.join(", ")}</span>}
+              </p>
+              <p class="mt-1 text-sm">{post.data.description}</p>
+            </li>
+          );
+        })}
+      </ul>
+    )
+  }
+</Layout>
