@@ -244,8 +244,8 @@ const jsonLd = {
     </script>
   </head>
 
-  <body class:list={["mx-auto px-8 py-16", wide ? "max-w-[900px]" : "max-w-[650px]"]}>
-    <main class="w-full mt-0 md:mt-16">
+  <body class:list={["mx-auto px-8", wide ? "max-w-[900px] py-8" : "max-w-[650px] py-16"]}>
+    <main class:list={["w-full", wide ? "" : "md:mt-16"]}>
       <slot />
     </main>
     <footer class="mt-16 flex justify-center">

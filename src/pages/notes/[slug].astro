@@ -22,16 +22,15 @@ const formattedDate = post.data.date.toLocaleDateString("en-US", {
 
 <Layout title={`${post.data.title} — Eric Minassian`} description={post.data.description} type="article" wide>
   <div class="font-mono text-sm leading-relaxed">
-    <nav class="mb-8">
-      <a href="/notes/" class="text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">&larr; Notes</a>
-    </nav>
     <article>
-      <header class="mb-8">
-        <h1 class="mb-1 text-xl font-semibold leading-tight md:text-2xl">{post.data.title}</h1>
-        <p class="text-xs text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]">
+      <header class="mb-6">
+        <nav class="mb-1 flex items-center gap-2 text-xs text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]" aria-label="Breadcrumb">
+          <a href="/notes/" class="hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-dark)]">notes</a>
+          <span>/</span>
           <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
           {post.data.tags.length > 0 && <span> &middot; {post.data.tags.join(", ")}</span>}
-        </p>
+        </nav>
+        <h1 class="text-xl font-semibold leading-tight md:text-2xl">{post.data.title}</h1>
       </header>
       <div class="notes-prose prose prose-sm max-w-none dark:prose-invert">
         <Content />
@@ -39,24 +38,122 @@ const formattedDate = post.data.date.toLocaleDateString("en-US", {
     </article>
   </div>
 
+  <div id="mermaid-overlay" class="fixed inset-0 z-50 hidden cursor-zoom-out items-center justify-center bg-white dark:bg-neutral-900" role="dialog" aria-modal="true" aria-label="Expanded diagram">
+    <div id="mermaid-overlay-content" class="flex h-full w-full items-center justify-center p-8"></div>
+  </div>
+
   <script is:inline type="module">
-    const pres = document.querySelectorAll('pre[data-language="mermaid"]');
-    if (pres.length > 0) {
-      const { default: mermaid } = await import(
-        "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
-      );
-      const isDark = document.documentElement.classList.contains("dark");
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: isDark ? "dark" : "default",
+    const COPY_ICON =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    const CHECK_ICON =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    // Copy buttons — skip mermaid blocks since they get replaced
+    document.querySelectorAll('pre.astro-code:not([data-language="mermaid"])').forEach((pre) => {
+      pre.style.position = "relative";
+      const btn = document.createElement("button");
+      btn.className = "code-copy-btn";
+      btn.setAttribute("aria-label", "Copy code");
+      btn.innerHTML = COPY_ICON;
+      btn.addEventListener("click", async () => {
+        const code = pre.querySelector("code");
+        if (!code) return;
+        try {
+          await navigator.clipboard.writeText(code.textContent ?? "");
+          btn.innerHTML = CHECK_ICON;
+          setTimeout(() => {
+            btn.innerHTML = COPY_ICON;
+          }, 2000);
+        } catch {
+          // Clipboard API unavailable (non-HTTPS, permissions)
+        }
       });
-      for (const pre of pres) {
-        const div = document.createElement("div");
-        div.className = "mermaid";
-        div.textContent = pre.textContent;
-        pre.replaceWith(div);
+      pre.appendChild(btn);
+    });
+
+    // Mermaid rendering
+    const mermaidPres = document.querySelectorAll('pre[data-language="mermaid"]');
+    if (mermaidPres.length > 0) {
+      try {
+        const { default: mermaid } = await import(
+          "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
+        );
+        const isDark = document.documentElement.classList.contains("dark");
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: isDark ? "dark" : "default",
+        });
+        for (const pre of mermaidPres) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "mermaid-wrapper";
+          wrapper.setAttribute("role", "button");
+          wrapper.setAttribute("tabindex", "0");
+          wrapper.setAttribute("aria-label", "Click to expand diagram");
+          const div = document.createElement("div");
+          div.className = "mermaid";
+          div.textContent = pre.textContent;
+          wrapper.appendChild(div);
+          pre.replaceWith(wrapper);
+        }
+        await mermaid.run();
+
+        const overlay = document.getElementById("mermaid-overlay");
+        const overlayContent = document.getElementById("mermaid-overlay-content");
+        let lastTrigger = null;
+
+        function openOverlay(wrapper) {
+          const svg = wrapper.querySelector("svg");
+          if (!svg) return;
+          const clone = svg.cloneNode(true);
+          const vb = svg.viewBox.baseVal;
+          const vbW = vb.width || svg.getBoundingClientRect().width;
+          const vbH = vb.height || svg.getBoundingClientRect().height;
+          if (vbW === 0 || vbH === 0) return;
+          const availW = window.innerWidth - 64;
+          const availH = window.innerHeight - 64;
+          const scale = Math.min(availW / vbW, availH / vbH);
+          clone.removeAttribute("width");
+          clone.removeAttribute("height");
+          clone.removeAttribute("style");
+          clone.style.width = vbW * scale + "px";
+          clone.style.height = vbH * scale + "px";
+          overlayContent.replaceChildren(clone);
+          lastTrigger = wrapper;
+          overlay.classList.remove("hidden");
+          overlay.classList.add("flex");
+          overlay.focus();
+        }
+
+        function closeOverlay() {
+          overlay.classList.add("hidden");
+          overlay.classList.remove("flex");
+          overlayContent.replaceChildren();
+          if (lastTrigger) {
+            lastTrigger.focus();
+            lastTrigger = null;
+          }
+        }
+
+        document.querySelectorAll(".mermaid-wrapper").forEach((wrapper) => {
+          wrapper.style.cursor = "zoom-in";
+          wrapper.addEventListener("click", () => openOverlay(wrapper));
+          wrapper.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openOverlay(wrapper);
+            }
+          });
+        });
+
+        overlay.addEventListener("click", closeOverlay);
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !overlay.classList.contains("hidden")) {
+            closeOverlay();
+          }
+        });
+      } catch (e) {
+        console.warn("Mermaid failed to load:", e);
       }
-      await mermaid.run();
     }
   </script>
 </Layout>
@@ -98,7 +195,31 @@ const formattedDate = post.data.date.toLocaleDateString("en-US", {
   .notes-prose :global(pre) {
     font-family: var(--font-mono);
     border-radius: 6px;
-    font-size: 0.85em;
+    font-size: 1em;
+  }
+
+  .notes-prose :global(pre:hover .code-copy-btn),
+  .notes-prose :global(pre:focus-within .code-copy-btn) {
+    opacity: 1;
+  }
+
+  :global(.code-copy-btn) {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    line-height: 0;
+  }
+
+  :global(.code-copy-btn:hover) {
+    color: rgba(255, 255, 255, 0.9);
   }
 
   .notes-prose :global(blockquote) {
