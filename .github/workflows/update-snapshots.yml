@@ -20,7 +20,7 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch }}
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v6
         with:
