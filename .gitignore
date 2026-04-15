@@ -17,6 +17,10 @@ pnpm-debug.log*
 .env
 .env.production
 
+# notes content (cloned from notes repo at build time)
+src/content/notes/*
+!src/content/notes/.gitkeep
+
 # macOS-specific files
 .DS_Store
 
