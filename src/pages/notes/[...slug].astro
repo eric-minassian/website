@@ -29,6 +29,8 @@ const formattedDate = post.data.date.toLocaleDateString("en-US", {
           <span>/</span>
           <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
           {post.data.tags.length > 0 && <span> &middot; {post.data.tags.join(", ")}</span>}
+          <span> &middot; </span>
+          <a href={`/notes/${post.id}.md`} class="hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-dark)]">view as markdown</a>
         </nav>
         <h1 class="text-xl font-semibold leading-tight md:text-2xl">{post.data.title}</h1>
       </header>
