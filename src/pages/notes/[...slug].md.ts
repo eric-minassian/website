@@ -11,9 +11,7 @@ export async function getStaticPaths() {
 
 export const GET: APIRoute = ({ props }) => {
   const { post } = props;
-  const tags = post.data.tags.length > 0
-    ? `\ntags: [${post.data.tags.join(", ")}]`
-    : "";
+  const tags = post.data.tags.length > 0 ? `\ntags: [${post.data.tags.join(", ")}]` : "";
   const frontmatter = `---
 title: ${JSON.stringify(post.data.title)}
 description: ${JSON.stringify(post.data.description)}
