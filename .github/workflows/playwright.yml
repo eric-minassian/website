@@ -30,8 +30,11 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
 
-      - name: Run Playwright tests
+      - name: Run visual regression tests
         run: pnpm test:visual
+
+      - name: Run SEO tests
+        run: pnpm test:seo
 
       - uses: actions/upload-artifact@v7
         if: failure()

@@ -1,13 +1,16 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const PORT = 4322;
+const BASE_URL = `http://127.0.0.1:${PORT}`;
+
 export default defineConfig({
   testDir: "./tests",
-  testIgnore: "seo.spec.ts",
+  testMatch: "seo.spec.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   reporter: "html",
   use: {
-    baseURL: "http://localhost:4321",
+    baseURL: BASE_URL,
     trace: "on-first-retry",
   },
   projects: [
@@ -15,19 +18,11 @@ export default defineConfig({
       name: "Desktop Chrome",
       use: { ...devices["Desktop Chrome"] },
     },
-    {
-      name: "Mobile Chrome",
-      use: { ...devices["iPhone 15 Pro"] },
-    },
   ],
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:4321",
+    command: `pnpm build && pnpm preview --host 127.0.0.1 --port ${PORT}`,
+    url: BASE_URL,
     reuseExistingServer: !process.env.CI,
-  },
-  expect: {
-    toHaveScreenshot: {
-      maxDiffPixelRatio: 0.01,
-    },
+    timeout: 180_000,
   },
 });

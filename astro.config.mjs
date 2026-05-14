@@ -4,7 +4,11 @@ import { defineConfig } from "astro/config";
 
 export default defineConfig({
   site: "https://www.ericminassian.com",
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      filter: (page) => !page.includes("/404"),
+    }),
+  ],
   vite: {
     plugins: [tailwindcss()],
   },

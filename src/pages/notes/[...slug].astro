@@ -20,7 +20,14 @@ const formattedDate = post.data.date.toLocaleDateString("en-US", {
 });
 ---
 
-<Layout title={`${post.data.title} — Eric Minassian`} description={post.data.description} type="article" wide>
+<Layout
+  title={`${post.data.title} — Eric Minassian`}
+  description={post.data.description}
+  type="article"
+  wide
+  published={post.data.date}
+  tags={post.data.tags}
+>
   <div class="font-mono text-sm leading-relaxed">
     <article>
       <header class="mb-6">
