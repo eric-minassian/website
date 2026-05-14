@@ -32,3 +32,6 @@ src/content/notes/*
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# lighthouse temp reports
+tmp-lighthouse-*.json

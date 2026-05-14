@@ -176,7 +176,11 @@ async function runSingleLighthouse(baseUrl, { name, extraArgs }) {
 const server = await startStaticServer();
 
 try {
-  await Promise.all(runs.map((runConfig) => runSingleLighthouse(server.url, runConfig)));
+  // Sequential: parallel runs share CPU and produce noisy mobile perf scores on CI.
+  for (const runConfig of runs) {
+    // eslint-disable-next-line no-await-in-loop
+    await runSingleLighthouse(server.url, runConfig);
+  }
 } finally {
   await server.close();
 }
