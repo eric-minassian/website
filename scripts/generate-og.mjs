@@ -1,9 +1,6 @@
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
 import { chromium } from "@playwright/test";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const html = `<!DOCTYPE html>
 <html>
@@ -57,7 +54,7 @@ async function main() {
   await page.setContent(html, { waitUntil: "networkidle" });
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({
-    path: join(__dirname, "..", "public", "og-image.png"),
+    path: join(import.meta.dirname, "..", "public", "og-image.png"),
     type: "png",
   });
   await browser.close();
