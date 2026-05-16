@@ -146,10 +146,16 @@ const graphData = { nodes, edges };
               aria-label="Search notes"
               class="w-full rounded border border-[var(--color-border)] bg-transparent px-3 py-1.5 text-sm font-mono outline-none focus:border-[var(--color-text)] sm:max-w-xs dark:border-[var(--color-border-dark)] dark:focus:border-[var(--color-text-dark)]"
             />
-            <div class="flex gap-1 text-xs" role="tablist" aria-label="View mode">
-              <button data-view="list" class="view-btn is-active" role="tab" aria-selected="true">list</button>
-              <button data-view="tree" class="view-btn" role="tab" aria-selected="false">tree</button>
-              <button data-view="graph" class="view-btn" role="tab" aria-selected="false">graph</button>
+            <div class="flex flex-wrap gap-3 text-xs">
+              <div class="flex gap-1" role="tablist" aria-label="View mode">
+                <button data-view="list" class="view-btn is-active" role="tab" aria-selected="true">list</button>
+                <button data-view="tree" class="view-btn" role="tab" aria-selected="false">tree</button>
+                <button data-view="graph" class="view-btn" role="tab" aria-selected="false">graph</button>
+              </div>
+              <div class="flex gap-1" role="group" aria-label="Sort order">
+                <button data-sort="newest" class="view-btn is-active" aria-pressed="true">newest</button>
+                <button data-sort="oldest" class="view-btn" aria-pressed="false">oldest</button>
+              </div>
             </div>
           </div>
 
@@ -174,7 +180,7 @@ const graphData = { nodes, edges };
                   .join(" ")
                   .toLowerCase();
                 return (
-                  <li class="note-item" data-note-id={post.id} data-haystack={haystack}>
+                  <li class="note-item" data-note-id={post.id} data-haystack={haystack} data-date={post.data.date.getTime()}>
                     <a href={`/notes/${post.id}/`} class="font-semibold no-underline hover:underline">
                       {post.data.title}
                     </a>
@@ -227,8 +233,10 @@ const graphData = { nodes, edges };
       const { nodes, edges } = JSON.parse(dataEl.textContent || "{}");
       const search = document.getElementById("notes-search");
       const empty = document.getElementById("notes-empty");
-      const viewBtns = document.querySelectorAll(".view-btn");
+      const viewBtns = document.querySelectorAll("[data-view]");
+      const sortBtns = document.querySelectorAll("[data-sort]");
       const panels = document.querySelectorAll("[data-view-panel]");
+      const listPanel = document.querySelector('[data-view-panel="list"] ul');
 
       const noteHaystacks = new Map();
       for (const n of nodes) {
@@ -239,7 +247,62 @@ const graphData = { nodes, edges };
       }
 
       let matchedIds = new Set(nodes.map((n) => n.id));
+      const VALID_VIEWS = new Set(["list", "tree", "graph"]);
+      const VALID_SORTS = new Set(["newest", "oldest"]);
       let currentView = "list";
+      let currentSort = "newest";
+
+      function readUrlState() {
+        const params = new URLSearchParams(window.location.search);
+        const view = params.get("view");
+        const sort = params.get("sort");
+        return {
+          view: view && VALID_VIEWS.has(view) ? view : "list",
+          sort: sort && VALID_SORTS.has(sort) ? sort : "newest",
+        };
+      }
+
+      function writeUrlState(view, sort) {
+        const params = new URLSearchParams(window.location.search);
+        if (view === "list") params.delete("view");
+        else params.set("view", view);
+        if (sort === "newest") params.delete("sort");
+        else params.set("sort", sort);
+        const qs = params.toString();
+        const url = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
+        window.history.pushState({ view, sort }, "", url);
+      }
+
+      function applySort(sort) {
+        if (!listPanel) return;
+        const items = [...listPanel.querySelectorAll(".note-item")];
+        items.sort((a, b) => {
+          const ad = Number(a.getAttribute("data-date")) || 0;
+          const bd = Number(b.getAttribute("data-date")) || 0;
+          return sort === "oldest" ? ad - bd : bd - ad;
+        });
+        for (const item of items) listPanel.appendChild(item);
+      }
+
+      function applyView(view) {
+        for (const b of viewBtns) {
+          const active = b.getAttribute("data-view") === view;
+          b.classList.toggle("is-active", active);
+          b.setAttribute("aria-selected", String(active));
+        }
+        for (const p of panels) {
+          p.classList.toggle("hidden", p.getAttribute("data-view-panel") !== view);
+        }
+        if (view === "graph" && !graphReady) renderGraph();
+      }
+
+      function applySortButtons(sort) {
+        for (const b of sortBtns) {
+          const active = b.getAttribute("data-sort") === sort;
+          b.classList.toggle("is-active", active);
+          b.setAttribute("aria-pressed", String(active));
+        }
+      }
 
       function applyFilter(query) {
         matchedIds = new Set();
@@ -414,20 +477,43 @@ const graphData = { nodes, edges };
       for (const btn of viewBtns) {
         btn.addEventListener("click", () => {
           const view = btn.getAttribute("data-view");
+          if (view === currentView) return;
           currentView = view;
-          for (const b of viewBtns) {
-            const active = b === btn;
-            b.classList.toggle("is-active", active);
-            b.setAttribute("aria-selected", String(active));
-          }
-          for (const p of panels) {
-            p.classList.toggle("hidden", p.getAttribute("data-view-panel") !== view);
-          }
-          if (view === "graph" && !graphReady) {
-            renderGraph();
-          }
+          applyView(view);
+          writeUrlState(currentView, currentSort);
         });
       }
+
+      for (const btn of sortBtns) {
+        btn.addEventListener("click", () => {
+          const sort = btn.getAttribute("data-sort");
+          if (sort === currentSort) return;
+          currentSort = sort;
+          applySortButtons(sort);
+          applySort(sort);
+          writeUrlState(currentView, currentSort);
+        });
+      }
+
+      window.addEventListener("popstate", () => {
+        const { view, sort } = readUrlState();
+        if (sort !== currentSort) {
+          currentSort = sort;
+          applySortButtons(sort);
+          applySort(sort);
+        }
+        if (view !== currentView) {
+          currentView = view;
+          applyView(view);
+        }
+      });
+
+      const initial = readUrlState();
+      currentView = initial.view;
+      currentSort = initial.sort;
+      applySortButtons(currentSort);
+      applySort(currentSort);
+      applyView(currentView);
     }
   </script>
 
