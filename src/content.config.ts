@@ -4,7 +4,7 @@ import { defineCollection } from "astro:content";
 
 const notes = defineCollection({
   loader: glob({
-    pattern: ["**/*.md", "!**/CLAUDE.md", "!**/README.md"],
+    pattern: ["**/*.md", "!**/CLAUDE.md", "!**/AGENTS.md",  "!**/README.md"],
     base: "./src/content/notes",
   }),
   schema: z.object({
