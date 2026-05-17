@@ -1,6 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { getCollection, render } from "astro:content";
+import { normalizeNote } from "../../lib/notes";
 
 export async function getStaticPaths() {
   const posts = await getCollection("notes");
@@ -12,27 +13,32 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await render(post);
+const note = normalizeNote(post);
 
-const formattedDate = post.data.date.toLocaleDateString("en-US", {
+const formattedDate = note.date?.toLocaleDateString("en-US", {
   year: "numeric",
   month: "long",
   day: "numeric",
 });
 ---
 
-<Layout title={`${post.data.title} — Eric Minassian`} description={post.data.description} type="article" wide>
+<Layout title={`${note.title} — Eric Minassian`} description={note.description} type="article" wide>
   <div class="font-mono text-sm leading-relaxed">
     <article>
       <header class="mb-6">
         <nav class="mb-1 flex items-center gap-2 text-xs text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]" aria-label="Breadcrumb">
           <a href="/notes/" class="hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-dark)]">notes</a>
           <span>/</span>
-          <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
-          {post.data.tags.length > 0 && <span> &middot; {post.data.tags.join(", ")}</span>}
-          <span> &middot; </span>
+          {note.date && formattedDate && (
+            <>
+              <time datetime={note.date.toISOString()}>{formattedDate}</time>
+              <span> &middot; </span>
+            </>
+          )}
+          {note.tags.length > 0 && <><span>{note.tags.join(", ")}</span><span> &middot; </span></>}
           <a href={`/notes/${post.id}.md`} class="hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-dark)]">view as markdown</a>
         </nav>
-        <h1 class="text-xl font-semibold leading-tight md:text-2xl">{post.data.title}</h1>
+        <h1 class="text-xl font-semibold leading-tight md:text-2xl">{note.title}</h1>
       </header>
       <div class="notes-prose prose prose-sm max-w-none dark:prose-invert">
         <Content />
