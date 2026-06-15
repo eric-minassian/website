@@ -1,6 +1,14 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("visual regression", () => {
+  test.beforeEach(async ({ page }) => {
+    // AuthStatus attempts silent SSO on load (a hidden prompt=none iframe to the
+    // live auth server). That makes screenshots slow and non-deterministic — and
+    // hung CI — so block all auth-server traffic. Silent SSO then no-ops and the
+    // page renders the stable unauthenticated UI ("Sign in").
+    await page.route(/auth\.ericminassian\.com/, (route) => route.abort());
+  });
+
   test("home page - light", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("theme", "light");
