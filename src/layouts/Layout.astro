@@ -1,4 +1,5 @@
 ---
+import AuthStatus from "../components/AuthStatus.astro";
 import ThemeToggle from "../components/ThemeToggle.astro";
 import { GA_ID, getThemeScript } from "../scripts/theme";
 import "../styles/globals.css";
@@ -245,6 +246,9 @@ const jsonLd = {
   </head>
 
   <body class:list={["mx-auto px-8", wide ? "max-w-[900px] py-8" : "max-w-[650px] py-16"]}>
+    <div class="fixed right-4 top-4 z-50">
+      <AuthStatus />
+    </div>
     <main class:list={["w-full", wide ? "" : "md:mt-16"]}>
       <slot />
     </main>

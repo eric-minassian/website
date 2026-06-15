@@ -1,0 +1,88 @@
+---
+// Footer auth control: shows "Sign in", or the signed-in user's email with a
+// "Sign out" action. Renders a neutral (hidden) placeholder on the server and
+// hydrates in the browser — auth state lives in sessionStorage, so it is only
+// known client-side.
+---
+
+<div data-auth-status class="font-mono text-xs" hidden>
+  <button type="button" data-auth-signin class="auth-action" hidden>Sign in</button>
+  <span data-auth-user class="inline-flex items-center gap-2" hidden>
+    <span
+      data-auth-email
+      class="text-[var(--color-muted)] dark:text-[var(--color-muted-dark)]"></span>
+    <button type="button" data-auth-signout class="auth-action">Sign out</button>
+  </span>
+</div>
+
+<script>
+  import { getAuthClient } from "../lib/auth";
+  import type { AuthState } from "@ericminassian/auth/client";
+
+  const root = document.querySelector<HTMLElement>("[data-auth-status]");
+  if (root) {
+    const signInBtn = root.querySelector<HTMLButtonElement>("[data-auth-signin]");
+    const userEl = root.querySelector<HTMLElement>("[data-auth-user]");
+    const emailEl = root.querySelector<HTMLElement>("[data-auth-email]");
+    const signOutBtn = root.querySelector<HTMLButtonElement>("[data-auth-signout]");
+    const auth = getAuthClient();
+
+    function render(state: AuthState): void {
+      if (!root) return;
+      const loading = state.status === "loading";
+      const authed = state.status === "authenticated";
+      if (signInBtn) signInBtn.hidden = loading || authed;
+      if (userEl) userEl.hidden = !authed;
+      if (state.status === "authenticated" && emailEl) {
+        emailEl.textContent = state.user.email ?? "Signed in";
+      }
+      root.hidden = loading;
+    }
+
+    signInBtn?.addEventListener("click", () => {
+      void auth.signInWithRedirect();
+    });
+    signOutBtn?.addEventListener("click", () => {
+      void auth.signOut({
+        postLogoutRedirectUri: new URL("/", window.location.origin).href,
+      });
+    });
+
+    render(auth.getState());
+    auth.onStateChange(render);
+
+    // Pick up an existing auth.ericminassian.com session automatically (silent
+    // SSO via a hidden iframe). Top-level only, so it never recurses inside the
+    // callback iframe, and only when not already signed in. No-op on localhost
+    // (the cross-site session cookie isn't sent to the iframe).
+    if (window.self === window.top && auth.getState().status !== "authenticated") {
+      void auth.signInSilently();
+    }
+  }
+</script>
+
+<style>
+  .auth-action {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--color-muted);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: var(--color-muted);
+    text-underline-offset: 2px;
+  }
+  .auth-action:hover {
+    color: var(--color-text);
+    text-decoration-color: var(--color-text);
+  }
+  :global(.dark) .auth-action {
+    color: var(--color-muted-dark);
+    text-decoration-color: var(--color-muted-dark);
+  }
+  :global(.dark) .auth-action:hover {
+    color: var(--color-text-dark);
+    text-decoration-color: var(--color-text-dark);
+  }
+</style>

@@ -1,0 +1,34 @@
+---
+// OIDC redirect callback. Deliberately NOT wrapped in Layout: in the silent-SSO
+// flow this page loads inside a hidden iframe, so it must not pull in AuthStatus
+// (which would recurse into another silent attempt) or analytics. handleCallback()
+// relays the result to the opener when framed, or completes the code exchange and
+// returns where to go at top level.
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Signing in…</title>
+  </head>
+  <body>
+    <p>Signing you in…</p>
+
+    <script>
+      import { getAuthClient } from "../../lib/auth";
+
+      (async () => {
+        try {
+          const result = await getAuthClient().handleCallback();
+          // null => handled inside a silent-auth iframe; do nothing further.
+          if (result) window.location.replace(result.returnTo ?? "/");
+        } catch (error) {
+          console.error("Sign-in callback failed", error);
+          window.location.replace("/");
+        }
+      })();
+    </script>
+  </body>
+</html>
