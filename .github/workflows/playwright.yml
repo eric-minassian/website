@@ -14,24 +14,18 @@ jobs:
   test:
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    # Run in Playwright's image: browsers are pre-baked, so we skip the on-runner
+    # `playwright install`, which hangs fetching browser artifacts from the CDN.
+    # The tag must track @playwright/test in package.json (1.59.1).
+    container:
+      image: mcr.microsoft.com/playwright:v1.59.1-noble
     steps:
       - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v5
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: package.json
-          cache: pnpm
+      - run: corepack enable
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        # Chromium only (the sole browser these tests use). No --with-deps: the
-        # apt OS-deps step hangs on the runner, and ubuntu-latest already ships
-        # the libraries Chromium needs.
-        run: pnpm exec playwright install chromium
 
       - name: Run Playwright tests
         run: pnpm test:visual
