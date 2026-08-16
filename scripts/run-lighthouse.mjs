@@ -1,12 +1,28 @@
 import { spawn } from "node:child_process";
 import { createReadStream } from "node:fs";
-import { readFile, stat } from "node:fs/promises";
+import { mkdir, readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
 
 const DIST_DIR = path.resolve("dist");
+const REPORT_DIR = path.resolve("lighthouse-reports");
 const LIGHTHOUSE_FLAGS = ["--headless=new", "--no-sandbox"];
 const REQUIRED_SCORE = 1;
+const PERF_DIAGNOSTIC_AUDITS = [
+  "first-contentful-paint",
+  "largest-contentful-paint",
+  "speed-index",
+  "total-blocking-time",
+  "cumulative-layout-shift",
+  "interactive",
+  "max-potential-fid",
+  "server-response-time",
+  "render-blocking-resources",
+  "unused-javascript",
+  "unused-css-rules",
+  "uses-text-compression",
+  "uses-responsive-images",
+];
 
 const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
@@ -134,8 +150,41 @@ async function startStaticServer() {
   };
 }
 
+function formatAudit(audit) {
+  const score = audit.score === null ? "n/a" : audit.score.toFixed(2);
+  const value = audit.displayValue ? ` (${audit.displayValue})` : "";
+  return `    - ${audit.id}: score=${score}${value}`;
+}
+
+function logPerformanceDiagnostics(name, report) {
+  const audits = report.audits ?? {};
+  const lines = [`  ${name} performance audits:`];
+
+  for (const id of PERF_DIAGNOSTIC_AUDITS) {
+    const audit = audits[id];
+    if (audit) {
+      lines.push(formatAudit(audit));
+    }
+  }
+
+  const failing = Object.values(audits).filter(
+    (audit) =>
+      typeof audit.score === "number" &&
+      audit.score < 1 &&
+      !PERF_DIAGNOSTIC_AUDITS.includes(audit.id),
+  );
+  if (failing.length > 0) {
+    lines.push("  other audits with score < 1:");
+    for (const audit of failing) {
+      lines.push(formatAudit(audit));
+    }
+  }
+
+  console.log(lines.join("\n"));
+}
+
 async function runSingleLighthouse(baseUrl, { name, extraArgs }) {
-  const outputPath = `./tmp-lighthouse-${name}.json`;
+  const outputPath = path.join(REPORT_DIR, name);
 
   await run("npx", [
     "--yes",
@@ -144,11 +193,12 @@ async function runSingleLighthouse(baseUrl, { name, extraArgs }) {
     "--quiet",
     `--output-path=${outputPath}`,
     "--output=json",
+    "--output=html",
     `--chrome-flags=${LIGHTHOUSE_FLAGS.join(" ")}`,
     ...extraArgs,
   ]);
 
-  const report = JSON.parse(await readFile(outputPath, "utf8"));
+  const report = JSON.parse(await readFile(`${outputPath}.report.json`, "utf8"));
   const categories = report.categories;
   const scores = {
     performance: categories.performance.score,
@@ -157,26 +207,39 @@ async function runSingleLighthouse(baseUrl, { name, extraArgs }) {
     seo: categories.seo.score,
   };
 
-  for (const [category, score] of Object.entries(scores)) {
-    if (score < REQUIRED_SCORE) {
-      throw new Error(
-        `${name} ${category} score was ${roundedScore(score)}; required ${roundedScore(REQUIRED_SCORE)}`,
-      );
-    }
-  }
-
   console.log(
     `${name}:`,
     Object.entries(scores)
       .map(([category, score]) => `${category}=${roundedScore(score)}`)
       .join(" "),
   );
+
+  for (const [category, score] of Object.entries(scores)) {
+    if (score < REQUIRED_SCORE) {
+      if (category === "performance") {
+        logPerformanceDiagnostics(name, report);
+      }
+      throw new Error(
+        `${name} ${category} score was ${roundedScore(score)}; required ${roundedScore(REQUIRED_SCORE)}`,
+      );
+    }
+  }
 }
 
+await mkdir(REPORT_DIR, { recursive: true });
 const server = await startStaticServer();
 
 try {
-  await Promise.all(runs.map((runConfig) => runSingleLighthouse(server.url, runConfig)));
+  const results = await Promise.allSettled(
+    runs.map((runConfig) => runSingleLighthouse(server.url, runConfig)),
+  );
+  const failures = results.filter((result) => result.status === "rejected");
+  if (failures.length > 0) {
+    for (const failure of failures) {
+      console.error(failure.reason);
+    }
+    throw new Error(`${failures.length} lighthouse run(s) failed`);
+  }
 } finally {
   await server.close();
 }
