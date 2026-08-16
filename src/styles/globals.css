@@ -1,24 +1,18 @@
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Typography */
   --font-serif: "Newsreader Variable", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono:
-    "JetBrains Mono Variable", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-    "Liberation Mono", monospace;
-
-  /* Colors - semantic tokens */
-  --color-bg: #f8f5ed;
-  --color-bg-dark: var(--color-neutral-900);
-  --color-text: var(--color-neutral-800);
-  --color-text-dark: var(--color-neutral-200);
+  --color-canvas: #f8f5ed;
+  --color-ink: var(--color-neutral-800);
   --color-muted: var(--color-neutral-500);
-  --color-muted-dark: var(--color-neutral-400);
-  --color-border: var(--color-neutral-200);
-  --color-border-dark: var(--color-neutral-800);
+}
+
+.dark {
+  --color-canvas: var(--color-neutral-900);
+  --color-ink: var(--color-neutral-200);
+  --color-muted: var(--color-neutral-400);
 }
 
 @layer base {
@@ -31,24 +25,26 @@
     font-weight: 300 800;
   }
 
-  @font-face {
-    font-family: "JetBrains Mono Variable";
-    src: url("@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2")
-      format("woff2-variations");
-    font-style: normal;
-    font-display: swap;
-    font-weight: 100 800;
-  }
-
   html {
-    @apply bg-[var(--color-bg)] text-[var(--color-text)] dark:bg-[var(--color-bg-dark)] dark:text-[var(--color-text-dark)];
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
   }
 
   body {
-    @apply font-serif antialiased;
+    font-family: var(--font-serif);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   a {
-    @apply underline decoration-[var(--color-muted)] decoration-1 underline-offset-2 transition-[text-decoration-color] duration-150 hover:decoration-[var(--color-text)] dark:decoration-[var(--color-muted-dark)] dark:hover:decoration-[var(--color-text-dark)];
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    text-decoration-color: var(--color-muted);
+    transition: text-decoration-color 150ms;
+  }
+
+  a:hover {
+    text-decoration-color: var(--color-ink);
   }
 }

@@ -1,10 +1,11 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { SITE } from "../lib/site";
 ---
 
 <Layout>
   <article itemscope itemtype="https://schema.org/Person">
-    <h1 class="mb-1 text-xl font-medium leading-tight md:text-2xl" itemprop="name">Eric Minassian</h1>
+    <h1 class="mb-1 text-xl font-medium leading-tight md:text-2xl" itemprop="name">{SITE.name}</h1>
     <p class="my-2">
       Software engineer and tech lead at <a href="https://amazon.com" target="_blank" rel="noopener noreferrer" itemprop="worksFor">Amazon</a>,
       working on <a href="https://leo.amazon.com/" target="_blank" rel="noopener noreferrer">Leo</a>.
@@ -15,11 +16,10 @@ import Layout from "../layouts/Layout.astro";
     </p>
     <nav aria-label="Social links and contact">
       <ul class="mt-6 list-none space-y-1 pl-0">
-        <li><a href="/notes/">Notes</a></li>
-        <li><a href="https://github.com/eric-minassian" target="_blank" rel="noopener noreferrer me" itemprop="sameAs">GitHub</a></li>
-        <li><a href="https://linkedin.com/in/minassian-eric" target="_blank" rel="noopener noreferrer me" itemprop="sameAs">LinkedIn</a></li>
-        <li><a href="mailto:eric@ericminassian.com?subject=hi" itemprop="email">Email</a> <small>(put "hi" in the subject or I won't see it)</small></li>
-        <li><a href="mailto:eric@ericminassian.com?subject=hi">Request my resume</a></li>
+        <li><a href={SITE.github} target="_blank" rel="noopener noreferrer me" itemprop="sameAs">GitHub</a></li>
+        <li><a href={SITE.linkedin} target="_blank" rel="noopener noreferrer me" itemprop="sameAs">LinkedIn</a></li>
+        <li><a href={`mailto:${SITE.email}?subject=hi`} itemprop="email">Email</a> <small>(put "hi" in the subject or I won't see it)</small></li>
+        <li><a href={`mailto:${SITE.email}?subject=hi`}>Request my resume</a></li>
       </ul>
     </nav>
   </article>

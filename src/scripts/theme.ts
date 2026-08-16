@@ -1,23 +1,21 @@
-/**
- * Theme toggle logic
- * Supports three modes: 'system' | 'light' | 'dark'
- */
-
 type Theme = "system" | "light" | "dark";
-
-export const GA_ID = "G-YWLR571NDY";
 
 const STORAGE_KEY = "theme";
 const THEMES: Theme[] = ["system", "dark", "light"];
 
-export const getTheme = (): Theme => (localStorage.getItem(STORAGE_KEY) as Theme) || "system";
+const isTheme = (value: string | null): value is Theme =>
+  value === "system" || value === "light" || value === "dark";
+
+export const getTheme = (): Theme => {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  return isTheme(stored) ? stored : "system";
+};
 
 export const prefersDark = (): boolean => matchMedia("(prefers-color-scheme: dark)").matches;
 
 export const isDark = (theme: Theme = getTheme()): boolean =>
   theme === "dark" || (theme === "system" && prefersDark());
 
-/** Inline script to prevent FOUC - must be called before page render */
 export const getThemeScript = (): string => `
 {
   const t = localStorage.getItem("${STORAGE_KEY}") || "system";
@@ -32,11 +30,9 @@ export const applyDarkClass = (): void => {
 
 const updateUI = (): void => {
   const theme = getTheme();
-  // Update icons
   document.querySelectorAll<HTMLElement>("[data-theme-icon]").forEach((el) => {
     el.classList.toggle("active", el.dataset.themeIcon === theme);
   });
-  // Update aria labels
   document.querySelectorAll("[data-theme-toggle]").forEach((btn) => {
     btn.setAttribute("aria-label", `Theme: ${theme} (click to change)`);
   });
@@ -49,25 +45,22 @@ export const applyTheme = (): void => {
 
 const cycleTheme = (): void => {
   const next = THEMES[(THEMES.indexOf(getTheme()) + 1) % THEMES.length];
+  if (!next) return;
   localStorage.setItem(STORAGE_KEY, next);
   applyTheme();
 };
 
-/** Initialize theme system - call once on page load */
 export const initTheme = (): void => {
-  // Update UI (dark class already applied by inline script)
   updateUI();
 
-  // Listen for system preference changes
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
     if (getTheme() === "system") applyTheme();
   });
 
-  // Event delegation for toggle clicks
   document.addEventListener("click", (e) => {
-    if ((e.target as HTMLElement).closest("[data-theme-toggle]")) {
-      e.preventDefault();
-      cycleTheme();
-    }
+    if (!(e.target instanceof Element)) return;
+    if (!e.target.closest("[data-theme-toggle]")) return;
+    e.preventDefault();
+    cycleTheme();
   });
 };

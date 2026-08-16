@@ -3,8 +3,6 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-  repository_dispatch:
-    types: [notes-updated]
   workflow_dispatch:
 
 permissions:
@@ -22,17 +20,8 @@ jobs:
     steps:
       - name: Checkout your repository using git
         uses: actions/checkout@v6
-      - name: Fetch notes content
-        run: |
-          rm -rf src/content/notes
-          git clone --depth 1 https://github.com/eric-minassian/notes.git src/content/notes
-          rm -rf src/content/notes/.git
       - name: Install, build, and upload your site
         uses: withastro/action@v6
-        # with:
-        # path: . # The root location of your Astro project inside the repository. (optional)
-        # node-version: 20 # The specific version of Node that should be used to build your site. Defaults to 20. (optional)
-        # package-manager: npm@latest # The Node package manager that should be used to install dependencies and build your site. Automatically detected based on your lockfile. (optional)
 
   deploy:
     needs: build
