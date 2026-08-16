@@ -30,11 +30,11 @@ A minimalist personal website built with Astro, Tailwind CSS v4, and TypeScript.
 
 - `src/layouts/Layout.astro` - Base HTML layout with meta tags and SEO
 - `src/components/ThemeToggle.astro` - Theme toggle button (system/dark/light)
-- `src/components/icons/*.astro` - Icon components
+- `src/lib/site.ts` - Shared site metadata
 
 ### Styling
 
-Tailwind CSS v4 via Vite plugin. Custom Newsreader font and base styles in `src/styles/globals.css`. Supports light/dark themes via system preference with manual override.
+Tailwind CSS v4 via Vite plugin. Custom Newsreader font and semantic tokens (`canvas`, `ink`, `muted`) in `src/styles/globals.css`. Dark mode is a class variant; token values swap on `.dark`.
 
 ### Linting & Formatting
 

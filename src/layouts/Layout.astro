@@ -1,33 +1,25 @@
 ---
 import ThemeToggle from "../components/ThemeToggle.astro";
-import { GA_ID, getThemeScript } from "../scripts/theme";
+import { SITE } from "../lib/site";
+import { getThemeScript } from "../scripts/theme";
 import "../styles/globals.css";
 
-// Import font files with ?url to get hashed URLs for preloading
-import latinNormal from "@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2?url";
-import jetbrainsMonoLatin from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url";
+import newsreaderLatin from "@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2?url";
 
 interface Props {
   title?: string;
   description?: string;
-  type?: "website" | "article";
   noindex?: boolean;
-  wide?: boolean;
 }
 
-const {
-  title = "Eric Minassian",
-  description = "Software engineer and tech lead at Amazon, working on Leo. Previously led payments software at Walmart. CS + Business from UC Irvine, summa cum laude.",
-  type = "website",
-  noindex = false,
-  wide = false,
-} = Astro.props;
+const { title = SITE.name, description = SITE.description, noindex = false } = Astro.props;
 
-const siteUrl = "https://www.ericminassian.com";
-const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
+const site = Astro.site ?? new URL(SITE.url);
+const siteUrl = site.origin;
+const canonicalUrl = new URL(Astro.url.pathname, site).href;
 const ogImage = `${siteUrl}/og-image.png`;
-const gaId = GA_ID;
-// JSON-LD structured data
+const gaId = SITE.gaId;
+
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
@@ -35,14 +27,14 @@ const jsonLd = {
       "@type": "WebSite",
       "@id": `${siteUrl}/#website`,
       url: siteUrl,
-      name: "Eric Minassian",
+      name: SITE.name,
       description,
       publisher: { "@id": `${siteUrl}/#person` },
     },
     {
       "@type": "Person",
       "@id": `${siteUrl}/#person`,
-      name: "Eric Minassian",
+      name: SITE.name,
       givenName: "Eric",
       familyName: "Minassian",
       url: siteUrl,
@@ -59,21 +51,14 @@ const jsonLd = {
         name: "University of California, Irvine",
         url: "https://uci.edu",
       },
-      knowsAbout: [
-        "Software Engineering",
-        "Payments Systems",
-        "Distributed Systems",
-      ],
-      sameAs: [
-        "https://github.com/eric-minassian",
-        "https://linkedin.com/in/minassian-eric",
-      ],
+      knowsAbout: ["Software Engineering", "Payments Systems", "Distributed Systems"],
+      sameAs: [SITE.github, SITE.linkedin],
     },
     {
       "@type": "ProfilePage",
       "@id": `${siteUrl}/#profilepage`,
       url: siteUrl,
-      name: "Eric Minassian",
+      name: SITE.name,
       mainEntity: { "@id": `${siteUrl}/#person` },
     },
   ],
@@ -84,67 +69,38 @@ const jsonLd = {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      href={latinNormal}
-      crossorigin="anonymous"
-    />
-    {
-      wide && (
-        <link
-          rel="preload"
-          as="font"
-          type="font/woff2"
-          href={jetbrainsMonoLatin}
-          crossorigin="anonymous"
-        />
-      )
-    }
+    <link rel="preload" as="font" type="font/woff2" href={newsreaderLatin} crossorigin="anonymous" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="48x32x16" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="author" content="Eric Minassian" />
+    <meta name="author" content={SITE.name} />
     <link rel="canonical" href={canonicalUrl} />
     <meta name="robots" content={noindex ? "noindex, nofollow" : "index, follow"} />
-    <link rel="me" href="https://github.com/eric-minassian" />
-    <link rel="me" href="https://linkedin.com/in/minassian-eric" />
+    <link rel="me" href={SITE.github} />
+    <link rel="me" href={SITE.linkedin} />
 
-    <!-- Open Graph -->
-    <meta property="og:type" content={type} />
+    <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
-    <meta property="og:site_name" content="Eric Minassian" />
+    <meta property="og:site_name" content={SITE.name} />
     <meta property="og:locale" content="en_US" />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Eric Minassian - Software Engineer & Tech Lead" />
 
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
     <meta name="twitter:image:alt" content="Eric Minassian - Software Engineer & Tech Lead" />
 
-    <!-- Theme -->
-    <meta
-      name="theme-color"
-      content="#f8f5ed"
-      media="(prefers-color-scheme: light)"
-    />
-    <meta
-      name="theme-color"
-      content="#171717"
-      media="(prefers-color-scheme: dark)"
-    />
+    <meta name="theme-color" content="#f8f5ed" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#171717" media="(prefers-color-scheme: dark)" />
 
-    <!-- Google Analytics -->
     <script is:inline define:vars={{ gaId }}>
       function queueGtag() {
         window.dataLayer.push(arguments);
@@ -232,20 +188,16 @@ const jsonLd = {
       })();
     </script>
 
-    <!-- JSON-LD -->
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
-
-    <!-- Prevent FOUC: Apply dark class before render -->
     <script is:inline set:html={getThemeScript()}></script>
-    <!-- Theme toggle logic -->
     <script>
       import { initTheme } from "../scripts/theme";
       initTheme();
     </script>
   </head>
 
-  <body class:list={["mx-auto px-8", wide ? "max-w-[900px] py-8" : "max-w-[650px] py-16"]}>
-    <main class:list={["w-full", wide ? "" : "md:mt-16"]}>
+  <body class="mx-auto max-w-[650px] px-8 py-16">
+    <main class="w-full md:mt-16">
       <slot />
     </main>
     <footer class="mt-16 flex justify-center">
