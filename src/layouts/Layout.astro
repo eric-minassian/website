@@ -1,6 +1,7 @@
 ---
 import { Font } from "astro:assets";
 
+import Moon from "../components/Moon.astro";
 import ThemeToggle from "../components/ThemeToggle.astro";
 import { SITE } from "../lib/site";
 import { getThemeScript } from "../scripts/theme";
@@ -203,5 +204,6 @@ const jsonLd = {
     <footer class="mt-16 flex justify-center">
       <ThemeToggle />
     </footer>
+    <Moon />
   </body>
 </html>

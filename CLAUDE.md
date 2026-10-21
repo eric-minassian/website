@@ -30,6 +30,10 @@ A minimalist personal website built with Astro, Tailwind CSS v4, and TypeScript.
 
 - `src/layouts/Layout.astro` - Base HTML layout with meta tags and SEO
 - `src/components/ThemeToggle.astro` - Theme toggle button (system/dark/light)
+- `src/components/Moon.astro` - Halftone moon in the corner showing the real lunar phase; hover/focus reveals the caption, drag or arrow keys step through other nights
+- `src/lib/moon.ts` - Lunar phase maths (Meeus ch. 48): illumination, phase name, age, next full/new moon
+- `src/scripts/moon.ts` - Moon caption and interaction; lazy-loads the scene after the page is idle
+- `src/scripts/moon-scene.ts` - three.js scene: NASA LRO albedo map (`public/textures/moon.jpg`) shaded and drawn through a halftone pass
 - `src/lib/site.ts` - Shared site metadata
 
 ### Styling
@@ -42,7 +46,7 @@ Tailwind CSS v4 via Vite plugin. Newsreader is self-hosted through Astro's Fonts
 
 ### Testing
 
-Playwright visual regression tests in `tests/visual.spec.ts`. Tests capture full-page screenshots of the home page (light/dark/system themes), theme toggle cycling, and 404 page.
+Playwright visual regression tests in `tests/visual.spec.ts`. Tests capture full-page screenshots of the home page (light/dark/system themes), theme toggle cycling, the 404 page, and the moon caption. The clock, time zone, and reduced motion are pinned so the moon renders the same phase every run, and Desktop Chrome renders WebGL with SwiftShader.
 
 ## CI/CD
 
