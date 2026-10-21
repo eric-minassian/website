@@ -1,0 +1,7 @@
+allowBuilds:
+  esbuild: true
+
+# Keep pnpm-lock.yaml as a single YAML document. pnpm's default (download) prepends a
+# package-manager document that GitHub's dependency graph can't parse yet, which hides
+# every dependency from Dependabot alerts. CI still installs the exact packageManager version.
+pmOnFail: ignore
