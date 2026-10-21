@@ -48,15 +48,24 @@ const whenSettled = (callback: () => void): void => {
   const start = () => {
     if (started) return;
     started = true;
-    for (const type of INTERACTIONS) window.removeEventListener(type, start);
+    for (const type of INTERACTIONS) window.removeEventListener(type, onInteraction);
     if (typeof window.requestIdleCallback === "function") {
       window.requestIdleCallback(callback, { timeout: 1_000 });
     } else {
       callback();
     }
   };
+  // Chrome dispatches a motionless pointermove while the page loads to update hover state;
+  // that isn't the visitor, so wait for one that actually moves.
+  const onInteraction = (event: Event) => {
+    if (event instanceof PointerEvent && event.type === "pointermove") {
+      if (event.movementX === 0 && event.movementY === 0) return;
+    }
+    start();
+  };
   const arm = () => {
-    for (const type of INTERACTIONS) window.addEventListener(type, start, { passive: true });
+    for (const type of INTERACTIONS)
+      window.addEventListener(type, onInteraction, { passive: true });
     window.setTimeout(start, LOAD_FALLBACK_MS);
   };
 
