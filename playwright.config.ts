@@ -20,7 +20,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm dev",
+    command: "pnpm dev --ignore-lock",
     url: "http://localhost:4321",
     reuseExistingServer: !process.env.CI,
   },

@@ -34,7 +34,7 @@ A minimalist personal website built with Astro, Tailwind CSS v4, and TypeScript.
 
 ### Styling
 
-Tailwind CSS v4 via Vite plugin. Custom Newsreader font and semantic tokens (`canvas`, `ink`, `muted`) in `src/styles/globals.css`. Dark mode is a class variant; token values swap on `.dark`.
+Tailwind CSS v4 via Vite plugin. Newsreader is self-hosted through Astro's Fonts API (`fonts` in `astro.config.mjs`, `<Font />` in `Layout.astro`). Semantic tokens (`canvas`, `ink`, `muted`) live in `src/styles/globals.css`. Dark mode is a class variant; token values swap on `.dark`.
 
 ### Linting & Formatting
 

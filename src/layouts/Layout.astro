@@ -1,10 +1,10 @@
 ---
+import { Font } from "astro:assets";
+
 import ThemeToggle from "../components/ThemeToggle.astro";
 import { SITE } from "../lib/site";
 import { getThemeScript } from "../scripts/theme";
 import "../styles/globals.css";
-
-import newsreaderLatin from "@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2?url";
 
 interface Props {
   title?: string;
@@ -69,7 +69,7 @@ const jsonLd = {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="preload" as="font" type="font/woff2" href={newsreaderLatin} crossorigin="anonymous" />
+    <Font cssVariable="--font-newsreader" preload />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="48x32x16" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
