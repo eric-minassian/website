@@ -1,0 +1,123 @@
+---
+// A halftone moon in the lower-right corner showing tonight's real phase, drawn from NASA's LRO
+// albedo map (public/textures/moon.jpg, credit: NASA's Scientific Visualization Studio). three.js
+// loads once the page is idle; without WebGL nothing is drawn and the page reads as before.
+---
+
+<div data-moon data-state="loading" class="moon">
+  <canvas class="moon-canvas" aria-hidden="true"></canvas>
+  <button
+    data-moon-hit
+    type="button"
+    aria-label="Moon phase"
+    class="moon-hit rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
+  ></button>
+  <p
+    aria-live="polite"
+    class="moon-caption flex flex-col text-xs leading-snug whitespace-nowrap text-neutral-600 tabular-nums dark:text-neutral-400"
+  >
+    <span data-moon-title class="text-[13px] text-ink"></span>
+    <span data-moon-detail></span>
+    <span data-moon-next></span>
+  </p>
+</div>
+
+<style>
+  /* Radius, and the centre's distance from the right and bottom edges as fractions of it. */
+  .moon {
+    --r: min(34svh, 40vw);
+    --cx: 1;
+    --cy: 0.3;
+    color: var(--color-muted);
+  }
+
+  @media (max-width: 639px) {
+    .moon {
+      --r: min(20svh, 45vw);
+      --cx: 0.6;
+      --cy: 0.2;
+    }
+  }
+
+  /* Landscape phones have no room for it without covering the text. */
+  @media (max-height: 479px) {
+    .moon {
+      display: none;
+    }
+  }
+
+  .moon-canvas,
+  .moon-hit,
+  .moon-caption {
+    position: fixed;
+  }
+
+  .moon-canvas {
+    z-index: -1;
+    right: calc(var(--r) * (var(--cx) - 1.05));
+    bottom: calc(var(--r) * (var(--cy) - 1.05));
+    width: calc(var(--r) * 2.1);
+    height: calc(var(--r) * 2.1);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 600ms;
+  }
+
+  .moon-hit {
+    display: none;
+    right: calc(var(--r) * (var(--cx) - 1));
+    bottom: calc(var(--r) * (var(--cy) - 1));
+    width: calc(var(--r) * 2);
+    height: calc(var(--r) * 2);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  [data-state="ready"] .moon-canvas {
+    opacity: 1;
+  }
+
+  [data-state="ready"] .moon-hit {
+    display: block;
+  }
+
+  [data-scrubbing] .moon-hit {
+    cursor: grabbing;
+  }
+
+  .moon-caption {
+    right: max(1rem, calc(var(--r) * var(--cx) - 5.5rem));
+    bottom: calc(var(--r) * (1 + var(--cy)) + 0.75rem);
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+      opacity 200ms,
+      transform 200ms,
+      visibility 200ms;
+  }
+
+  .moon-hit:hover + .moon-caption,
+  .moon-hit:focus-visible + .moon-caption,
+  [data-scrubbing] .moon-caption,
+  [data-reveal] .moon-caption {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .moon-canvas,
+    .moon-caption {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { initMoon } from "../scripts/moon";
+  initMoon();
+</script>
