@@ -8,8 +8,10 @@ const DRAG_PX_PER_DAY = 10;
 const HOLD_AFTER_DRAG_MS = 700;
 const HOLD_AFTER_KEY_MS = 2_500;
 const CAPTION_REFRESH_MS = 600_000;
-// The moon is decoration, so give the page a moment after load before fetching three.js.
-const LOAD_DELAY_MS = 2_000;
+// The moon is decoration: fetch three.js once the visitor interacts, or after the page has been
+// quiet for a few seconds, so it never competes with the page's own loading.
+const LOAD_FALLBACK_MS = 4_000;
+const INTERACTIONS = ["pointermove", "pointerdown", "keydown", "scroll", "touchstart"] as const;
 const IDLE_OPACITY = 0.8;
 // Real libration reaches about ±6.7° in latitude and ±7.9° in longitude.
 const MAX_TILT_X = 0.1;
@@ -38,19 +40,26 @@ const toRgb = (color: string): Rgb => {
   return [r / 255, g / 255, b / 255];
 };
 
-// Run once the page has finished loading, settled for a moment, and the main thread is quiet.
-const whenIdle = (callback: () => void): void => {
-  const schedule = () =>
-    window.setTimeout(() => {
-      if (typeof window.requestIdleCallback === "function") {
-        window.requestIdleCallback(callback, { timeout: 2_000 });
-      } else {
-        callback();
-      }
-    }, LOAD_DELAY_MS);
+// Run after load, on the first interaction or the fallback delay, once the main thread is quiet.
+const whenSettled = (callback: () => void): void => {
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true;
+    for (const type of INTERACTIONS) window.removeEventListener(type, start);
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(callback, { timeout: 1_000 });
+    } else {
+      callback();
+    }
+  };
+  const arm = () => {
+    for (const type of INTERACTIONS) window.addEventListener(type, start, { passive: true });
+    window.setTimeout(start, LOAD_FALLBACK_MS);
+  };
 
-  if (document.readyState === "complete") schedule();
-  else window.addEventListener("load", schedule, { once: true });
+  if (document.readyState === "complete") arm();
+  else window.addEventListener("load", arm, { once: true });
 };
 
 const describeWhen = (offsetDays: number, ms: number): string =>
@@ -212,7 +221,7 @@ export const initMoon = (): void => {
 
   refreshCaption();
 
-  whenIdle(async () => {
+  whenSettled(async () => {
     try {
       const { createMoonScene } = await import("./moon-scene");
       scene = await createMoonScene(canvas, TEXTURE_URL);

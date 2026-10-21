@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 // The moon shows the real phase for the current moment, so pin the clock, time zone, and motion to
-// keep screenshots stable. Its WebGL scene loads once the page is idle.
+// keep screenshots stable. Its WebGL scene loads a few seconds after the page.
 const NOW = new Date("2026-10-21T04:00:00Z");
 
 test.use({ timezoneId: "UTC", locale: "en-US", contextOptions: { reducedMotion: "reduce" } });
