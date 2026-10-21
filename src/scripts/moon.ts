@@ -18,12 +18,14 @@ const MAX_TILT_X = 0.1;
 const MAX_TILT_Y = 0.12;
 const ARROW_STEPS: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };
 
-const shortDate = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
-const longDate = new Intl.DateTimeFormat(undefined, {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-});
+// The first Intl formatter on a page loads ICU locale data, which took ~350 ms on a cold CI
+// runner, so build them only when the moon is about to appear.
+let dateFormats: { short: Intl.DateTimeFormat; long: Intl.DateTimeFormat } | undefined;
+const formats = () =>
+  (dateFormats ??= {
+    short: new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }),
+    long: new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" }),
+  });
 
 const clampDays = (days: number): number =>
   Math.max(-MAX_OFFSET_DAYS, Math.min(MAX_OFFSET_DAYS, days));
@@ -63,7 +65,7 @@ const whenSettled = (callback: () => void): void => {
 };
 
 const describeWhen = (offsetDays: number, ms: number): string =>
-  Math.abs(offsetDays) < 0.5 ? "Tonight" : longDate.format(ms);
+  Math.abs(offsetDays) < 0.5 ? "Tonight" : formats().long.format(ms);
 
 const ariaLabel = (when: string, phase: MoonPhase, lit: number): string =>
   `Moon ${when === "Tonight" ? "tonight" : `on ${when}`}: ${phase.name.toLowerCase()}, ${lit}% lit. ` +
@@ -81,7 +83,7 @@ export const initMoon = (): void => {
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   const tilt = { x: 0, y: 0, targetX: 0, targetY: 0 };
   let scene: MoonScene | null = null;
-  let phase = moonPhase(Date.now());
+  let phase: MoonPhase | undefined;
   let captionKey = Number.NaN;
   let offsetDays = 0;
   let drag: { x: number; start: number; moved: boolean } | null = null;
@@ -92,10 +94,10 @@ export const initMoon = (): void => {
   let lastFrame = performance.now();
 
   // Recompute the phase whenever the shown moment moves by ten minutes or more.
-  const refreshCaption = () => {
+  const refreshCaption = (): MoonPhase => {
     const ms = Date.now() + offsetDays * DAY_MS;
     const key = Math.round(ms / CAPTION_REFRESH_MS);
-    if (key === captionKey) return;
+    if (phase && key === captionKey) return phase;
     captionKey = key;
 
     phase = moonPhase(ms);
@@ -103,8 +105,9 @@ export const initMoon = (): void => {
     const lit = Math.round(phase.illumination * 100);
     title.textContent = `${when} · ${phase.name}`;
     detail.textContent = `${lit}% lit · ${phase.ageDays.toFixed(1)} days old`;
-    next.textContent = `${phase.next.name} ${shortDate.format(phase.next.at)}`;
+    next.textContent = `${phase.next.name} ${formats().short.format(phase.next.at)}`;
     hit.setAttribute("aria-label", ariaLabel(when, phase, lit));
+    return phase;
   };
 
   const tick = (now: number) => {
@@ -120,7 +123,7 @@ export const initMoon = (): void => {
       offsetDays = still || Math.abs(offsetDays) < 0.01 ? 0 : offsetDays * Math.exp(-5 * dt);
     }
     root.toggleAttribute("data-scrubbing", drag !== null || offsetDays !== 0);
-    refreshCaption();
+    const { elongation } = refreshCaption();
 
     const ease = still ? 1 : 1 - Math.exp(-6 * dt);
     const targetX = still ? 0 : tilt.targetX;
@@ -130,7 +133,7 @@ export const initMoon = (): void => {
     tilt.y += (targetY - tilt.y) * ease;
     opacity += (targetOpacity - opacity) * ease;
 
-    scene.render({ sun: sunDirection(phase.elongation), tilt: [tilt.x, tilt.y], opacity });
+    scene.render({ sun: sunDirection(elongation), tilt: [tilt.x, tilt.y], opacity });
 
     const settled =
       !drag &&
@@ -219,9 +222,8 @@ export const initMoon = (): void => {
   });
   window.setInterval(requestFrame, CAPTION_REFRESH_MS);
 
-  refreshCaption();
-
   whenSettled(async () => {
+    refreshCaption();
     try {
       const { createMoonScene } = await import("./moon-scene");
       scene = await createMoonScene(canvas, TEXTURE_URL);

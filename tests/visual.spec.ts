@@ -89,11 +89,11 @@ test.describe("visual regression", () => {
 
   test("moon describes tonight and steps through other nights", async ({ page }) => {
     await page.goto("/");
+    await waitForMoon(page);
     await expect(page.locator("[data-moon-title]")).toHaveText("Tonight · Waxing gibbous");
     await expect(page.locator("[data-moon-detail]")).toHaveText("73% lit · 10.5 days old");
     await expect(page.locator("[data-moon-next]")).toHaveText("Full moon Oct 26");
 
-    await waitForMoon(page);
     const state = await page.locator("[data-moon]").getAttribute("data-state");
     test.skip(state !== "ready", "WebGL is unavailable in this browser");
 
