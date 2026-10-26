@@ -27,7 +27,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.5",
     "@types/three": "^0.186.0",
-    "astro": "^7.4.1",
+    "astro": "^7.4.2",
     "oxfmt": "^0.74.0",
     "oxlint": "^1.89.0",
     "tailwindcss": "^4.3.3",
