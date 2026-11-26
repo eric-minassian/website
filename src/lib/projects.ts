@@ -84,3 +84,20 @@ export async function loadProjects(): Promise<Projects> {
   if (!res.ok) throw new Error(`the project directory answered ${res.status}`);
   return parseProjects(await res.json());
 }
+
+const day = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
+const full = new Intl.NumberFormat("en-US");
+
+/** `Nov 26`, for a date or a timestamp, in UTC like the counts. */
+export const formatDay = (when: string): string => day.format(new Date(when));
+
+/** A page-view total as shown: `6.4k`, `329`, or an en dash for none. */
+export const formatViews = (n: number): string =>
+  n === 0 ? "–" : compact.format(n).replace("K", "k");
+
+/** The same total as a screen reader hears it. */
+export const describeViews = (n: number): string =>
+  n === 0 ? "No page views" : `${full.format(n)} page views`;
+
+export const totalOf = (counts: number[]): number => counts.reduce((sum, n) => sum + n, 0);

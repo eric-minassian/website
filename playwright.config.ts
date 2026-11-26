@@ -16,11 +16,7 @@ export default defineConfig({
   projects: [
     {
       name: "Desktop Chrome",
-      use: {
-        ...devices["Desktop Chrome"],
-        // Render WebGL in software so the moon draws the same on every machine, GPU or not.
-        launchOptions: { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] },
-      },
+      use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "Mobile Chrome",

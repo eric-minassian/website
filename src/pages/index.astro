@@ -1,4 +1,5 @@
 ---
+import ProjectsCorner from "../components/ProjectsCorner.astro";
 import Layout from "../layouts/Layout.astro";
 import { SITE } from "../lib/site";
 ---
@@ -14,9 +15,8 @@ import { SITE } from "../lib/site";
       Previously led payments software at <a href="https://tech.walmart.com" target="_blank" rel="noopener noreferrer">Walmart</a>.
       CS + Business from <a href="https://uci.edu" target="_blank" rel="noopener noreferrer" itemprop="alumniOf">UC Irvine</a>, summa cum laude.
     </p>
-    <nav aria-label="Projects, social links and contact">
+    <nav aria-label="Social links and contact">
       <ul class="mt-6 list-none space-y-1 pl-0">
-        <li><a href="/projects">Projects</a></li>
         <li><a href={SITE.github} target="_blank" rel="noopener noreferrer me" itemprop="sameAs">GitHub</a></li>
         <li><a href={SITE.linkedin} target="_blank" rel="noopener noreferrer me" itemprop="sameAs">LinkedIn</a></li>
         <li><a href={`mailto:${SITE.email}?subject=hi`} itemprop="email">Email</a> <small>(put "hi" in the subject or I won't see it)</small></li>
@@ -24,4 +24,5 @@ import { SITE } from "../lib/site";
       </ul>
     </nav>
   </article>
+  <ProjectsCorner />
 </Layout>

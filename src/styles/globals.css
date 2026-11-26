@@ -33,9 +33,6 @@
   }
 
   a {
-    /* Above the moon's fixed hit area (Moon.astro), which content scrolls under on short viewports. */
-    position: relative;
-    z-index: 1;
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 2px;
