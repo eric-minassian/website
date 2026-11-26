@@ -32,6 +32,9 @@ jobs:
 
       - name: Build site
         run: pnpm build
+        # Read the project list from the fixture the Lighthouse script serves, not the live platform.
+        env:
+          PROJECTS_URL: /__fixtures/projects.json
 
       - name: Run Lighthouse
         run: pnpm test:lighthouse

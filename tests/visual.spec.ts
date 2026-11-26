@@ -1,11 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { PROJECTS_URL } from "../src/lib/projects";
+import { SITE } from "../src/lib/site";
 import PROJECTS from "./fixtures/projects.json" with { type: "json" };
 
 /** Answers the page's request for the platform's directory with `body` (the fixture by default). */
 const serveProjects = (page: Page, body: unknown = PROJECTS) =>
-  page.route(PROJECTS_URL, (route) => route.fulfill({ json: body }));
+  page.route(SITE.projectsUrl, (route) => route.fulfill({ json: body }));
 
 // Pin the time zone and skip the fades, so pages draw the same every run.
 test.use({ timezoneId: "UTC", locale: "en-US", contextOptions: { reducedMotion: "reduce" } });
@@ -130,8 +130,8 @@ test.describe("visual regression", () => {
     const corner = page.getByRole("region", { name: "Projects" });
     await expect(corner).toContainText("Page views since Nov 24");
 
-    await page.unroute(PROJECTS_URL);
-    await page.route(PROJECTS_URL, (route) => route.fulfill({ status: 503, body: "" }));
+    await page.unroute(SITE.projectsUrl);
+    await page.route(SITE.projectsUrl, (route) => route.fulfill({ status: 503, body: "" }));
     await page.reload();
     await expect(page.locator("[data-corner]")).toHaveAttribute("data-state", "error");
     await expect(corner.getByRole("listitem")).toHaveCount(0);
@@ -175,8 +175,8 @@ test.describe("visual regression", () => {
     await page.goto("/projects");
     await expect(page.getByText("Page views since Nov 24, today included.")).toBeVisible();
 
-    await page.unroute(PROJECTS_URL);
-    await page.route(PROJECTS_URL, (route) => route.fulfill({ status: 503, body: "" }));
+    await page.unroute(SITE.projectsUrl);
+    await page.route(SITE.projectsUrl, (route) => route.fulfill({ status: 503, body: "" }));
     await page.reload();
     await expect(
       page.getByText("The projects couldn't be loaded. Reload to try again."),
