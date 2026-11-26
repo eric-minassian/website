@@ -1,14 +1,18 @@
 // Fills the projects ledger (Projects.astro) from the platform's directory once the page loads.
-import { loadProjects, type Project, type Projects } from "../lib/projects";
+import {
+  describeViews,
+  formatDay,
+  formatViews,
+  loadProjects,
+  type Project,
+  type Projects,
+  totalOf,
+} from "../lib/projects";
 
 const SVG = "http://www.w3.org/2000/svg";
 const BAR_WIDTH = 2;
 const BAR_GAP = 1;
 const HEIGHT = 14;
-
-const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
-const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
-const full = new Intl.NumberFormat("en-US");
 
 const element = <K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -70,24 +74,17 @@ function row(project: Project): HTMLLIElement {
     "col-span-full row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1",
   );
   if (project.description) about.append(element("p", "text-muted", project.description));
-  const meta = element(
-    "p",
-    "text-sm text-muted",
-    `Deployed ${date.format(new Date(project.lastDeployedAt))}`,
-  );
+  const meta = element("p", "text-sm text-muted", `Deployed ${formatDay(project.lastDeployedAt)}`);
   if (project.source) meta.append(" · ", link(project.source, "Source"));
   if (project.up === false) meta.append(" · Down");
   about.append(meta);
   li.append(about, sparkline(project.pageViews));
 
-  const total = project.pageViews.reduce((sum, views) => sum + views, 0);
+  const total = totalOf(project.pageViews);
   const figure = element("span", "col-start-3 row-start-1 text-right tabular-nums sm:col-start-4");
-  const shown = element("span", "", total === 0 ? "–" : compact.format(total).replace("K", "k"));
+  const shown = element("span", "", formatViews(total));
   shown.setAttribute("aria-hidden", "true");
-  figure.append(
-    shown,
-    element("span", "sr-only", total === 0 ? "No page views" : `${full.format(total)} page views`),
-  );
+  figure.append(shown, element("span", "sr-only", describeViews(total)));
   li.append(figure);
   return li;
 }
@@ -95,7 +92,7 @@ function row(project: Project): HTMLLIElement {
 /** What the totals cover: the whole window, or the days since counting began. */
 const period = ({ days, countingSince }: Projects): string =>
   countingSince
-    ? `Page views since ${date.format(new Date(countingSince))}, today included.`
+    ? `Page views since ${formatDay(countingSince)}, today included.`
     : `Page views over the last ${days.length} days, today included.`;
 
 export async function initProjects(): Promise<void> {

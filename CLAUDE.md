@@ -23,20 +23,18 @@ A minimalist personal website built with Astro, Tailwind CSS v4, and TypeScript.
 
 ### Pages
 
-- `src/pages/index.astro` - Home page with intro and links
-- `src/pages/projects.astro` - The apps running on my platform (`Projects.astro`), without the moon
+- `src/pages/index.astro` - Home page: intro, links, and the projects corner
+- `src/pages/projects.astro` - The apps running on my platform (`Projects.astro`)
 - `src/pages/404.astro` - 404 error page
 
 ### Components
 
 - `src/layouts/Layout.astro` - Base HTML layout with meta tags and SEO
 - `src/components/ThemeToggle.astro` - Theme toggle button (system/dark/light)
-- `src/components/Moon.astro` - Halftone moon in the corner showing the real lunar phase; hover/focus reveals the caption, drag or arrow keys step through other nights
-- `src/lib/moon.ts` - Lunar phase maths (Meeus ch. 48): illumination, phase name, age, next full/new moon
-- `src/scripts/moon.ts` - Moon caption and interaction; lazy-loads the scene after the page is idle
-- `src/scripts/moon-scene.ts` - three.js scene: NASA LRO albedo map (`public/textures/moon.jpg`) shaded and drawn through a halftone pass
+- `src/components/ProjectsCorner.astro` - The home page's way into /projects: a key of the apps with their page views over halftone strata of that traffic; fixed in the bottom-right corner on wide, tall windows, after the links otherwise
+- `src/scripts/projects-corner.ts` - Draws the corner's key and strata once the directory loads, and redraws on resize
 - `src/components/Projects.astro` - Ledger of the apps on my platform: name, description, last deploy, a 30-day page-view sparkline and total
-- `src/lib/projects.ts` - Fetches and checks the platform's public directory (`/v1/public/apps`) in the browser, so the list is live without a deploy
+- `src/lib/projects.ts` - Fetches and checks the platform's public directory (`/v1/public/apps`) in the browser, so the list is live without a deploy; shared formatting of days and totals
 - `src/scripts/projects.ts` - Renders the ledger once the directory loads
 - `src/lib/site.ts` - Shared site metadata
 
@@ -50,7 +48,7 @@ Tailwind CSS v4 via Vite plugin. Newsreader is self-hosted through Astro's Fonts
 
 ### Testing
 
-Playwright visual regression tests in `tests/visual.spec.ts`. Tests capture full-page screenshots of the home page (light/dark/system themes), the projects page (light/dark), theme toggle cycling, the 404 page, and the moon caption. Tests answer the platform's directory request with `tests/fixtures/projects.json`, and `PORT` moves Playwright's dev server off 4321. The clock, time zone, and reduced motion are pinned so the moon renders the same phase every run, and Desktop Chrome renders WebGL with SwiftShader.
+Playwright visual regression tests in `tests/visual.spec.ts`. Tests capture full-page screenshots of the home page (light/dark/system themes), the projects page (light/dark), theme toggle cycling, and the 404 page, and check the projects corner and list, including their since-counting and failed-load states. Tests answer the platform's directory request with `tests/fixtures/projects.json`, and `PORT` moves Playwright's dev server off 4321. The time zone is pinned and reduced motion skips the fades.
 
 ## CI/CD
 

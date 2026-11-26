@@ -7,54 +7,51 @@ import PROJECTS from "./fixtures/projects.json" with { type: "json" };
 const serveProjects = (page: Page, body: unknown = PROJECTS) =>
   page.route(PROJECTS_URL, (route) => route.fulfill({ json: body }));
 
-// The moon shows the real phase for the current moment, so pin the clock, time zone, and motion to
-// keep screenshots stable. Its WebGL scene loads a few seconds after the page.
-const NOW = new Date("2026-10-21T04:00:00Z");
-
+// Pin the time zone and skip the fades, so pages draw the same every run.
 test.use({ timezoneId: "UTC", locale: "en-US", contextOptions: { reducedMotion: "reduce" } });
 
-test.beforeEach(async ({ page }) => {
-  await page.clock.setFixedTime(NOW);
-});
-
-const waitForMoon = async (page: Page) => {
-  await expect(page.locator("[data-moon]")).not.toHaveAttribute("data-state", "loading", {
-    timeout: 15_000,
-  });
+/** Waits for the home page's projects corner to draw its key and chart. */
+const waitForCorner = async (page: Page) => {
+  await expect(page.locator("[data-corner]")).toHaveAttribute("data-state", "ready");
+  await expect(page.locator("[data-corner-chart] circle").first()).toBeAttached();
 };
 
 test.describe("visual regression", () => {
   test("home page - light", async ({ page }) => {
+    await serveProjects(page);
     await page.addInitScript(() => {
       localStorage.setItem("theme", "light");
     });
     await page.goto("/");
     await expect(page.locator("[data-theme-icon='light']")).toBeVisible();
-    await waitForMoon(page);
+    await waitForCorner(page);
     await expect(page).toHaveScreenshot("home-light.png", { fullPage: true });
   });
 
   test("home page - dark", async ({ page }) => {
+    await serveProjects(page);
     await page.addInitScript(() => {
       localStorage.setItem("theme", "dark");
     });
     await page.goto("/");
     await expect(page.locator("[data-theme-icon='dark']")).toBeVisible();
-    await waitForMoon(page);
+    await waitForCorner(page);
     await expect(page).toHaveScreenshot("home-dark.png", { fullPage: true });
   });
 
   test("home page - system", async ({ page }) => {
+    await serveProjects(page);
     await page.addInitScript(() => {
       localStorage.setItem("theme", "system");
     });
     await page.goto("/");
     await expect(page.locator("[data-theme-icon='system']")).toBeVisible();
-    await waitForMoon(page);
+    await waitForCorner(page);
     await expect(page).toHaveScreenshot("home-system.png", { fullPage: true });
   });
 
   test("theme toggle cycles through system, dark, and light", async ({ page }) => {
+    await serveProjects(page);
     // Start with system
     await page.addInitScript(() => {
       localStorage.setItem("theme", "system");
@@ -90,29 +87,7 @@ test.describe("visual regression", () => {
       localStorage.setItem("theme", "dark");
     });
     await page.goto("/nonexistent-page");
-    await waitForMoon(page);
     await expect(page).toHaveScreenshot("404.png", { fullPage: true });
-  });
-
-  test("moon describes tonight and steps through other nights", async ({ page }) => {
-    await page.goto("/");
-    await waitForMoon(page);
-    await expect(page.locator("[data-moon-title]")).toHaveText("Tonight · Waxing gibbous");
-    await expect(page.locator("[data-moon-detail]")).toHaveText("73% lit · 10.5 days old");
-    await expect(page.locator("[data-moon-next]")).toHaveText("Full moon Oct 26");
-
-    const state = await page.locator("[data-moon]").getAttribute("data-state");
-    test.skip(state !== "ready", "WebGL is unavailable in this browser");
-
-    const moon = page.locator("[data-moon-hit]");
-    for (let day = 0; day < 5; day++) {
-      // Sequential on purpose: each press steps one night forward.
-      // eslint-disable-next-line no-await-in-loop -- see comment above
-      await moon.press("ArrowRight");
-    }
-    await expect(page.locator("[data-moon-title]")).toHaveText("Mon, Oct 26 · Full moon");
-    await expect(page.locator("[data-moon-next]")).toHaveText("New moon Nov 9");
-    await expect(moon).toHaveAttribute("aria-label", /^Moon on Mon, Oct 26: full moon, 100% lit\./);
   });
 
   for (const theme of ["light", "dark"] as const) {
@@ -122,16 +97,53 @@ test.describe("visual regression", () => {
       await page.goto("/projects");
       await expect(page.locator(`[data-theme-icon='${theme}']`)).toBeVisible();
       await expect(page.locator("[data-projects]")).toHaveAttribute("data-state", "ready");
-      // A page of rows to scroll past leaves the corner moon out.
-      await expect(page.locator("[data-moon]")).toHaveCount(0);
       await expect(page).toHaveScreenshot(`projects-${theme}.png`, { fullPage: true });
     });
   }
 
-  test("projects list the platform's apps, latest deploy first", async ({ page }) => {
+  test("the home page names the projects with their traffic, and leads to them", async ({
+    page,
+  }) => {
     await serveProjects(page);
     await page.goto("/");
-    await page.getByRole("link", { name: "Projects" }).click();
+    const corner = page.getByRole("region", { name: "Projects" });
+    // The busiest first, as the chart stacks them.
+    await expect(corner.getByRole("listitem")).toHaveText([
+      /^platform\s*9\.1k/,
+      /^atlas\s*6\.4k/,
+      /^encore\s*329/,
+      /^virtual-fly\s*–/,
+    ]);
+    await expect(corner.getByRole("listitem").first()).toContainText("9,112 page views");
+    await expect(corner).toContainText("Page views, last 30 days");
+    // The chart leads there too, for the pointer; the heading is the link to read.
+    await expect(page.locator("[data-corner-chart]")).toHaveAttribute("href", "/projects");
+    await corner.getByRole("link", { name: "Projects" }).click();
+    await expect(page).toHaveURL(/\/projects$/);
+  });
+
+  test("the home page's projects corner says when counting began, and keeps its link when the data can't load", async ({
+    page,
+  }) => {
+    await serveProjects(page, { ...PROJECTS, countingSince: "2026-11-24" });
+    await page.goto("/");
+    const corner = page.getByRole("region", { name: "Projects" });
+    await expect(corner).toContainText("Page views since Nov 24");
+
+    await page.unroute(PROJECTS_URL);
+    await page.route(PROJECTS_URL, (route) => route.fulfill({ status: 503, body: "" }));
+    await page.reload();
+    await expect(page.locator("[data-corner]")).toHaveAttribute("data-state", "error");
+    await expect(corner.getByRole("listitem")).toHaveCount(0);
+    await expect(corner.getByRole("link", { name: "Projects" })).toHaveAttribute(
+      "href",
+      "/projects",
+    );
+  });
+
+  test("projects list the platform's apps, latest deploy first", async ({ page }) => {
+    await serveProjects(page);
+    await page.goto("/projects");
     await expect(page).toHaveURL(/\/projects$/);
     await expect(page).toHaveTitle("Projects - Eric Minassian");
     const projects = page.getByRole("list", { name: "Projects" });

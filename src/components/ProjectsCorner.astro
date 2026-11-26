@@ -1,0 +1,69 @@
+---
+// The home page's way into /projects: the apps on my platform, named in a key with their page
+// views, over a halftone picture of that traffic (src/scripts/projects-corner.ts draws both once
+// the platform's directory loads). On a wide, tall enough window it sits in the bottom-right
+// corner, the chart bleeding off the edges; otherwise it follows the links, full width.
+---
+
+<section data-corner data-state="loading" aria-labelledby="corner-heading" class="corner mt-10">
+  <div class="corner-key">
+    <h2 id="corner-heading" class="font-medium">
+      <a href="/projects">Projects</a> <span aria-hidden="true">→</span>
+    </h2>
+    <p class="text-sm text-muted">Apps I run on my own platform, with their traffic.</p>
+    <ul data-corner-list class="corner-fade mt-3 max-w-80 list-none space-y-0.5 pl-0 text-sm tabular-nums" hidden></ul>
+    <p data-corner-period class="corner-fade mt-2 text-xs text-muted"></p>
+  </div>
+  <!-- The chart is a second way to the page for the pointer; the heading's link is the one to read. -->
+  <a href="/projects" data-corner-chart class="corner-chart corner-fade" tabindex="-1" aria-hidden="true"></a>
+</section>
+
+<style>
+  .corner-chart {
+    display: block;
+    height: 9rem;
+    margin: 1.25rem -2rem 0;
+    text-decoration: none;
+  }
+
+  /* Room beside the text and below it: the corner, where the chart can bleed off the edges. */
+  @media (min-width: 1280px) and (min-height: 640px) {
+    .corner {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      width: min(46vw, 48rem);
+      margin: 0;
+    }
+
+    .corner-key {
+      width: 15rem;
+      margin: 0 3rem 0 auto;
+    }
+
+    .corner-chart {
+      height: clamp(9rem, 34vh, 24rem);
+      margin: 1.25rem 0 0;
+    }
+  }
+
+  .corner-fade {
+    opacity: 0;
+    transition: opacity 400ms;
+  }
+
+  [data-state="ready"] .corner-fade {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .corner-fade {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { initProjectsCorner } from "../scripts/projects-corner";
+  void initProjectsCorner();
+</script>
