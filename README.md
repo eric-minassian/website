@@ -24,7 +24,7 @@ pnpm test:visual:update # Update visual regression snapshots
 - `src/components/Moon.astro` — Halftone moon showing tonight's real phase (three.js)
 - `src/lib/moon.ts` — Lunar phase calculations
 - `src/components/Projects.astro` — Apps running on my platform, with 30-day page views
-- `src/lib/projects.ts` — Loads the project list at build time (`PROJECTS_SOURCE`)
+- `src/lib/projects.ts` — Fetches the project list from the platform in the browser
 - `src/styles/globals.css` — Global styles and Tailwind theme
 - `src/lib/site.ts` — Site metadata
 

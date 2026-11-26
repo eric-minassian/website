@@ -6,7 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm dev                # Start development server (localhost:4321)
-PROJECTS_SOURCE=tests/fixtures/projects.json pnpm dev  # Develop against the project fixture
 pnpm build              # Type-check and build for production
 pnpm preview            # Preview production build
 pnpm lint               # Lint with oxlint
@@ -37,7 +36,8 @@ A minimalist personal website built with Astro, Tailwind CSS v4, and TypeScript.
 - `src/scripts/moon.ts` - Moon caption and interaction; lazy-loads the scene after the page is idle
 - `src/scripts/moon-scene.ts` - three.js scene: NASA LRO albedo map (`public/textures/moon.jpg`) shaded and drawn through a halftone pass
 - `src/components/Projects.astro` - Ledger of the apps on my platform: name, description, last deploy, a 30-day page-view sparkline and total
-- `src/lib/projects.ts` - Loads and validates the project list at build time from `PROJECTS_SOURCE` (URL or JSON file; defaults to the platform's `/v1/public/apps` in `astro.config.mjs`); any failure fails the build
+- `src/lib/projects.ts` - Fetches and checks the platform's public directory (`/v1/public/apps`) in the browser, so the list is live without a deploy
+- `src/scripts/projects.ts` - Renders the ledger once the directory loads
 - `src/lib/site.ts` - Shared site metadata
 
 ### Styling
@@ -50,12 +50,12 @@ Tailwind CSS v4 via Vite plugin. Newsreader is self-hosted through Astro's Fonts
 
 ### Testing
 
-Playwright visual regression tests in `tests/visual.spec.ts`. Tests capture full-page screenshots of the home page (light/dark/system themes), the projects page (light/dark), theme toggle cycling, the 404 page, and the moon caption. Playwright's dev server reads the project list from `tests/fixtures/projects.json`, and `PORT` moves it off 4321. The clock, time zone, and reduced motion are pinned so the moon renders the same phase every run, and Desktop Chrome renders WebGL with SwiftShader.
+Playwright visual regression tests in `tests/visual.spec.ts`. Tests capture full-page screenshots of the home page (light/dark/system themes), the projects page (light/dark), theme toggle cycling, the 404 page, and the moon caption. Tests answer the platform's directory request with `tests/fixtures/projects.json`, and `PORT` moves Playwright's dev server off 4321. The clock, time zone, and reduced motion are pinned so the moon renders the same phase every run, and Desktop Chrome renders WebGL with SwiftShader.
 
 ## CI/CD
 
 - `.github/workflows/playwright.yml` - Runs visual regression tests on PRs and main branch pushes
 - `.github/workflows/lint.yml` - Runs oxlint and oxfmt checks on PRs and main branch pushes
-- `.github/workflows/deploy.yml` - Deploys to GitHub Pages on main branch pushes and every 6 hours, to refresh the project list
+- `.github/workflows/deploy.yml` - Deploys to GitHub Pages on main branch pushes
 - `.github/workflows/update-snapshots.yml` - Manual workflow to update visual snapshots
 - `.github/dependabot.yml` - Automated weekly dependency updates for npm and GitHub Actions
