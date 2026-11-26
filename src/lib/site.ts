@@ -7,4 +7,6 @@ export const SITE = {
   github: "https://github.com/eric-minassian",
   linkedin: "https://linkedin.com/in/minassian-eric",
   gaId: "G-YWLR571NDY",
+  /** The platform's public directory of the apps it runs, which the projects pages read live. */
+  projectsUrl: "https://platform.ericminassian.com/v1/public/apps",
 } as const;

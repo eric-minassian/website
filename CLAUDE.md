@@ -34,7 +34,7 @@ A minimalist personal website built with Astro, Tailwind CSS v4, and TypeScript.
 - `src/components/ProjectsCorner.astro` - The home page's way into /projects: a key of the apps with their page views over halftone strata of that traffic; fixed in the bottom-right corner on wide, tall windows, after the links otherwise
 - `src/scripts/projects-corner.ts` - Draws the corner's key and strata once the directory loads, and redraws on resize
 - `src/components/Projects.astro` - Ledger of the apps on my platform: name, description, last deploy, a 30-day page-view sparkline and total
-- `src/lib/projects.ts` - Fetches and checks the platform's public directory (`/v1/public/apps`) in the browser, so the list is live without a deploy; shared formatting of days and totals
+- `src/lib/projects.ts` - Fetches and checks the platform's public directory in the browser (`PROJECTS_URL` in `astro.config.mjs`, `SITE.projectsUrl` by default), so the list is live without a deploy; shared formatting of days and totals. Lighthouse CI builds against `tests/fixtures/projects.json`, which `scripts/run-lighthouse.mjs` serves
 - `src/scripts/projects.ts` - Renders the ledger once the directory loads
 - `src/lib/site.ts` - Shared site metadata
 

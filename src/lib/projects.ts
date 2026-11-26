@@ -1,8 +1,7 @@
 // The apps running on my platform, from its public directory. Browsers fetch it when a page that
 // shows them loads, so new apps and today's page views appear without a deploy; the platform
 // caches it for a few minutes.
-
-export const PROJECTS_URL = "https://platform.ericminassian.com/v1/public/apps";
+import { PROJECTS_URL } from "astro:env/client";
 
 export interface Project {
   name: string;

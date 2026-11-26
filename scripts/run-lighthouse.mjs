@@ -6,6 +6,9 @@ import path from "node:path";
 
 const DIST_DIR = path.resolve("dist");
 const REPORT_DIR = path.resolve("lighthouse-reports");
+const PROJECTS_FIXTURE = path.resolve("tests/fixtures/projects.json");
+/** Where the build looks for the project list when built with PROJECTS_URL set to it. */
+const PROJECTS_FIXTURE_PATH = "/__fixtures/projects.json";
 const LIGHTHOUSE_FLAGS = ["--headless=new", "--no-sandbox"];
 const DEFAULT_REQUIRED_SCORE = 1;
 // Mobile Lighthouse performance flakes at 99/100 on CI because CPU throttling
@@ -117,6 +120,14 @@ async function startStaticServer() {
     if (!request.url) {
       response.writeHead(400);
       response.end("Missing request URL");
+      return;
+    }
+
+    // The project list the build was pointed at (PROJECTS_URL in lighthouse.yml), instead of the
+    // live platform, so the audit doesn't depend on it.
+    if (request.url === PROJECTS_FIXTURE_PATH) {
+      response.writeHead(200, { "content-type": "application/json" });
+      createReadStream(PROJECTS_FIXTURE).pipe(response);
       return;
     }
 

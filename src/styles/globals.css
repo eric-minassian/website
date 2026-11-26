@@ -9,7 +9,8 @@
 @theme {
   --color-canvas: #f8f5ed;
   --color-ink: var(--color-neutral-800);
-  --color-muted: var(--color-neutral-500);
+  /* Not neutral-500: that's 4.35:1 on the canvas, under AA's 4.5:1 for small text. */
+  --color-muted: #6b6b6b;
   --color-faint: var(--color-neutral-300);
 }
 
