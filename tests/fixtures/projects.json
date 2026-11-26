@@ -1,0 +1,99 @@
+{
+  "generatedAt": "2026-11-26T18:00:00.000Z",
+  "days": [
+    "2026-10-27",
+    "2026-10-28",
+    "2026-10-29",
+    "2026-10-30",
+    "2026-10-31",
+    "2026-11-01",
+    "2026-11-02",
+    "2026-11-03",
+    "2026-11-04",
+    "2026-11-05",
+    "2026-11-06",
+    "2026-11-07",
+    "2026-11-08",
+    "2026-11-09",
+    "2026-11-10",
+    "2026-11-11",
+    "2026-11-12",
+    "2026-11-13",
+    "2026-11-14",
+    "2026-11-15",
+    "2026-11-16",
+    "2026-11-17",
+    "2026-11-18",
+    "2026-11-19",
+    "2026-11-20",
+    "2026-11-21",
+    "2026-11-22",
+    "2026-11-23",
+    "2026-11-24",
+    "2026-11-25"
+  ],
+  "apps": [
+    {
+      "name": "atlas",
+      "description": "A live, interactive model of the world",
+      "url": "https://atlas.ericminassian.com",
+      "source": "https://github.com/eric-minassian/atlas",
+      "liveSince": "2026-11-15T22:21:54.295Z",
+      "lastDeployedAt": "2026-11-19T07:30:15.868Z",
+      "up": true,
+      "pageViews": [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 320, 5708, 346, 0, 0, 0, 0, 43, 0,
+        0, 14
+      ],
+      "requests": [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 961, 17126, 1038, 0, 0, 0, 0, 131,
+        0, 0, 44
+      ]
+    },
+    {
+      "name": "encore",
+      "description": "A music player: YouTube Music catalog, played in the browser",
+      "url": "https://encore.ericminassian.com",
+      "liveSince": "2026-11-25T04:31:24.343Z",
+      "lastDeployedAt": "2026-11-25T15:50:37.758Z",
+      "up": true,
+      "pageViews": [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 329
+      ],
+      "requests": [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 989
+      ]
+    },
+    {
+      "name": "virtual-fly",
+      "description": "Checkpoint results for a fruit fly simulated from its connectome",
+      "url": "https://virtual-fly.ericminassian.com",
+      "liveSince": "2026-11-26T06:21:56.517Z",
+      "lastDeployedAt": "2026-11-26T06:29:32.128Z",
+      "up": true,
+      "pageViews": [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      ],
+      "requests": [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      ]
+    },
+    {
+      "name": "platform",
+      "description": "A personal platform that deploys, routes and observes every app listed here",
+      "url": "https://platform.ericminassian.com",
+      "source": "https://github.com/eric-minassian/platform",
+      "liveSince": "2026-11-14T23:50:03.588Z",
+      "lastDeployedAt": "2026-11-25T15:00:44.932Z",
+      "up": true,
+      "pageViews": [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 108, 2844, 2728, 202, 26, 6, 8, 2,
+        316, 0, 0, 2872
+      ],
+      "requests": [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 324, 8533, 8186, 606, 79, 20, 24, 7,
+        950, 0, 0, 8618
+      ]
+    }
+  ]
+}

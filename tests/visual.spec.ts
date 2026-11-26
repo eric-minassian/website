@@ -107,4 +107,43 @@ test.describe("visual regression", () => {
     await expect(page.locator("[data-moon-next]")).toHaveText("New moon Nov 9");
     await expect(moon).toHaveAttribute("aria-label", /^Moon on Mon, Oct 26: full moon, 100% lit\./);
   });
+
+  // Rendered from tests/fixtures/projects.json (see webServer in playwright.config.ts).
+  for (const theme of ["light", "dark"] as const) {
+    test(`projects page - ${theme}`, async ({ page }) => {
+      await page.addInitScript((t) => localStorage.setItem("theme", t), theme);
+      await page.goto("/projects");
+      await expect(page.locator(`[data-theme-icon='${theme}']`)).toBeVisible();
+      // A page of rows to scroll past leaves the corner moon out.
+      await expect(page.locator("[data-moon]")).toHaveCount(0);
+      await expect(page).toHaveScreenshot(`projects-${theme}.png`, { fullPage: true });
+    });
+  }
+
+  test("projects list the platform's apps, latest deploy first", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "Projects" }).click();
+    await expect(page).toHaveURL(/\/projects$/);
+    await expect(page).toHaveTitle("Projects - Eric Minassian");
+    const projects = page.getByRole("list", { name: "Projects" });
+    const rows = projects.getByRole("listitem");
+
+    await expect(rows.locator(":scope > a")).toHaveText([
+      "virtual-fly",
+      "encore",
+      "platform",
+      "atlas",
+    ]);
+    await expect(rows.nth(0)).toContainText("Deployed Nov 26");
+    await expect(rows.nth(0)).toContainText("No page views");
+    await expect(rows.nth(1)).toContainText("329 page views");
+    await expect(rows.nth(2)).toContainText("9,112 page views");
+    await expect(rows.nth(3)).toContainText("6,431 page views");
+    await expect(rows.nth(3).getByRole("link", { name: "Source" })).toHaveAttribute(
+      "href",
+      "https://github.com/eric-minassian/atlas",
+    );
+    await expect(rows.nth(1).getByRole("link", { name: "Source" })).toHaveCount(0);
+    await expect(page.getByText("Page views over the 30 days to Nov 25.")).toBeVisible();
+  });
 });

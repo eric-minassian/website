@@ -1,0 +1,103 @@
+---
+// The apps running on my platform, as a ledger: what each is, when it last shipped, and its page
+// views over the last 30 days. Rendered at build time; the deploy workflow rebuilds it on a schedule.
+import { getProjects } from "../lib/projects";
+
+interface Props {
+  /** The id of the heading that names the list. */
+  labelledBy: string;
+}
+
+const { labelledBy } = Astro.props;
+const { days, projects } = await getProjects();
+
+const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
+const full = new Intl.NumberFormat("en-US");
+
+const BAR_WIDTH = 2;
+const BAR_GAP = 1;
+const HEIGHT = 14;
+const width = days.length * (BAR_WIDTH + BAR_GAP) - BAR_GAP;
+
+const rows = projects.map((project) => {
+  const max = Math.max(...project.pageViews);
+  const bars = project.pageViews.map((views, day) => ({
+    x: day * (BAR_WIDTH + BAR_GAP),
+    // Any traffic at all stands at least 2px, clear of the 1px tick drawn for a day with none.
+    height: views === 0 ? 1 : Math.max(2, Math.round((views / max) * HEIGHT)),
+    views,
+  }));
+  const total = project.pageViews.reduce((sum, views) => sum + views, 0);
+  return {
+    ...project,
+    deployed: date.format(new Date(project.lastDeployedAt)),
+    quiet: bars.filter((bar) => bar.views === 0),
+    busy: bars.filter((bar) => bar.views > 0),
+    total: total === 0 ? "–" : compact.format(total).replace("K", "k"),
+    totalLabel: total === 0 ? "No page views" : `${full.format(total)} page views`,
+  };
+});
+
+const through = date.format(new Date(days.at(-1) ?? ""));
+---
+
+{
+  rows.length > 0 && (
+    <>
+      <ul
+        aria-labelledby={labelledBy}
+        class="mt-6 grid list-none grid-cols-[1fr_auto_auto] gap-x-4 border-b border-faint pl-0 sm:grid-cols-[max-content_1fr_auto_auto] sm:gap-x-6"
+      >
+        {rows.map((row) => (
+          <li class="col-span-full grid grid-cols-subgrid items-baseline border-t border-faint py-3">
+            <a href={row.url} target="_blank" rel="noopener noreferrer" class="col-start-1 row-start-1">
+              {row.name}
+            </a>
+            <div class="col-span-full row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1">
+              {row.description && <p class="text-muted">{row.description}</p>}
+              <p class="text-sm text-muted">
+                Deployed {row.deployed}
+                {row.source && (
+                  <>
+                    {" · "}
+                    <a href={row.source} target="_blank" rel="noopener noreferrer">
+                      Source
+                    </a>
+                  </>
+                )}
+                {row.up === false && " · Down"}
+              </p>
+            </div>
+            <svg
+              aria-hidden="true"
+              width={width}
+              height={HEIGHT}
+              viewBox={`0 0 ${width} ${HEIGHT}`}
+              shape-rendering="crispEdges"
+              class="col-start-2 row-start-1 sm:col-start-3"
+            >
+              <g class="fill-faint">
+                {row.quiet.map((bar) => (
+                  <rect x={bar.x} y={HEIGHT - bar.height} width={BAR_WIDTH} height={bar.height} />
+                ))}
+              </g>
+              <g class="fill-ink">
+                {row.busy.map((bar) => (
+                  <rect x={bar.x} y={HEIGHT - bar.height} width={BAR_WIDTH} height={bar.height} />
+                ))}
+              </g>
+            </svg>
+            <span class="col-start-3 row-start-1 text-right tabular-nums sm:col-start-4">
+              <span aria-hidden="true">{row.total}</span>
+              <span class="sr-only">{row.totalLabel}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p class="mt-3 text-sm text-muted">
+        Page views over the {days.length} days to {through}.
+      </p>
+    </>
+  )
+}

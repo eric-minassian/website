@@ -11,9 +11,11 @@ interface Props {
   title?: string;
   description?: string;
   noindex?: boolean;
+  /** The fixed moon in the corner; a page of rows the reader scrolls past it leaves it out. */
+  moon?: boolean;
 }
 
-const { title = SITE.name, description = SITE.description, noindex = false } = Astro.props;
+const { title = SITE.name, description = SITE.description, noindex = false, moon = true } = Astro.props;
 
 const site = Astro.site ?? new URL(SITE.url);
 const siteUrl = site.origin;
@@ -204,6 +206,6 @@ const jsonLd = {
     <footer class="mt-16 flex justify-center">
       <ThemeToggle />
     </footer>
-    <Moon />
+    {moon && <Moon />}
   </body>
 </html>

@@ -32,6 +32,9 @@ jobs:
 
       - name: Build site
         run: pnpm build
+        # Audit against a fixed project list rather than live platform data.
+        env:
+          PROJECTS_SOURCE: tests/fixtures/projects.json
 
       - name: Run Lighthouse
         run: pnpm test:lighthouse
