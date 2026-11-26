@@ -17,11 +17,14 @@ pnpm test:visual:update # Update visual regression snapshots
 ## Structure
 
 - `src/pages/index.astro` — Home page
+- `src/pages/projects.astro` — Projects page
 - `src/pages/404.astro` — 404 error page
 - `src/layouts/Layout.astro` — Base HTML layout and SEO
 - `src/components/ThemeToggle.astro` — System / dark / light toggle
 - `src/components/Moon.astro` — Halftone moon showing tonight's real phase (three.js)
 - `src/lib/moon.ts` — Lunar phase calculations
+- `src/components/Projects.astro` — Apps running on my platform, with 30-day page views
+- `src/lib/projects.ts` — Loads the project list at build time (`PROJECTS_SOURCE`)
 - `src/styles/globals.css` — Global styles and Tailwind theme
 - `src/lib/site.ts` — Site metadata
 
