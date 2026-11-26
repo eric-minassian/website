@@ -30,8 +30,6 @@ export default defineConfig({
   webServer: {
     command: `pnpm dev --ignore-lock --port ${port}`,
     url: baseURL,
-    // Render the project list from a fixture so the screenshots don't change with live traffic.
-    env: { PROJECTS_SOURCE: "tests/fixtures/projects.json" },
     reuseExistingServer: !process.env.CI,
   },
   expect: {

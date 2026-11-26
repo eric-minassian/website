@@ -1,5 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { PROJECTS_URL } from "../src/lib/projects";
+import PROJECTS from "./fixtures/projects.json" with { type: "json" };
+
+/** Answers the page's request for the platform's directory with `body` (the fixture by default). */
+const serveProjects = (page: Page, body: unknown = PROJECTS) =>
+  page.route(PROJECTS_URL, (route) => route.fulfill({ json: body }));
+
 // The moon shows the real phase for the current moment, so pin the clock, time zone, and motion to
 // keep screenshots stable. Its WebGL scene loads a few seconds after the page.
 const NOW = new Date("2026-10-21T04:00:00Z");
@@ -108,12 +115,13 @@ test.describe("visual regression", () => {
     await expect(moon).toHaveAttribute("aria-label", /^Moon on Mon, Oct 26: full moon, 100% lit\./);
   });
 
-  // Rendered from tests/fixtures/projects.json (see webServer in playwright.config.ts).
   for (const theme of ["light", "dark"] as const) {
     test(`projects page - ${theme}`, async ({ page }) => {
+      await serveProjects(page);
       await page.addInitScript((t) => localStorage.setItem("theme", t), theme);
       await page.goto("/projects");
       await expect(page.locator(`[data-theme-icon='${theme}']`)).toBeVisible();
+      await expect(page.locator("[data-projects]")).toHaveAttribute("data-state", "ready");
       // A page of rows to scroll past leaves the corner moon out.
       await expect(page.locator("[data-moon]")).toHaveCount(0);
       await expect(page).toHaveScreenshot(`projects-${theme}.png`, { fullPage: true });
@@ -121,6 +129,7 @@ test.describe("visual regression", () => {
   }
 
   test("projects list the platform's apps, latest deploy first", async ({ page }) => {
+    await serveProjects(page);
     await page.goto("/");
     await page.getByRole("link", { name: "Projects" }).click();
     await expect(page).toHaveURL(/\/projects$/);
@@ -144,6 +153,22 @@ test.describe("visual regression", () => {
       "https://github.com/eric-minassian/atlas",
     );
     await expect(rows.nth(1).getByRole("link", { name: "Source" })).toHaveCount(0);
-    await expect(page.getByText("Page views over the 30 days to Nov 25.")).toBeVisible();
+    await expect(page.getByText("Page views over the last 30 days, today included.")).toBeVisible();
+  });
+
+  test("projects say when the platform began counting, and when the list can't load", async ({
+    page,
+  }) => {
+    await serveProjects(page, { ...PROJECTS, countingSince: "2026-11-24" });
+    await page.goto("/projects");
+    await expect(page.getByText("Page views since Nov 24, today included.")).toBeVisible();
+
+    await page.unroute(PROJECTS_URL);
+    await page.route(PROJECTS_URL, (route) => route.fulfill({ status: 503, body: "" }));
+    await page.reload();
+    await expect(
+      page.getByText("The projects couldn't be loaded. Reload to try again."),
+    ).toBeVisible();
+    await expect(page.getByRole("list", { name: "Projects" })).toBeHidden();
   });
 });

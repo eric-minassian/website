@@ -1,81 +1,86 @@
-// The apps running on my platform, read once at build time from its public endpoint (or a local
-// JSON file, set through PROJECTS_SOURCE). Any failure throws so the build fails and GitHub Pages
-// keeps serving the last good deploy instead of a page with the list missing.
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+// The apps running on my platform, from its public directory. Browsers fetch it when a page that
+// shows them loads, so new apps and today's page views appear without a deploy; the platform
+// caches it for a few minutes.
 
-import { z } from "astro/zod";
-import { PROJECTS_SOURCE } from "astro:env/server";
+export const PROJECTS_URL = "https://platform.ericminassian.com/v1/public/apps";
 
+export interface Project {
+  name: string;
+  description?: string;
+  url: string;
+  source?: string;
+  liveSince: string;
+  lastDeployedAt: string;
+  /** Whether it was up at the platform's last check; null before the first. */
+  up: boolean | null;
+  /** One count per entry of `days`. */
+  pageViews: number[];
+  requests: number[];
+}
+
+export interface Projects {
+  /** UTC dates, `YYYY-MM-DD`, oldest first; the last is today, counted so far. */
+  days: string[];
+  /** The first day the platform counted page views, when that's within `days`. */
+  countingSince?: string;
+  /** The most recently deployed first. */
+  projects: Project[];
+}
+
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
+const isDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+const isTime = (v: unknown): v is string => typeof v === "string" && !Number.isNaN(Date.parse(v));
 // The values land in hrefs, so only web links are accepted.
-const webUrl = z.url({ protocol: /^https?$/, hostname: z.regexes.domain });
-const dailyCounts = z.array(z.number().int().nonnegative());
-
-const app = z.object({
-  name: z.string().min(1),
-  description: z.string().min(1).optional(),
-  url: webUrl,
-  source: webUrl.optional(),
-  liveSince: z.iso.datetime(),
-  lastDeployedAt: z.iso.datetime(),
-  up: z.boolean().nullable(),
-  pageViews: dailyCounts,
-  requests: dailyCounts,
-});
-
-const response = z
-  .object({
-    generatedAt: z.iso.datetime(),
-    days: z.array(z.iso.date()).min(1),
-    apps: z.array(app),
-  })
-  .check((ctx) => {
-    const { days, apps } = ctx.value;
-    for (const [index, { name, pageViews, requests }] of apps.entries()) {
-      for (const [key, series] of Object.entries({ pageViews, requests })) {
-        if (series.length === days.length) continue;
-        ctx.issues.push({
-          code: "custom",
-          input: series,
-          path: ["apps", index, key],
-          message: `${name} has ${series.length} ${key} entries for ${days.length} days`,
-        });
-      }
-    }
-  });
-
-export type Project = z.infer<typeof app>;
-
-const read = async (source: string): Promise<unknown> => {
-  if (!/^https?:\/\//i.test(source)) return JSON.parse(await readFile(resolve(source), "utf8"));
-
-  const res = await fetch(source, {
-    headers: { accept: "application/json" },
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-};
-
-/** Every app with its daily page views, the most recently deployed first. */
-export const getProjects = async () => {
-  let body: unknown;
+const isWebUrl = (v: unknown): v is string => {
+  if (typeof v !== "string") return false;
   try {
-    body = await read(PROJECTS_SOURCE);
-  } catch (error) {
-    throw new Error(`Couldn't load projects from ${PROJECTS_SOURCE}`, { cause: error });
+    return ["http:", "https:"].includes(new URL(v).protocol);
+  } catch {
+    return false;
   }
+};
+const isCounts = (v: unknown, length: number): v is number[] =>
+  Array.isArray(v) && v.length === length && v.every((n) => Number.isInteger(n) && n >= 0);
 
-  const result = response.safeParse(body);
-  if (!result.success) {
-    throw new Error(
-      `Projects from ${PROJECTS_SOURCE} don't match the expected shape:\n${z.prettifyError(result.error)}`,
-    );
+/** The directory's response, checked; throws when it isn't the shape this site reads. */
+export function parseProjects(body: unknown): Projects {
+  if (
+    !isObject(body) ||
+    !Array.isArray(body.days) ||
+    !body.days.every(isDate) ||
+    !Array.isArray(body.apps)
+  ) {
+    throw new Error("the project directory answered with an unexpected shape");
   }
-
-  const { days, apps } = result.data;
+  const days = body.days;
+  const projects = body.apps.map((app, i): Project => {
+    const ok =
+      isObject(app) &&
+      typeof app.name === "string" &&
+      (app.description === undefined || typeof app.description === "string") &&
+      isWebUrl(app.url) &&
+      (app.source === undefined || isWebUrl(app.source)) &&
+      isTime(app.liveSince) &&
+      isTime(app.lastDeployedAt) &&
+      (app.up === null || typeof app.up === "boolean") &&
+      isCounts(app.pageViews, days.length) &&
+      isCounts(app.requests, days.length);
+    if (!ok) throw new Error(`the project directory's app ${i} has an unexpected shape`);
+    return app as unknown as Project;
+  });
+  const since =
+    isDate(body.countingSince) && body.countingSince > days[0]! ? body.countingSince : undefined;
   return {
     days,
-    projects: apps.toSorted((a, b) => Date.parse(b.lastDeployedAt) - Date.parse(a.lastDeployedAt)),
+    ...(since ? { countingSince: since } : {}),
+    projects: projects.toSorted(
+      (a, b) => Date.parse(b.lastDeployedAt) - Date.parse(a.lastDeployedAt),
+    ),
   };
-};
+}
+
+export async function loadProjects(): Promise<Projects> {
+  const res = await fetch(PROJECTS_URL, { headers: { accept: "application/json" } });
+  if (!res.ok) throw new Error(`the project directory answered ${res.status}`);
+  return parseProjects(await res.json());
+}
