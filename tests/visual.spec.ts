@@ -13,7 +13,7 @@ test.use({ timezoneId: "UTC", locale: "en-US", contextOptions: { reducedMotion: 
 /** Waits for the home page's projects corner to draw its key and chart. */
 const waitForCorner = async (page: Page) => {
   await expect(page.locator("[data-corner]")).toHaveAttribute("data-state", "ready");
-  await expect(page.locator("[data-corner-chart] circle").first()).toBeAttached();
+  await expect(page.locator("[data-corner-chart] path").first()).toBeAttached();
 };
 
 test.describe("visual regression", () => {
