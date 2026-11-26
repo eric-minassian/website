@@ -54,11 +54,17 @@ const circle = (x: number, y: number, r: number): SVGCircleElement => {
   return c;
 };
 
+/** A dot as path data: two arcs, so a band's hundreds of dots are one element. */
+const dot = (x: number, y: number, r: number): string =>
+  `M${(x - r).toFixed(1)} ${y.toFixed(1)}a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0`;
+
 /**
  * The strata at `width` × `height`: a column of dots every `PITCH` px, the oldest day at the left
  * and today at the right edge. A column's height follows the square root of its traffic, so quiet
  * days still show beside the busiest; the bands split it by each app's share. Dots shrink toward
  * the top edge, and the bottom row keeps faint dots where there's nothing, so the 30 days read.
+ * Each band is one path, not an element per dot: a phone styles and lays out a handful of nodes
+ * instead of hundreds while the page loads.
  */
 export function strata(bands: Band[], width: number, height: number): SVGSVGElement {
   const svg = document.createElementNS(SVG, "svg");
@@ -74,13 +80,8 @@ export function strata(bands: Band[], width: number, height: number): SVGSVGElem
   const at = (x: number) => (days > 1 ? (x / width) * (days - 1) : 0);
   const totals = xs.map((x) => bands.map((b) => smoothed(b.daily, at(x))));
   const peak = Math.max(0, ...totals.map((t) => Math.sqrt(totalOf(t))));
-  const faint = document.createElementNS(SVG, "g");
-  faint.setAttribute("class", "fill-faint");
-  const layers = bands.map((_, i) => {
-    const g = document.createElementNS(SVG, "g");
-    g.setAttribute("fill-opacity", String(OPACITY[i]));
-    return g;
-  });
+  let faint = "";
+  const layers = bands.map(() => "");
 
   xs.forEach((x, c) => {
     const shares = totals[c]!;
@@ -95,13 +96,22 @@ export function strata(bands: Band[], width: number, height: number): SVGSVGElem
           below += (shares[band]! / total) * top;
         }
         const fade = 0.55 + 0.45 * Math.min(1, (top - up) / (2 * PITCH));
-        layers[band]!.append(circle(x, y, RADIUS[band]! * fade));
+        layers[band] += dot(x, y, RADIUS[band]! * fade);
       } else if (row === 0) {
-        faint.append(circle(x, y, 0.9));
+        faint += dot(x, y, 0.9);
       }
     }
   });
-  svg.append(faint, ...layers);
+  const path = (d: string, attributes: Record<string, string>) => {
+    const el = document.createElementNS(SVG, "path");
+    el.setAttribute("d", d);
+    for (const [name, value] of Object.entries(attributes)) el.setAttribute(name, value);
+    return el;
+  };
+  svg.append(
+    path(faint, { class: "fill-faint" }),
+    ...layers.map((d, i) => path(d, { "fill-opacity": String(OPACITY[i]) })),
+  );
   return svg;
 }
 
@@ -113,9 +123,9 @@ function keyRow(band: Band, index: number): HTMLLIElement {
   swatch.setAttribute("height", "12");
   swatch.setAttribute("aria-hidden", "true");
   swatch.setAttribute("class", "fill-muted");
-  const dot = circle(6, 6, RADIUS[index]! + 0.6);
-  dot.setAttribute("fill-opacity", String(OPACITY[index]));
-  swatch.append(dot);
+  const mark = circle(6, 6, RADIUS[index]! + 0.6);
+  mark.setAttribute("fill-opacity", String(OPACITY[index]));
+  swatch.append(mark);
   const name = document.createElement("span");
   name.textContent = band.name;
   const total = document.createElement("span");
