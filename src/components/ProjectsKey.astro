@@ -28,6 +28,10 @@ const placeholders = [
     <p class="mt-1 text-sm text-muted">Apps I run on my own platform.</p>
   </div>
   <div class="key-body">
+    <!-- What the counts below cover, once there are counts; until then a line kept for it. -->
+    <p data-traffic-period class="key-period text-sm text-muted" aria-live="polite"></p>
+    <noscript><p class="text-sm text-muted">The traffic loads with JavaScript.</p></noscript>
+    <div class="key-rows">
     <div data-traffic-placeholder aria-hidden="true" class="text-sm">
       {
         placeholders.map(({ name, about }) => (
@@ -53,16 +57,14 @@ const placeholders = [
       }
     </div>
     <ul data-traffic-list class="list-none pl-0 text-sm tabular-nums" hidden></ul>
+    </div>
   </div>
-  <!-- Says what the counts cover once there are counts; until then there's nothing to say. -->
-  <p data-traffic-period class="key-period text-sm text-muted" aria-live="polite"></p>
-  <noscript><p class="key-period text-sm text-muted">The traffic loads with JavaScript.</p></noscript>
 </section>
 
 <style>
   .projects-key {
     display: grid;
-    grid-template-areas: "head" "body" "period";
+    grid-template-areas: "head" "body";
     row-gap: 0.75rem;
     margin-top: 3rem;
     padding-top: 2rem;
@@ -73,13 +75,17 @@ const placeholders = [
   }
 
   .key-body {
-    position: relative;
     grid-area: body;
+  }
+
+  /* The rows, over which the placeholders fade out (src/lib/leave.ts). */
+  .key-rows {
+    position: relative;
+    margin-top: 0.25rem;
   }
 
   /* A line kept for the caption, so nothing moves when it arrives with the counts. */
   .key-period {
-    grid-area: period;
     min-height: 1.5em;
   }
 
@@ -90,7 +96,7 @@ const placeholders = [
   @media (width >= 40rem) {
     .projects-key {
       grid-template-columns: minmax(0, 1fr) 21rem;
-      grid-template-areas: "head body" "head period";
+      grid-template-areas: "head body";
       align-items: start;
       column-gap: 2rem;
     }
@@ -100,7 +106,7 @@ const placeholders = [
   @media (width >= 56rem) {
     .projects-key {
       grid-template-columns: none;
-      grid-template-areas: "head" "body" "period";
+      grid-template-areas: "head" "body";
       margin-top: 0;
       padding-top: 0;
       background: none;

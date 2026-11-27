@@ -354,7 +354,8 @@
     height: 0.5em;
     background-image: radial-gradient(circle, var(--color-faint) 1.4px, transparent 1.9px);
     background-size: 5px 100%;
-    background-repeat: repeat-x;
+    /* Whole dots only: the spacing gives a little rather than the last dot being cut in half. */
+    background-repeat: round no-repeat;
     background-position: left center;
     vertical-align: middle;
     animation: skeleton-pulse 2.4s ease-in-out infinite;
@@ -365,7 +366,7 @@
     position: absolute;
     inset: 0 0 auto;
     pointer-events: none;
-    animation: leave 140ms ease-out both;
+    animation: leave 180ms ease-in both;
   }
 
   /*
@@ -374,7 +375,7 @@
    */
   .arrive {
     animation: arrive 420ms var(--ease-out-soft) both;
-    animation-delay: calc(110ms + var(--i, 0) * 45ms);
+    animation-delay: calc(80ms + var(--i, 0) * 45ms);
   }
 }
 

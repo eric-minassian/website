@@ -276,7 +276,13 @@ test.describe("projects page", () => {
       "https://github.com/eric-minassian/atlas",
     );
     await expect(rows.nth(2).getByRole("link", { name: "Source" })).toHaveCount(0);
-    await expect(page.getByText("Page views over the last 30 days.")).toBeVisible();
+    // What the totals cover sits over them; how the days are drawn, under the list.
+    await expect(page.locator("[data-projects-head]")).toHaveText(
+      "Page views over the last 30 days",
+    );
+    await expect(
+      page.getByText("Each app’s days are scaled to its own busiest one."),
+    ).toBeVisible();
   });
 
   test("reads out a day's views from a sparkline, by pointer and by keyboard", async ({ page }) => {
@@ -312,7 +318,7 @@ test.describe("projects page", () => {
   }) => {
     await serveProjects(page, { ...PROJECTS, countingSince: "2026-11-24" });
     await page.goto("/projects");
-    await expect(page.getByText("Page views since Nov 24.")).toBeVisible();
+    await expect(page.locator("[data-projects-head]")).toHaveText("Page views since Nov 24");
 
     await page.unroute(SITE.projectsUrl);
     await failProjects(page);

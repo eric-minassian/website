@@ -19,6 +19,8 @@ const placeholders = [
 ---
 
 <div data-projects data-state="loading" class="ledger mt-6">
+  <!-- What the totals cover, above their column, once there are totals. -->
+  <p data-projects-head class="ledger-head text-sm text-muted"></p>
   <div data-projects-placeholder aria-hidden="true" class="ledger-grid rule-below">
     {
       placeholders.map(({ name, about }) => (
@@ -57,6 +59,12 @@ const placeholders = [
    */
   .ledger {
     position: relative;
+  }
+
+  .ledger-head {
+    min-height: 1.5em;
+    margin-bottom: 0.5rem;
+    text-align: right;
   }
 
   .ledger-grid {
@@ -136,13 +144,15 @@ const placeholders = [
     font-variant-numeric: tabular-nums;
   }
 
+  /* On a phone the days span their own line, and a day's reading has the line under them. */
   .ledger :global(.ledger-spark) {
     grid-column: 1 / -1;
     grid-row: 3;
     justify-self: start;
     display: flex;
-    align-items: flex-end;
-    gap: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
     position: relative;
     cursor: crosshair;
     touch-action: pan-y;
@@ -198,15 +208,19 @@ const placeholders = [
   /* A sparkline before its data: a placeholder along its foot, its width and height. */
   .spark-skeleton {
     display: block;
-    width: 238px;
+    width: 100%;
+    min-width: 178px;
     height: 0.375rem;
     margin-top: calc(36px - 0.375rem);
+    margin-bottom: calc(1.5em + 0.25rem);
   }
 
   @media (width >= 52rem) {
     .spark-skeleton {
       width: 119px;
+      min-width: 0;
       margin-top: calc(32px - 0.375rem);
+      margin-bottom: 0;
     }
   }
 
