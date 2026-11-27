@@ -20,6 +20,10 @@ const waitForTraffic = async (page: Page) => {
   await expect(page.locator("[data-horizon-chart] path").first()).toBeAttached();
 };
 
+/** Waits for the key to fill, with or without a chart to draw. */
+const waitForTrafficKey = (page: Page) =>
+  expect(page.locator("[data-traffic]")).toHaveAttribute("data-state", "ready");
+
 const storedTheme = (page: Page) => page.evaluate(() => localStorage.getItem("theme"));
 const isDark = (page: Page) =>
   page.evaluate(() => document.documentElement.classList.contains("dark"));
@@ -153,7 +157,7 @@ test.describe("home page", () => {
     // On the chart the short form; the key's caption and the slider's value say it in full.
     await expect(page.locator("[data-horizon-label]")).toHaveText("Today so far · 3,215");
     await expect(key.getByRole("listitem")).toHaveText([
-      /^platform\s*2\.9k/,
+      /^platform\s*2,872/,
       /^atlas\s*14/,
       /^2 others\s*329/,
     ]);
@@ -179,7 +183,7 @@ test.describe("home page", () => {
     await page.keyboard.press("ArrowLeft");
     await expect(scrub).toHaveAttribute("aria-valuetext", "Nov 25: no page views");
     await page.keyboard.press("Home");
-    await expect(page.locator("[data-horizon-label]")).toHaveText("Oct 28 · 0");
+    await expect(page.locator("[data-horizon-label]")).toHaveText("Oct 28 · no apps yet");
     // Escape puts the reading away and keeps the keyboard on the strata.
     await page.keyboard.press("Escape");
     await expect(page.locator("[data-horizon-label]")).toBeHidden();
@@ -217,6 +221,19 @@ test.describe("home page", () => {
   });
 });
 
+test.describe("home page, unusual data", () => {
+  test("names no busiest day when there were no views at all", async ({ page }) => {
+    const quiet = {
+      ...PROJECTS,
+      apps: PROJECTS.apps.map((app) => ({ ...app, pageViews: app.pageViews.map(() => 0) })),
+    };
+    await serveProjects(page, quiet);
+    await page.goto("/");
+    await waitForTrafficKey(page);
+    await expect(page.locator("[data-horizon-peak]")).toBeHidden();
+  });
+});
+
 test.describe("projects page", () => {
   test("lists the platform's apps, busiest first", async ({ page }) => {
     await serveProjects(page);
@@ -226,7 +243,7 @@ test.describe("projects page", () => {
     await expect(page.getByRole("link", { name: "Eric Minassian" })).toHaveAttribute("href", "/");
     const rows = page.getByRole("list", { name: "Projects" }).getByRole("listitem");
 
-    await expect(rows.locator(":scope > a")).toHaveText([
+    await expect(rows.locator(".ledger-name a")).toHaveText([
       "platform",
       "atlas",
       "encore",
@@ -245,43 +262,32 @@ test.describe("projects page", () => {
     await expect(page.getByText("Page views over the last 30 days.")).toBeVisible();
   });
 
-  test("reads out a day's views from a sparkline, by pointer and by keyboard", async ({
-    page,
-    isMobile,
-  }) => {
+  test("reads out a day's views from a sparkline, by pointer and by keyboard", async ({ page }) => {
     await serveProjects(page);
     await page.goto("/projects");
     const row = page.getByRole("list", { name: "Projects" }).getByRole("listitem").first();
+    const reading = row.locator(".spark-reading");
     const box = (await row.locator(".ledger-spark svg").boundingBox())!;
-    // Each of the 30 days owns a bar and the 1px gap after it; day 20 is Nov 16, platform's 2,844.
+    // Each of the 30 days owns a column and the 1px gap after it; day 20 is Nov 16, 2,844 views.
     const day = (box.width + 1) / 30;
     await page.mouse.move(box.x + 19.5 * day, box.y + 10);
-    if (isMobile) {
-      // On a phone the reading takes the deploy line's place.
-      await expect(row.locator(".ledger-reading")).toHaveText("Nov 16 · 2,844 page views");
-      await expect(row.locator(".ledger-reading")).toBeVisible();
-      await expect(row.getByText("Deployed Nov 25")).toBeHidden();
-    } else {
-      // Beside the description, it sits under the bars.
-      await expect(row.locator(".spark-reading")).toHaveText("Nov 16 · 2,844");
-      await expect(row.locator(".spark-reading")).toBeVisible();
-      await expect(row.getByText("Deployed Nov 25")).toBeVisible();
-    }
+    // The reading sits by the dots, so the row's links and lines stay as they are.
+    await expect(reading).toHaveText("Nov 16 · 2,844");
+    await expect(reading).toBeVisible();
+    await expect(row.getByText("Deployed Nov 25")).toBeVisible();
     // The total stays the total.
     await expect(row.locator(".ledger-total")).toContainText("9,112 page views");
 
     await page.mouse.move(box.x - 200, box.y);
-    await expect(row.locator(".ledger-reading")).toBeHidden();
-    await expect(row.locator(".spark-reading")).toBeHidden();
-    await expect(row.getByText("Deployed Nov 25")).toBeVisible();
+    await expect(reading).toBeHidden();
 
     const spark = row.getByRole("slider", { name: "platform, page views by day" });
     await spark.focus();
     await page.keyboard.press("End");
-    await expect(spark).toHaveAttribute("aria-valuetext", "Today so far · 2,872 page views");
+    await expect(spark).toHaveAttribute("aria-valuetext", "Today so far: 2,872 page views");
     await page.keyboard.press("Escape");
     await expect(spark).toBeFocused();
-    await expect(row.locator(".spark-reading")).toBeHidden();
+    await expect(reading).toBeHidden();
   });
 
   test("says when counting began, and offers another try when the list can't load", async ({

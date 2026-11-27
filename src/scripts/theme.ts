@@ -20,6 +20,7 @@ export const currentTheme = (): Theme => stored() ?? system();
 /** Runs in the head before the first paint, so the page never flashes the other theme. */
 export const getThemeScript = (): string => `
 {
+  document.documentElement.classList.remove("no-js");
   const t = localStorage.getItem("${STORAGE_KEY}");
   const d = t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
   if (d) document.documentElement.classList.add("dark");

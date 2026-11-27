@@ -73,6 +73,7 @@ const placeholders = [
   }
 
   .key-body {
+    position: relative;
     grid-area: body;
   }
 
@@ -96,7 +97,7 @@ const placeholders = [
   }
 
   /* Beside the bio on a large window, where the whitespace is separation enough. */
-  @media (width >= 60rem) {
+  @media (width >= 56rem) {
     .projects-key {
       grid-template-columns: none;
       grid-template-areas: "head" "body" "period";
@@ -178,6 +179,6 @@ const placeholders = [
 
   /* Pointing at (or focusing) one app in the key quiets the others, here and on the horizon. */
   [data-focus] :global(li.key-row:not(.is-focused)) {
-    opacity: 0.45;
+    opacity: 0.6;
   }
 </style>

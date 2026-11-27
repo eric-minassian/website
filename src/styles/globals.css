@@ -44,6 +44,25 @@
   --color-band-3: color-mix(in srgb, var(--color-ink) 39%, var(--color-canvas));
 }
 
+/*
+ * Without JavaScript there's no class to set, so a visitor whose system is dark still gets the dark
+ * page. The head script takes `no-js` off before the first paint whenever it runs.
+ */
+@media (prefers-color-scheme: dark) {
+  html.no-js {
+    --color-canvas: #1a1917;
+    --color-ink: #e7e2d8;
+    --color-muted: #a19a8f;
+    --color-faint: color-mix(in srgb, var(--color-ink) 24%, var(--color-canvas));
+    --color-alert: #e88a72;
+    /* Dimmer than the ink, so the chart never outshines the name (8.4, 5.2, 3.2:1). */
+    --color-band-1: color-mix(in srgb, var(--color-ink) 76%, var(--color-canvas));
+    --color-band-2: color-mix(in srgb, var(--color-ink) 57%, var(--color-canvas));
+    --color-band-3: color-mix(in srgb, var(--color-ink) 39%, var(--color-canvas));
+    color-scheme: dark;
+  }
+}
+
 @layer base {
   :root {
     --gutter: 1.5rem;
@@ -198,10 +217,13 @@
     color: var(--color-ink);
   }
 
-  /* A section's name: a clear step above the text, and a step below the page's name. */
+  /*
+   * A section's name: a step above the text and, in size and in weight, a clear step below the
+   * page's name.
+   */
   .section-heading {
     font-size: 1.25rem;
-    font-weight: 500;
+    font-weight: 400;
     line-height: 1.3;
   }
 
@@ -223,14 +245,19 @@
     text-decoration-color: currentColor;
   }
 
-  /* A quiet link's trailing ↗ says, faintly, that it opens elsewhere; pointing at it says so plainly. */
-  .link-quiet .arrow-out {
-    opacity: 0.45;
-    transition: opacity 150ms;
+  /*
+   * A quiet link's trailing arrow (↗ opens elsewhere, → a page here) rests a step back from its
+   * text, still 3:1 or more, and comes forward when pointed at.
+   */
+  .link-quiet .arrow {
+    opacity: 0.7;
+    transition:
+      opacity 150ms,
+      translate 200ms var(--ease-out-soft);
   }
 
-  .link-quiet:hover .arrow-out,
-  .link-quiet:focus-visible .arrow-out {
+  .link-quiet:hover .arrow,
+  .link-quiet:focus-visible .arrow {
     opacity: 1;
   }
 
@@ -318,11 +345,20 @@
   /* A placeholder bar while data loads: the shape of the text to come, breathing gently. */
   .skeleton {
     display: inline-block;
-    height: 0.6em;
+    height: 0.5em;
     border-radius: 2px;
-    background-color: var(--color-faint);
+    background-color: color-mix(in srgb, var(--color-faint) 70%, transparent);
     vertical-align: middle;
-    animation: skeleton-pulse 1.6s ease-in-out infinite;
+    /* The same tempo as the light along the horizon's ground while it loads. */
+    animation: skeleton-pulse 2.4s ease-in-out infinite;
+  }
+
+  /* A placeholder fading out over what arrives in its place (src/lib/leave.ts). */
+  .leaving {
+    position: absolute;
+    inset: 0 0 auto;
+    pointer-events: none;
+    animation: leave 280ms ease-out both;
   }
 
   /* Rows that arrive with the data rise into place one after another. */
@@ -338,10 +374,16 @@
   }
 }
 
-/* From about where the placeholders were, so there's no blank frame between them and the rows. */
+/* While the placeholders fade out over them (`leaving`), so there's no blank frame between. */
 @keyframes arrive {
   from {
-    opacity: 0.3;
+    opacity: 0;
     transform: translateY(3px);
+  }
+}
+
+@keyframes leave {
+  to {
+    opacity: 0;
   }
 }
