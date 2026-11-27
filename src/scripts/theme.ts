@@ -53,18 +53,26 @@ const applyTheme = (): void => {
 };
 
 /**
- * Flips the theme at once: the toggle's icon turning is the only motion. Transitions are held off
- * for the frame of the swap (`flipping` in globals.css), so nothing fades through the new
- * background on its way to its new colour.
+ * Flips the theme with a short crossfade of the whole page, so a flip to light at night isn't a
+ * flash (at once where motion is reduced, or the browser can't). Transitions are held off for the
+ * frame of the swap (`flipping` in globals.css), so nothing fades through the new background on its
+ * own way to its new colour; the toggle's icon turns.
  */
 const flipTheme = (): void => {
   const next: Theme = currentTheme() === "dark" ? "light" : "dark";
   if (next === system()) localStorage.removeItem(STORAGE_KEY);
   else localStorage.setItem(STORAGE_KEY, next);
   const root = document.documentElement;
-  root.classList.add("flipping");
-  applyTheme();
-  requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("flipping")));
+  const swap = () => {
+    root.classList.add("flipping");
+    applyTheme();
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("flipping")));
+  };
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches || !document.startViewTransition) {
+    swap();
+  } else {
+    document.startViewTransition(swap);
+  }
 };
 
 export const initTheme = (): void => {

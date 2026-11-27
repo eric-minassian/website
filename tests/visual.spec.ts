@@ -203,9 +203,10 @@ test.describe("home page", () => {
     await page.goto("/");
     const key = page.getByRole("region", { name: "Projects" });
     await expect(key).toContainText("Page views since Nov 24");
-    // The horizon starts where the counting did, a few days at the end of the window.
-    await expect(page.locator("[data-horizon-start]")).toHaveText("Since Nov 24");
-    await expect(page.locator("[data-horizon-start]")).toBeVisible();
+    // The horizon starts where the counting did, a few days at the end of the window, named
+    // beside the tick where it began.
+    await expect(page.locator("[data-horizon-since]")).toHaveText("Since Nov 24");
+    await expect(page.locator("[data-horizon-since]")).toBeVisible();
 
     await page.unroute(SITE.projectsUrl);
     await failProjects(page);

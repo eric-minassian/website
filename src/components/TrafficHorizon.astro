@@ -25,6 +25,7 @@
     ></span>
     <span data-horizon-guide class="horizon-guide" aria-hidden="true" hidden></span>
     <span data-horizon-mark class="horizon-mark" aria-hidden="true" hidden></span>
+    <span data-horizon-since class="horizon-note text-sm text-muted" aria-hidden="true" hidden></span>
     <span data-horizon-label class="horizon-note text-sm tabular-nums" aria-hidden="true" hidden></span>
   </div>
   <div data-horizon-axis class="horizon-axis page text-sm text-muted tabular-nums" aria-hidden="true">
@@ -36,18 +37,23 @@
 
 <script is:inline>
   // A window a little short of the whole page would scroll just to show the dates: there, the
-  // strata give those pixels up (`--give`, at most 48, so never under 7rem) and the page fits. Run
-  // as the page is read, so the first paint already fits, and again whenever its height changes.
+  // strata give those pixels up (`--give`) and the page fits, as long as they keep 7rem; past that
+  // the page scrolls. Run as the page is read, so the first paint already fits, and again whenever
+  // the page's height or the window's changes.
   (() => {
     const horizon = document.querySelector("[data-horizon]");
+    const plot = horizon.querySelector(".horizon-plot");
     const fit = () => {
       const give = parseFloat(horizon.style.getPropertyValue("--give")) || 0;
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const most = parseFloat(getComputedStyle(plot).minHeight) + give - 7 * rem;
       const over = document.documentElement.scrollHeight - innerHeight + give;
-      const next = over > 0 && over <= 48 ? Math.ceil(over) : 0;
+      const next = over > 0 && over <= most ? Math.ceil(over) : 0;
       if (next !== give) horizon.style.setProperty("--give", `${next}px`);
     };
     fit();
     new ResizeObserver(fit).observe(document.body);
+    addEventListener("resize", fit);
   })();
 </script>
 

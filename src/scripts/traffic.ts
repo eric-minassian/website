@@ -70,13 +70,17 @@ export function bandsOf(apps: Project[], max = FILLS.length): Band[] {
 }
 
 /**
- * The count a full-height block stands for: the busiest day's, but never under `FLOOR`, so a few
- * days of a hundred views or so stand as the modest days they are, not as tall as thousands.
+ * The count a full-height block stands for: the busiest day's, but never under `FLOOR`, nor under
+ * `PER_ROW` views for each row of dots the chart has room for. So a few days of a hundred views or
+ * so stand as the modest days they are, about as tall on a tall window as on a small one, not as
+ * tall as thousands.
  */
 const FLOOR = 250;
-export const scaleOf = (bands: Band[], days: number): number =>
+const PER_ROW = 7;
+export const scaleOf = (bands: Band[], days: number, capacity: number): number =>
   Math.max(
     FLOOR,
+    PER_ROW * capacity,
     ...Array.from({ length: days }, (_, d) => totalOf(bands.map((b) => b.daily[d]!))),
   );
 
@@ -276,8 +280,11 @@ interface Marks {
   weeks?: number[];
   /** The first day any app was live, if after the first day shown. */
   firstLive?: number;
-  /** Whether the platform began counting within its window, on the first day shown. */
-  since?: boolean;
+  /**
+   * Where the platform began counting, if within its window (on the first day shown): how far its
+   * tick rises above the others, up to the note that names it.
+   */
+  since?: number | null;
 }
 
 /**
@@ -291,7 +298,7 @@ export function strata(
   width: number,
   height: number,
   grid: Grid,
-  { weeks = [], firstLive = 0, since = false }: Marks = {},
+  { weeks = [], firstLive = 0, since = null }: Marks = {},
 ): SVGSVGElement {
   const svg = document.createElementNS(SVG, "svg");
   svg.setAttribute("width", String(width));
@@ -312,11 +319,12 @@ export function strata(
     `M${(weekX(grid, d) - 0.5).toFixed(1)} ${height - FOOT + 2}h1v${FOOT - 2}h-1z`;
   // Where counting began, and the first app's launch, are marked the same way, taller, rising
   // through the ground: the days before the one weren't counted, before the other had no apps.
-  const tall = (d: number) =>
-    `M${(weekX(grid, d) - 0.5).toFixed(1)} ${height - FOOT - pitch}h1v${FOOT + pitch}h-1z`;
+  // Where counting began rises further still, like a flag's pole, to the note beside it.
+  const tall = (d: number, rise = 0) =>
+    `M${(weekX(grid, d) - 0.5).toFixed(1)} ${height - FOOT - pitch - rise}h1v${FOOT + pitch + rise}h-1z`;
   const marks = [
     ...weeks.filter((d) => d > 0 && d !== firstLive).map(tick),
-    ...(since ? [tall(0)] : []),
+    ...(since === null ? [] : [tall(0, since)]),
     ...(firstLive > 0 && firstLive < days ? [tall(firstLive)] : []),
   ].join("");
   const week = document.createElementNS(SVG, "path");
@@ -325,7 +333,7 @@ export function strata(
   const floor = document.createElementNS(SVG, "path");
   floor.setAttribute("d", ground);
   floor.setAttribute("class", "fill-faint");
-  const peak = scaleOf(bands, days);
+  const peak = scaleOf(bands, days, capacityOf(height, pitch));
   const dots = Array.from({ length: days }, (_, d) => dotsOf(bands, grid, height, d, peak)).flat();
   const rows = Math.max(1, ...dots.map((dt) => dt.row + 1));
   // However tall the strata, the rise from the ground takes under half a second.
@@ -338,7 +346,7 @@ export function strata(
 export function dayLayer(bands: Band[], height: number, grid: Grid, d: number): SVGGElement {
   const g = document.createElementNS(SVG, "g");
   g.setAttribute("class", "day-layer");
-  const peak = scaleOf(bands, grid.days);
+  const peak = scaleOf(bands, grid.days, capacityOf(height, grid.pitch));
   g.append(...paths(dotsOf(bands, grid, height, d, peak)));
   return g;
 }
@@ -490,6 +498,7 @@ export async function initTraffic(): Promise<void> {
   const guide = horizon.querySelector<HTMLElement>("[data-horizon-guide]")!;
   const label = horizon.querySelector<HTMLElement>("[data-horizon-label]")!;
   const mark = horizon.querySelector<HTMLElement>("[data-horizon-mark]")!;
+  const sinceNote = horizon.querySelector<HTMLElement>("[data-horizon-since]")!;
   const peakLabel = horizon.querySelector<HTMLElement>("[data-horizon-peak]")!;
   const start = horizon.querySelector<HTMLElement>("[data-horizon-start]")!;
   const today = horizon.querySelector<HTMLElement>("[data-horizon-today]")!;
@@ -587,10 +596,9 @@ export async function initTraffic(): Promise<void> {
   }
 
   let grid: Grid = { pitch: 9, weight: 1, days: days.length, x0: 0, per: 1, gap: false };
-  /** The weeks named on the axis, whose ticks the ground draws. */
-  let named: number[] = [];
-  /** The count a full-height block stands for. */
-  const scale = scaleOf(bands, days.length);
+  /** How far the tick where counting began rises to its note, if it's marked. */
+  let sinceRise: number | null = null;
+  sinceNote.textContent = `Since ${formatDay(days[0]!)}`;
   const measure = () => {
     const box = chart.getBoundingClientRect();
     const column = axis.getBoundingClientRect();
@@ -601,15 +609,16 @@ export async function initTraffic(): Promise<void> {
     const pitch = parseFloat(style.getPropertyValue("--pitch")) || 9;
     const weight = parseFloat(style.getPropertyValue("--dot-scale")) || 1;
     grid = gridOf({ from, to }, days.length, pitch, weight, slots);
-    const edges = gridEdges(grid);
-    scrub.style.left = `${edges.from}px`;
-    scrub.style.width = `${edges.to - edges.from}px`;
+    // Pointing anywhere from the column's left edge to the window's right reads a day: on the
+    // ground before a short run, or past today, the nearest one, so a few days on a phone aren't
+    // a few narrow targets.
+    scrub.style.left = `${from}px`;
+    scrub.style.width = `${box.width - from}px`;
     const offset = column.left - box.left;
     // "Today so far" holds the right edge. Then, in that order, the first day, the first app's
     // launch and each week find room on the axis, each at least 20px from the others, inside the
-    // column, or give way.
+    // column, or go unnamed.
     const kept = [today.getBoundingClientRect()];
-    const shown: { x: number; month: string }[] = [];
     const fit = (el: HTMLElement, x: number, shifts: number[]): boolean => {
       el.hidden = false;
       const fits = shifts.some((shift) => {
@@ -623,42 +632,45 @@ export async function initTraffic(): Promise<void> {
       el.hidden = !fits;
       return fits;
     };
-    const monthOf = (d: number) => days[d]!.slice(0, 7);
-    // The first day starts at the column's edge; a run that began within the window is named
-    // where its tick stands, ending there if it can (or just short of "Today so far", when the
-    // run is shorter than that), so the ground before it reads as not counted.
-    start.hidden = false;
-    const startWidth = start.offsetWidth;
-    const room = kept[0]!.left - 20 - (box.left + edges.from);
-    const shifts = since ? [startWidth, startWidth - Math.min(0, room), 0] : [0];
-    if (fit(start, edges.from, shifts)) {
-      shown.push({ x: edges.from, month: monthOf(0) });
+    // A run that began within the window is named beside its tick, above the ground and ending
+    // just before it, like a flag on its pole, so the name belongs to the moment counting began
+    // and the bare ground before it reads as not counted. Without room for that before it (counting
+    // began early in the window), it's named on the axis, beginning at its tick.
+    sinceRise = null;
+    sinceNote.hidden = !since;
+    if (since) {
+      const x = weekX(grid, 0);
+      const width = sinceNote.offsetWidth;
+      const height = sinceNote.offsetHeight;
+      if (x - 6 - width >= from) {
+        const top = chart.clientHeight - FOOT - grid.pitch - 4 - height;
+        sinceNote.style.translate = `${Math.round(x - 6 - width)}px ${Math.round(top)}px`;
+        sinceRise = 4 + height / 2;
+        start.hidden = true;
+      } else {
+        sinceNote.hidden = true;
+        sinceRise = 0;
+        fit(start, x, [0]);
+      }
+    } else {
+      fit(start, gridEdges(grid).from, [0]);
     }
+    weekLabels.replaceChildren();
     if (firstLive > 0 && firstLive < days.length) {
       const el = document.createElement("span");
       el.textContent = `${formatDay(days[firstLive]!)} · first app`;
-      weekLabels.replaceChildren(el);
-      const x = weekX(grid, firstLive);
+      weekLabels.append(el);
       // Centred under its tick, or ending or beginning at it.
       const width = el.offsetWidth;
-      if (fit(el, x, [width / 2, width, 0])) shown.push({ x, month: monthOf(firstLive) });
-    } else {
-      weekLabels.replaceChildren();
+      fit(el, weekX(grid, firstLive), [width / 2, width, 0]);
     }
-    // Each week by its day of the month, with the month too wherever the date to its left (if
-    // any) is in another; a week that can't be named gives up its tick.
-    named = [];
+    // Every week is ticked, so the ticks keep time; each is dated in full ("Nov 9", never a bare
+    // number beside the counts) where there's room under it.
     for (const d of weeks.filter((w) => w > 0 && w !== firstLive)) {
-      const x = weekX(grid, d);
-      const left = shown.filter((l) => l.x < x).toSorted((a, b) => b.x - a.x)[0];
       const el = document.createElement("span");
-      const [, month, day] = formatDay(days[d]!).match(/^(\S+) (\d+)$/) ?? [];
-      el.textContent = left?.month === monthOf(d) && day ? day : `${month} ${day}`;
+      el.textContent = formatDay(days[d]!);
       weekLabels.append(el);
-      if (fit(el, x, [el.offsetWidth / 2])) {
-        shown.push({ x, month: monthOf(d) });
-        named.push(d);
-      }
+      fit(el, weekX(grid, d), [el.offsetWidth / 2]);
     }
   };
 
@@ -666,6 +678,7 @@ export async function initTraffic(): Promise<void> {
   const crestOf = (d: number) => {
     const height = chart.clientHeight;
     const capacity = Math.max(1, Math.floor((height - HEADROOM - FOOT) / grid.pitch));
+    const scale = scaleOf(bands, days.length, capacity);
     const stands = Math.max(1, rowsOf(totals[d]!, scale, capacity));
     return height - FOOT - stands * grid.pitch;
   };
@@ -686,7 +699,15 @@ export async function initTraffic(): Promise<void> {
     const crest = Math.min(
       ...under.map((i) => (totals[i]! > 0 ? crestOf(i) : chart.clientHeight - FOOT - grid.pitch)),
     );
-    const top = Math.max(HEADROOM - note.offsetHeight - 8, crest - note.offsetHeight - 10);
+    let top = Math.max(HEADROOM - note.offsetHeight - 8, crest - note.offsetHeight - 10);
+    // Clear of the note naming where counting began, too, when the two would cross.
+    if (!sinceNote.hidden) {
+      const flag = sinceNote.getBoundingClientRect();
+      const chartLeft = chart.getBoundingClientRect().left;
+      const crosses = left < flag.right - chartLeft + 6 && left + width > flag.left - chartLeft - 6;
+      const flagTop = flag.top - chart.getBoundingClientRect().top;
+      if (crosses) top = Math.min(top, flagTop - note.offsetHeight - 6);
+    }
     note.style.translate = `${Math.round(left)}px ${Math.round(top)}px`;
     return top;
   };
@@ -835,9 +856,9 @@ export async function initTraffic(): Promise<void> {
     frame = requestAnimationFrame(() => {
       measure();
       const svg = strata(bands, chart.clientWidth, chart.clientHeight, grid, {
-        weeks: named,
+        weeks,
         firstLive,
-        since,
+        since: sinceRise,
       });
       // The strata rise from the ground the first time, the busiest day's note after them; a
       // resize just redraws them.

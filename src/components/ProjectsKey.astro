@@ -93,15 +93,9 @@ const placeholders = [
     text-align: right;
   }
 
-  /* Under the bio, as wide as its text: the counts stay near the names they belong to. */
-  .projects-key {
-    max-width: 36rem;
-  }
-
-  /* Beside the bio on a large window, where the whitespace is separation enough. */
-  @media (width >= 56rem) {
+  /* Beside the bio once there's room (index.astro), where the whitespace is separation enough. */
+  @media (width >= 43rem) {
     .projects-key {
-      max-width: none;
       margin-top: 0;
       padding-top: 0;
       background: none;

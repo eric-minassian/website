@@ -64,18 +64,21 @@ const dotsFor = (phone: boolean, width: number): Dots => {
   return { pitch, rows: Math.floor(36 / pitch) };
 };
 
+/** Room under a sparkline's ground for the keyboard's mark under a day, px. */
+const FOOT = 5;
+
 /**
- * The project's 30 days as columns of dots like the home page's horizon, in its darkest tone,
- * standing on a ground of faint dots that runs the whole window, so every row's days line up.
- * Each is scaled to the app's own busiest day (but never fewer than ten views, so a handful doesn't
- * stand full height); the footnote says so and the totals compare the rows. Any traffic at all
- * stands at least one dot; a day with none is a small dot in the third band's tone; a day before
- * the app was live, or before the platform counted, is the bare ground.
+ * The project's 30 days as columns of dots like the home page's horizon, in its darkest tone, so
+ * every row's days line up. Each is scaled to the app's own busiest day (but never fewer than ten
+ * views, so a handful doesn't stand full height); the footnote says so and the totals compare the
+ * rows. Any traffic at all stands at least one dot; a day with none is a small dot in the third
+ * band's tone; a day before the app was live, or before the platform counted, is a fine ground of
+ * the faintest dots, smaller than the dotted rules between the rows so it's never taken for one.
  */
 function sparkline(pageViews: number[], from: number, peak: number, dots: Dots): SVGSVGElement {
   const { pitch, rows } = dots;
   const width = pageViews.length * pitch;
-  const height = rows * pitch;
+  const height = rows * pitch + FOOT;
   const svg = document.createElementNS(SVG, "svg");
   svg.setAttribute("width", String(width));
   svg.setAttribute("height", String(height));
@@ -84,12 +87,12 @@ function sparkline(pageViews: number[], from: number, peak: number, dots: Dots):
   svg.setAttribute("class", "block");
   const r = pitch * 0.4;
   const scale = Math.max(10, peak);
-  const ground = height - pitch / 2;
+  const ground = rows * pitch - pitch / 2;
   const bare: string[] = [];
   pageViews.forEach((views, day) => {
     const x = (day + 0.5) * pitch;
     if (day < from) {
-      bare.push(dot(x, ground, 0.9));
+      bare.push(dot(x, ground, 0.55));
       return;
     }
     const count = views === 0 ? 0 : Math.max(1, Math.round((views / scale) * rows));
@@ -107,6 +110,13 @@ function sparkline(pageViews: number[], from: number, peak: number, dots: Dots):
   floor.setAttribute("d", bare.join(""));
   floor.setAttribute("class", "fill-faint");
   svg.prepend(floor);
+  // From the keyboard, the day in hand is underlined, as on the home page's horizon.
+  const mark = document.createElementNS(SVG, "rect");
+  mark.setAttribute("class", "spark-mark fill-ink");
+  mark.setAttribute("y", String(height - 2));
+  mark.setAttribute("width", String(pitch + 4));
+  mark.setAttribute("height", "2");
+  svg.append(mark);
   return svg;
 }
 
@@ -185,6 +195,9 @@ function row(project: Project, index: number, span: Span, start: Dots, signal: A
   const mark = () => {
     for (const bar of svg.querySelectorAll("path"))
       bar.classList.toggle("is-day", bar.dataset.day === String(shown));
+    if (shown !== null) {
+      svg.querySelector(".spark-mark")?.setAttribute("x", String(shown * dots.pitch - 2));
+    }
   };
   const show = (d: number | null) => {
     shown = d;
