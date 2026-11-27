@@ -172,8 +172,17 @@ const placeholders = [
     inset: -0.5rem -0.25rem;
   }
 
+  /* Focused, the dots read out a day (today, to begin with), underlined like the horizon's. */
   .ledger :global(.ledger-spark:focus-visible) {
-    outline-offset: 3px;
+    outline: none;
+  }
+
+  .ledger :global(.spark-mark) {
+    visibility: hidden;
+  }
+
+  .ledger :global(.ledger-spark:focus-visible[data-day] .spark-mark) {
+    visibility: visible;
   }
 
   /* Kept in place while nothing's being read, so a reading never moves the row. */
@@ -207,7 +216,7 @@ const placeholders = [
 
     .ledger :global(.spark-reading) {
       position: absolute;
-      top: calc(100% + 0.8125rem);
+      top: calc(100% + 0.5rem);
       right: 0;
     }
 
@@ -224,8 +233,8 @@ const placeholders = [
   .spark-skeleton {
     display: block;
     width: 150px;
-    height: 0.375rem;
-    margin-top: calc(35px - 0.375rem);
+    height: 6px;
+    margin-block: 29.5px 4.5px;
   }
 
   /* A phone's column under 300px: 30 days at 4.5px or 4px. */
@@ -245,9 +254,16 @@ const placeholders = [
     transition: opacity 120ms;
   }
 
-  /* A day being read stays; the other days step back, and the ground stays as it is. */
+  /*
+   * A day being read comes forward in ink, even a day with no views; the other days step back, and
+   * the ground stays as it is.
+   */
   .ledger :global(.ledger-spark[data-day] path[data-day]:not(.is-day)) {
     opacity: 0.25;
+  }
+
+  .ledger :global(.ledger-spark[data-day] path.is-day) {
+    fill: var(--color-ink);
   }
 </style>
 

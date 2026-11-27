@@ -154,6 +154,17 @@
     border-radius: 2px;
   }
 
+  /*
+   * A theme flip crossfades the whole page, briefly (theme.ts), rather than each thing fading on
+   * its own: while it does, everything takes its new colours at once and only the toggle's icon
+   * turns.
+   */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 200ms;
+    animation-timing-function: ease-out;
+  }
+
   /* While the theme flips, everything takes its new colours at once; only the toggle's icon turns. */
   html.flipping *:not(.theme-icon),
   html.flipping ::before,
@@ -221,11 +232,6 @@
 
   .masthead-home {
     color: var(--color-muted);
-  }
-
-  /* Focus is put on the page's name while what it heads reloads; it isn't a control. */
-  #page-heading:focus-visible {
-    outline: none;
   }
 
   .masthead-home:hover {
