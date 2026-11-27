@@ -59,7 +59,8 @@
   .horizon-plot::before {
     content: "";
     position: absolute;
-    inset: auto 0 0;
+    /* Above the strip kept for the weeks' ticks (FOOT in traffic.ts). */
+    inset: auto 0 6px;
     height: var(--pitch);
     background-image: radial-gradient(circle, var(--color-faint) 0.9px, transparent 1.4px);
     background-size: var(--pitch) var(--pitch);
@@ -131,7 +132,7 @@
   [data-state="loading"] .horizon-plot::after {
     content: "";
     position: absolute;
-    inset: auto 0 0;
+    inset: auto 0 6px;
     height: var(--pitch);
     background-image: radial-gradient(circle, var(--color-muted) 0.9px, transparent 1.4px);
     background-size: var(--pitch) var(--pitch);
