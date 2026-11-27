@@ -161,8 +161,9 @@
    */
   ::view-transition-old(root),
   ::view-transition-new(root) {
-    animation-duration: 200ms;
-    animation-timing-function: ease-out;
+    /* Quick through the middle, where the two themes' text would both be faint. */
+    animation-duration: 180ms;
+    animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1);
   }
 
   /* While the theme flips, everything takes its new colours at once; only the toggle's icon turns. */

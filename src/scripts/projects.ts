@@ -114,7 +114,7 @@ function sparkline(pageViews: number[], from: number, peak: number, dots: Dots):
   const mark = document.createElementNS(SVG, "rect");
   mark.setAttribute("class", "spark-mark fill-ink");
   mark.setAttribute("y", String(height - 2));
-  mark.setAttribute("width", String(pitch + 4));
+  mark.setAttribute("width", String(pitch + 8));
   mark.setAttribute("height", "2");
   svg.append(mark);
   return svg;
@@ -196,7 +196,7 @@ function row(project: Project, index: number, span: Span, start: Dots, signal: A
     for (const bar of svg.querySelectorAll("path"))
       bar.classList.toggle("is-day", bar.dataset.day === String(shown));
     if (shown !== null) {
-      svg.querySelector(".spark-mark")?.setAttribute("x", String(shown * dots.pitch - 2));
+      svg.querySelector(".spark-mark")?.setAttribute("x", String(shown * dots.pitch - 4));
     }
   };
   const show = (d: number | null) => {
