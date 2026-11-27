@@ -53,17 +53,22 @@ interface Dots {
   rise: number;
 }
 
-/** On a phone the days have a line of their own, so they can be wider and easier to touch. */
-const dotsFor = (wide: boolean): Dots =>
-  wide ? { bar: 6, gap: 2, height: 36, rise: 5 } : { bar: 3, gap: 1, height: 32, rise: 3.5 };
+/**
+ * Beside the description, small dots in a narrow column. On a phone the days have a line of their
+ * own, so they span it, as wide as `width` allows, and are easier to touch.
+ */
+const dotsFor = (phone: boolean, width: number): Dots => {
+  if (!phone) return { bar: 3, gap: 1, height: 32, rise: 3.5 };
+  const step = Math.max(6, Math.min(12, Math.floor((width + 2) / 30)));
+  return { bar: step - 2, gap: 2, height: 36, rise: 5 };
+};
 
 /**
  * The project's 30 days as columns of small dots like the home page's horizon, in its darkest
- * tone, on a faint track that shows the whole month. Each is scaled to the app's own busiest day
- * (but never fewer than ten views, so a handful doesn't stand full height); the footnote says so
- * and the totals compare the rows. Any traffic at all stands at least one dot; a day with none has
- * a small dot in the third band's tone; a day before the app was live, or before the platform
- * counted, has only the track.
+ * tone. Each is scaled to the app's own busiest day (but never fewer than ten views, so a handful
+ * doesn't stand full height); the footnote says so and the totals compare the rows. Any traffic
+ * at all stands at least one dot; a day with none has a small dot in the third band's tone; a day
+ * before the app was live, or before the platform counted, is left blank.
  */
 function sparkline(pageViews: number[], from: number, peak: number, dots: Dots): SVGSVGElement {
   const { bar, gap, height, rise } = dots;
@@ -79,13 +84,6 @@ function sparkline(pageViews: number[], from: number, peak: number, dots: Dots):
   const rows = Math.floor(height / rise);
   const scale = Math.max(10, peak);
   const ground = height - rise / 2;
-  const track = document.createElementNS(SVG, "path");
-  track.setAttribute(
-    "d",
-    pageViews.map((_, day) => dot(day * step + bar / 2, ground, 0.6)).join(""),
-  );
-  track.setAttribute("class", "fill-faint");
-  svg.append(track);
   pageViews.forEach((views, day) => {
     if (day < from) return;
     const x = day * step + bar / 2;
@@ -124,10 +122,10 @@ const firstDayOf = (project: Project, days: string[], counting: number): number 
 const shownTotal = (project: Project, days: string[], counting: number): number =>
   totalOf(project.pageViews.slice(firstDayOf(project, days, counting)));
 
-function row(project: Project, index: number, span: Span): HTMLLIElement {
+function row(project: Project, index: number, span: Span, arrive: boolean): HTMLLIElement {
   const { days, dots } = span;
   const from = firstDayOf(project, days, span.from);
-  const li = element("li", "ledger-row rule-above arrive");
+  const li = element("li", `ledger-row rule-above${arrive ? " arrive" : ""}`);
   li.style.setProperty("--i", String(index));
   const name = element("span", "ledger-name");
   const out = link(project.url, "", "link-quiet tap");
@@ -235,12 +233,25 @@ export async function initProjects(): Promise<void> {
   const placeholder = root.querySelector<HTMLElement>("[data-projects-placeholder]")!;
   const list = root.querySelector<HTMLUListElement>("[data-projects-list]")!;
   const note = root.querySelector<HTMLElement>("[data-projects-note]")!;
+  const head = root.querySelector<HTMLElement>("[data-projects-head]")!;
+  /** Whether the days have a line of their own. */
+  const phone = matchMedia("(width < 52rem)");
+  /** Draws the rows (rising into place the first time), sized to the list as it is now. */
+  let draw: ((arrive: boolean) => void) | null = null;
+  let drawnAt = "";
+  const redraw = () => {
+    const key = `${phone.matches}:${dotsFor(phone.matches, list.clientWidth).bar}`;
+    if (draw && key !== drawnAt) draw(false);
+  };
+  phone.addEventListener("change", redraw);
+  new ResizeObserver(redraw).observe(root);
 
   const load = async (): Promise<void> => {
     root.dataset.state = "loading";
     placeholder.hidden = false;
     list.setAttribute("aria-busy", "true");
     note.replaceChildren();
+    head.textContent = "";
     try {
       const projects: Projects = await loadProjects();
       const from = firstCounted(projects);
@@ -252,11 +263,17 @@ export async function initProjects(): Promise<void> {
           shownTotal(b, days, from) - shownTotal(a, days, from) ||
           Date.parse(b.lastDeployedAt) - Date.parse(a.lastDeployedAt),
       );
-      const span = { days, from, dots: dotsFor(!matchMedia("(width >= 52rem)").matches) };
-      list.replaceChildren(...apps.map((p, i) => row(p, i, span)));
       list.hidden = apps.length === 0;
+      draw = (arrive) => {
+        const dots = dotsFor(phone.matches, list.clientWidth);
+        drawnAt = `${phone.matches}:${dots.bar}`;
+        list.replaceChildren(...apps.map((p, i) => row(p, i, { days, from, dots }, arrive)));
+      };
+      draw(true);
+      // What the totals cover, over them; how the days are drawn, under the list.
+      head.textContent = apps.length ? periodOf(projects) : "";
       note.textContent = apps.length
-        ? `${periodOf(projects)}. Each app’s days are scaled to its own busiest one.`
+        ? "Each app’s days are scaled to its own busiest one."
         : "Nothing is running right now.";
       leave(placeholder);
     } catch (error) {

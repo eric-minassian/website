@@ -287,20 +287,15 @@ export function strata(
   svg.setAttribute("width", String(width));
   svg.setAttribute("height", String(height));
   const { days, pitch } = grid;
-  // The ground: in step with the days' columns across the grid, on the grid's pitch past its right
-  // edge. It begins with the first day any app was live (or the first day counted): before that
-  // there was nothing to stand on it, so there's no ground, and the horizon starts where the apps
-  // did.
+  // The ground: in step with the days' columns across the grid, and on the grid's pitch from its
+  // edges to the window's, one unbroken line in every state.
   const edges = gridEdges(grid);
   const ofDay = (d: number) => [
     ...columnsOf(grid, d),
     ...(grid.gap ? [grid.x0 + d * grid.per * pitch] : []),
   ];
-  const launched = Math.min(firstLive, days);
-  const xs = Array.from({ length: days - launched }, (_, i) => ofDay(i + launched)).flat();
-  if (launched === 0 && grid.fills) {
-    for (let x = edges.from - pitch / 2; x > 0; x -= pitch) xs.push(x);
-  }
+  const xs = Array.from({ length: days }, (_, d) => ofDay(d)).flat();
+  for (let x = edges.from - pitch / 2; x > 0; x -= pitch) xs.push(x);
   for (let x = edges.to + pitch / 2; x < width; x += pitch) xs.push(x);
   const groundAt = (x: number) => dot(x, height - FOOT - pitch / 2, 0.9);
   const ground = xs.map(groundAt).join("");
@@ -308,11 +303,17 @@ export function strata(
   // its own shape and tone, below the row the data stands on, so it can't be read as traffic, and
   // the empty stretches have a measure.
   const marks = weeks
-    .filter((d) => d > 0)
+    .filter((d) => d > 0 && d !== firstLive)
     .map((d) => `M${(weekX(grid, d) - 0.5).toFixed(1)} ${height - FOOT + 2}h1v${FOOT - 2}h-1z`)
     .join("");
+  // The first app's launch is marked the same way, taller, rising through the ground: the days
+  // before it read "no apps yet", and the axis names it.
+  const launch =
+    firstLive > 0 && firstLive < days
+      ? `M${(weekX(grid, firstLive) - 0.5).toFixed(1)} ${height - FOOT - pitch}h1v${FOOT + pitch}h-1z`
+      : "";
   const week = document.createElementNS(SVG, "path");
-  week.setAttribute("d", marks);
+  week.setAttribute("d", marks + launch);
   week.setAttribute("class", "fill-muted");
   const floor = document.createElementNS(SVG, "path");
   floor.setAttribute("d", ground);
@@ -420,26 +421,33 @@ function keyRow(row: Band, band: number, position: number): HTMLLIElement {
   if (row.apps.length === 1 && only) {
     about.textContent = only.description ?? "";
   } else {
-    // Among the others, one that's down says so after its name, and comes first, so the line's
-    // two-line limit never hides it.
-    row.apps
-      .toSorted((a, b) => Number(b.up === false) - Number(a.up === false))
-      .forEach((p, i) => {
-        if (i) about.append(", ");
-        const whole = document.createElement("span");
-        whole.className = "whitespace-nowrap";
-        whole.textContent = p.name;
-        if (p.up === false) {
-          const down = document.createElement("span");
-          down.className = "key-down";
-          down.textContent = " (Down)";
-          whole.append(down);
-        }
-        about.append(whole);
-      });
+    nameOthers(about, row.apps, row.apps.length);
   }
   li.append(mark, name, total, about);
   return li;
+}
+
+/**
+ * The others' names, the first `shown` of them and "and N more" for the rest. One that's down says
+ * so after its name and comes first, so no limit on the line hides it.
+ */
+function nameOthers(about: HTMLElement, apps: Project[], shown: number): void {
+  const named = apps.toSorted((a, b) => Number(b.up === false) - Number(a.up === false));
+  about.replaceChildren();
+  named.slice(0, shown).forEach((p, i) => {
+    if (i) about.append(", ");
+    const whole = document.createElement("span");
+    whole.className = "whitespace-nowrap";
+    whole.textContent = p.name;
+    if (p.up === false) {
+      const down = document.createElement("span");
+      down.className = "key-down";
+      down.textContent = " (Down)";
+      whole.append(down);
+    }
+    about.append(whole);
+  });
+  if (shown < named.length) about.append(`, and ${named.length - shown} more`);
 }
 
 /** Whether two labels on the axis stand clear of each other, 20px apart or more. */
@@ -589,15 +597,22 @@ export async function initTraffic(): Promise<void> {
     const end = today.getBoundingClientRect();
     if (!clear(start.getBoundingClientRect(), end)) start.hidden = true;
     const kept = [end, ...(start.hidden ? [] : [start.getBoundingClientRect()])];
-    weekLabels.replaceChildren(
+    // The first app's launch, then each week, in that order of precedence.
+    const marked = [
+      ...(firstLive > 0 && firstLive < days.length
+        ? [{ d: firstLive, text: `${formatDay(days[firstLive]!)} · first app` }]
+        : []),
       ...weeks
-        .filter((d) => d > 0)
-        .map((d) => {
-          const el = document.createElement("span");
-          el.textContent = formatDay(days[d]!);
-          el.dataset.x = String(weekX(grid, d) - offset);
-          return el;
-        }),
+        .filter((d) => d > 0 && d !== firstLive)
+        .map((d) => ({ d, text: formatDay(days[d]!) })),
+    ];
+    weekLabels.replaceChildren(
+      ...marked.map(({ d, text }) => {
+        const el = document.createElement("span");
+        el.textContent = text;
+        el.dataset.x = String(weekX(grid, d) - offset);
+        return el;
+      }),
     );
     for (const el of weekLabels.querySelectorAll<HTMLElement>("span")) {
       el.style.translate = `${Math.round(Number(el.dataset.x) - el.offsetWidth / 2)}px 0`;
@@ -773,12 +788,22 @@ export async function initTraffic(): Promise<void> {
       }
       drawn = true;
       chart.replaceChildren(svg);
-      // A description cut short beside the bio keeps its whole text in a title; one that fits
-      // needs none.
-      for (const about of list.querySelectorAll<HTMLElement>(".key-about")) {
-        const cut = about.scrollHeight > about.clientHeight + 1;
-        if (cut) about.title = about.textContent ?? "";
-        else about.removeAttribute("title");
+      // Where the key's lines are limited: the others' names stop at a whole name, "and N more"
+      // after it, and a description cut short keeps its whole text in a title.
+      for (const row of rows) {
+        const about = row.querySelector<HTMLElement>(".key-about")!;
+        const { apps } = bands[bandOfRow(row)]!;
+        const cut = () => about.scrollHeight > about.clientHeight + 1;
+        if (apps.length > 1) {
+          for (let shown = apps.length; shown >= 1; shown--) {
+            nameOthers(about, apps, shown);
+            if (!cut()) break;
+          }
+        } else if (cut()) {
+          about.title = about.textContent ?? "";
+        } else {
+          about.removeAttribute("title");
+        }
       }
       // The strata bring their own ground, in step with them; the CSS one held the place.
       chart.dataset.drawn = "";
