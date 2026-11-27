@@ -344,7 +344,6 @@
     background-position: left bottom;
   }
 
-  /* A placeholder bar while data loads: the shape of the text to come, breathing gently. */
   /*
    * A placeholder for text while data loads: a run of faint dots as long as the text to come, in
    * the horizon's idiom, breathing at the same tempo as the light along its ground.
@@ -366,16 +365,17 @@
     position: absolute;
     inset: 0 0 auto;
     pointer-events: none;
-    animation: leave 180ms ease-in both;
+    animation: leave 220ms ease-in both;
   }
 
   /*
-   * Rows that arrive with the data rise into place one after another, starting as the placeholders
-   * finish fading, so the two are never drawn over each other at strength.
+   * Rows that arrive with the data rise into place one after another while the placeholders fade,
+   * so the two are never drawn over each other at strength, and every row has begun before the
+   * last placeholder is gone (past the fifth, rows have no placeholder to take over from).
    */
   .arrive {
     animation: arrive 420ms var(--ease-out-soft) both;
-    animation-delay: calc(80ms + var(--i, 0) * 45ms);
+    animation-delay: calc(60ms + min(var(--i, 0), 4) * 35ms);
   }
 }
 

@@ -183,7 +183,7 @@
     left: 0;
   }
 
-  /* The weeks' dates, each under its tick; on a phone the first and last dates are enough. */
+  /* The weeks' dates, each under its tick; on a phone, the first and last dates and the launch's. */
   .horizon-weeks {
     position: absolute;
     inset: 0.5rem 0 auto 0;
@@ -198,7 +198,7 @@
   }
 
   @media (width < 40rem) {
-    .horizon-weeks {
+    .horizon-weeks :global(span:not([data-launch])) {
       display: none;
     }
   }

@@ -308,6 +308,12 @@ test.describe("projects page", () => {
     await spark.focus();
     await page.keyboard.press("End");
     await expect(spark).toHaveAttribute("aria-valuetext", "Today so far: 2,872 page views");
+    // A new window size redraws the dots, and leaves the keyboard and the reading where they were.
+    const size = page.viewportSize()!;
+    await page.setViewportSize({ width: size.width + 40, height: size.height });
+    await expect(spark).toBeFocused();
+    await expect(reading).toHaveText("Today so far · 2,872");
+    await page.setViewportSize(size);
     await page.keyboard.press("Escape");
     await expect(spark).toBeFocused();
     await expect(reading).toBeHidden();
