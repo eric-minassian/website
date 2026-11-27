@@ -21,6 +21,7 @@ const placeholders = [
 <div data-projects data-state="loading" class="ledger mt-6">
   <!-- What the totals cover, above their column, once there are totals. -->
   <p data-projects-head class="ledger-head text-sm text-muted"></p>
+  <div class="ledger-rows">
   <div data-projects-placeholder aria-hidden="true" class="ledger-grid rule-below">
     {
       placeholders.map(({ name, about }) => (
@@ -48,16 +49,14 @@ const placeholders = [
   </div>
   <ul data-projects-list aria-labelledby={labelledBy} aria-busy="true" hidden class="ledger-grid rule-below list-none pl-0">
   </ul>
+  </div>
   <p data-projects-note class="mt-4 text-sm text-muted" aria-live="polite"></p>
   <noscript><p class="mt-4 text-sm text-muted">The list loads with JavaScript.</p></noscript>
 </div>
 
 <style>
-  /*
-   * On a phone: the name and its total on the first line, what the app is below, and its days on a
-   * line of their own with a day's reading beside them.
-   */
-  .ledger {
+  /* The rows, over which the placeholders fade out (src/lib/leave.ts). */
+  .ledger-rows {
     position: relative;
   }
 
@@ -67,6 +66,10 @@ const placeholders = [
     text-align: right;
   }
 
+  /*
+   * On a phone: the name and its total on the first line, what the app is below, and its days on a
+   * line of their own with a day's reading under them.
+   */
   .ledger-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;

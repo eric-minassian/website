@@ -600,25 +600,37 @@ export async function initTraffic(): Promise<void> {
     // The first app's launch, then each week, in that order of precedence.
     const marked = [
       ...(firstLive > 0 && firstLive < days.length
-        ? [{ d: firstLive, text: `${formatDay(days[firstLive]!)} · first app` }]
+        ? [{ d: firstLive, text: `${formatDay(days[firstLive]!)} · first app`, launch: true }]
         : []),
       ...weeks
         .filter((d) => d > 0 && d !== firstLive)
-        .map((d) => ({ d, text: formatDay(days[d]!) })),
+        .map((d) => ({ d, text: formatDay(days[d]!), launch: false })),
     ];
     weekLabels.replaceChildren(
-      ...marked.map(({ d, text }) => {
+      ...marked.map(({ d, text, launch }) => {
         const el = document.createElement("span");
         el.textContent = text;
         el.dataset.x = String(weekX(grid, d) - offset);
+        if (launch) el.dataset.launch = "";
         return el;
       }),
     );
     for (const el of weekLabels.querySelectorAll<HTMLElement>("span")) {
-      el.style.translate = `${Math.round(Number(el.dataset.x) - el.offsetWidth / 2)}px 0`;
-      const at = el.getBoundingClientRect();
-      el.hidden = !kept.every((other) => clear(at, other));
-      if (!el.hidden) kept.push(at);
+      const width = el.offsetWidth;
+      // A phone names only the launch.
+      if (width === 0) continue;
+      const x = Number(el.dataset.x);
+      // Centred under its tick; the launch's, rather than give way, may end or begin at its tick.
+      const shifts = el.dataset.launch === undefined ? [width / 2] : [width / 2, width, 0];
+      const fits = shifts.some((shift) => {
+        el.style.translate = `${Math.round(x - shift)}px 0`;
+        const at = el.getBoundingClientRect();
+        const inside = at.left >= box.left + from && at.right <= box.left + to;
+        if (!inside || !kept.every((other) => clear(at, other))) return false;
+        kept.push(at);
+        return true;
+      });
+      el.hidden = !fits;
     }
   };
 

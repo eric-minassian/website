@@ -105,11 +105,19 @@ function sparkline(pageViews: number[], from: number, peak: number, dots: Dots):
 const dot = (x: number, y: number, r: number): string =>
   `M${(x - r).toFixed(2)} ${y.toFixed(2)}a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0`;
 
-/** The days the ledger covers, the first the platform counted, and how the dots are drawn. */
+/** A sparkline size, to tell whether a new one differs. */
+const sizeOf = ({ bar, height }: Dots): string => `${bar}:${height}`;
+
+/** The days the ledger covers and the first the platform counted. */
 interface Span {
   days: string[];
   from: number;
-  dots: Dots;
+}
+
+/** A drawn row, and a way to redraw its days at another size, in place. */
+interface Row {
+  li: HTMLLIElement;
+  resize: (dots: Dots) => void;
 }
 
 /** The app's first day in the ledger: the first the platform counted, or the day it went live. */
@@ -122,10 +130,10 @@ const firstDayOf = (project: Project, days: string[], counting: number): number 
 const shownTotal = (project: Project, days: string[], counting: number): number =>
   totalOf(project.pageViews.slice(firstDayOf(project, days, counting)));
 
-function row(project: Project, index: number, span: Span, arrive: boolean): HTMLLIElement {
-  const { days, dots } = span;
+function row(project: Project, index: number, span: Span, start: Dots, signal: AbortSignal): Row {
+  const { days } = span;
   const from = firstDayOf(project, days, span.from);
-  const li = element("li", `ledger-row rule-above${arrive ? " arrive" : ""}`);
+  const li = element("li", "ledger-row rule-above arrive");
   li.style.setProperty("--i", String(index));
   const name = element("span", "ledger-name");
   const out = link(project.url, "", "link-quiet tap");
@@ -148,10 +156,9 @@ function row(project: Project, index: number, span: Span, arrive: boolean): HTML
   figure(total, totalOf(counted));
 
   const peak = Math.max(1, ...counted);
-  const svg = sparkline(project.pageViews, from, peak, dots);
   const spark = element("div", "ledger-spark");
-  // A day's reading, beside the dots on a phone and under them where the description sits beside
-  // the name; either way nothing moves. The slider's value is what a screen reader hears.
+  // A day's reading, under the dots in room kept for it, so nothing moves. The slider's value is
+  // what a screen reader hears.
   const reading = element("span", "spark-reading text-sm tabular-nums");
   reading.setAttribute("aria-hidden", "true");
   spark.setAttribute("role", "slider");
@@ -159,9 +166,14 @@ function row(project: Project, index: number, span: Span, arrive: boolean): HTML
   spark.setAttribute("aria-label", `${project.name}, page views by day`);
   spark.setAttribute("aria-valuemin", String(from));
   spark.setAttribute("aria-valuemax", String(days.length - 1));
+  let dots = start;
+  let svg = sparkline(project.pageViews, from, peak, dots);
   spark.append(svg, reading);
-  const bars = [...svg.querySelectorAll("path")];
   let shown: number | null = null;
+  const mark = () => {
+    for (const bar of svg.querySelectorAll("path"))
+      bar.classList.toggle("is-day", bar.dataset.day === String(shown));
+  };
   const show = (d: number | null) => {
     shown = d;
     if (d === null) {
@@ -169,7 +181,7 @@ function row(project: Project, index: number, span: Span, arrive: boolean): HTML
       return;
     }
     spark.dataset.day = String(d);
-    for (const mark of bars) mark.classList.toggle("is-day", mark.dataset.day === String(d));
+    mark();
     reading.textContent = `${dayName(days, d)} · ${formatCount(project.pageViews[d]!)}`;
     spark.setAttribute("aria-valuenow", String(d));
     spark.setAttribute(
@@ -196,9 +208,13 @@ function row(project: Project, index: number, span: Span, arrive: boolean): HTML
     if (e.pointerType === "mouse" && !spark.matches(":focus-visible")) show(null);
   });
   // A tap anywhere else puts a tapped-out reading away.
-  document.addEventListener("pointerdown", (e) => {
-    if (shown !== null && e.target instanceof Node && !spark.contains(e.target)) show(null);
-  });
+  document.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (shown !== null && e.target instanceof Node && !spark.contains(e.target)) show(null);
+    },
+    { signal },
+  );
   // From the keyboard the dots are a slider over the days, starting from today.
   spark.addEventListener("focus", () => {
     if (spark.matches(":focus-visible")) show(shown ?? days.length - 1);
@@ -224,7 +240,15 @@ function row(project: Project, index: number, span: Span, arrive: boolean): HTML
   });
 
   li.append(about, spark, total);
-  return li;
+  // A new size redraws only the dots, so focus, and a day being read, stay where they are.
+  const resize = (next: Dots) => {
+    dots = next;
+    const old = svg;
+    svg = sparkline(project.pageViews, from, peak, dots);
+    old.replaceWith(svg);
+    mark();
+  };
+  return { li, resize };
 }
 
 export async function initProjects(): Promise<void> {
@@ -236,17 +260,25 @@ export async function initProjects(): Promise<void> {
   const head = root.querySelector<HTMLElement>("[data-projects-head]")!;
   /** Whether the days have a line of their own. */
   const phone = matchMedia("(width < 52rem)");
-  /** Draws the rows (rising into place the first time), sized to the list as it is now. */
-  let draw: ((arrive: boolean) => void) | null = null;
+  const dotsNow = () => dotsFor(phone.matches, list.clientWidth);
+  /** The rows drawn, and the size of their dots. */
+  let rows: Row[] = [];
   let drawnAt = "";
   const redraw = () => {
-    const key = `${phone.matches}:${dotsFor(phone.matches, list.clientWidth).bar}`;
-    if (draw && key !== drawnAt) draw(false);
+    const dots = dotsNow();
+    if (rows.length === 0 || sizeOf(dots) === drawnAt) return;
+    drawnAt = sizeOf(dots);
+    for (const r of rows) r.resize(dots);
   };
   phone.addEventListener("change", redraw);
   new ResizeObserver(redraw).observe(root);
+  /** Ends the listeners the last rows left on the document. */
+  let drawn: AbortController | null = null;
 
   const load = async (): Promise<void> => {
+    drawn?.abort();
+    drawn = new AbortController();
+    rows = [];
     root.dataset.state = "loading";
     placeholder.hidden = false;
     list.setAttribute("aria-busy", "true");
@@ -264,12 +296,11 @@ export async function initProjects(): Promise<void> {
           Date.parse(b.lastDeployedAt) - Date.parse(a.lastDeployedAt),
       );
       list.hidden = apps.length === 0;
-      draw = (arrive) => {
-        const dots = dotsFor(phone.matches, list.clientWidth);
-        drawnAt = `${phone.matches}:${dots.bar}`;
-        list.replaceChildren(...apps.map((p, i) => row(p, i, { days, from, dots }, arrive)));
-      };
-      draw(true);
+      const dots = dotsNow();
+      drawnAt = sizeOf(dots);
+      const { signal } = drawn;
+      rows = apps.map((p, i) => row(p, i, { days, from }, dots, signal));
+      list.replaceChildren(...rows.map((r) => r.li));
       // What the totals cover, over them; how the days are drawn, under the list.
       head.textContent = apps.length ? periodOf(projects) : "";
       note.textContent = apps.length
