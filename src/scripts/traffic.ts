@@ -143,9 +143,12 @@ export const gridEdges = ({ pitch, x0, per, days }: Grid) => ({
 /** Room kept clear above the strata for a day's reading and the busiest day's note, px. */
 export const HEADROOM = 26;
 
+/** Room kept under the ground row for the weeks' ticks, px. */
+export const FOOT = 6;
+
 /** How many rows of dots a chart `height` px tall has room for under its headroom. */
 const capacityOf = (height: number, pitch: number): number =>
-  Math.max(1, Math.floor((height - HEADROOM) / pitch));
+  Math.max(1, Math.floor((height - HEADROOM - FOOT) / pitch));
 
 /**
  * How many rows a day with `total` views stands, of `capacity`: its share of the busiest day,
@@ -193,7 +196,7 @@ function dotsOf(bands: Band[], grid: Grid, height: number, d: number, peak: numb
     }
     return band;
   };
-  const ground = height - pitch / 2;
+  const ground = height - FOOT - pitch / 2;
   return columnsOf(grid, d).flatMap((x): Dot[] => {
     if (count === 0) {
       const band = bandOf(0);
@@ -261,21 +264,22 @@ export function strata(
   if (grid.gap) {
     for (let d = 0; d < days; d++) xs.push(grid.x0 + d * grid.per * pitch);
   }
-  const ground = xs.map((x) => dot(x, height - pitch / 2, 0.9)).join("");
-  // Each week's first day is marked on the ground just before it, a slightly stronger dot, so the
-  // empty stretches have a measure and the dates are easier to judge.
+  const ground = xs.map((x) => dot(x, height - FOOT - pitch / 2, 0.9)).join("");
+  // Each week's first day is marked by a short tick under the ground, just before it: a mark of
+  // its own shape and tone, below the row the data stands on, so it can't be read as traffic, and
+  // the empty stretches have a measure.
   const marks = weeks
     .filter((d) => d > 0)
     .map((d) => {
       const x = grid.gap
         ? grid.x0 + d * grid.per * pitch
         : (columnsOf(grid, d - 1).at(-1)! + columnsOf(grid, d)[0]!) / 2;
-      return dot(x, height - pitch / 2, 1.35);
+      return `M${(x - 0.5).toFixed(1)} ${height - FOOT + 2}h1v${FOOT - 2}h-1z`;
     })
     .join("");
   const week = document.createElementNS(SVG, "path");
   week.setAttribute("d", marks);
-  week.setAttribute("class", "fill-band-3");
+  week.setAttribute("class", "fill-muted");
   const floor = document.createElementNS(SVG, "path");
   floor.setAttribute("d", ground);
   floor.setAttribute("class", "fill-faint");
@@ -378,8 +382,7 @@ function keyRow(row: Band, band: number, position: number): HTMLLIElement {
   total.dataset.total = "";
   figure(total, totalOf(row.daily));
 
-  // What it is: the app's description, or the others' names, each kept whole across a line break;
-  // a description longer than the key has room for keeps its whole text in its title.
+  // What it is: the app's description, or the others' names, each kept whole across a line break.
   const about = document.createElement("span");
   about.className = "key-about";
   if (row.apps.length === 1 && only) {
@@ -393,7 +396,6 @@ function keyRow(row: Band, band: number, position: number): HTMLLIElement {
       about.append(whole);
     });
   }
-  about.title = about.textContent ?? "";
   li.append(mark, name, total, about);
   return li;
 }
@@ -518,9 +520,9 @@ export async function initTraffic(): Promise<void> {
   /** Where day `d`'s top dot's top edge is, px from the chart's top. */
   const crestOf = (d: number) => {
     const height = chart.clientHeight;
-    const capacity = Math.max(1, Math.floor((height - HEADROOM) / grid.pitch));
+    const capacity = Math.max(1, Math.floor((height - HEADROOM - FOOT) / grid.pitch));
     const stands = Math.max(1, rowsOf(totals[d]!, totals[peakDay]!, capacity));
-    return height - stands * grid.pitch;
+    return height - FOOT - stands * grid.pitch;
   };
 
   /**
@@ -537,7 +539,7 @@ export async function initTraffic(): Promise<void> {
       .map((_, i) => i)
       .filter((i) => dayX(grid, i) + reach >= left && dayX(grid, i) - reach <= left + width);
     const crest = Math.min(
-      ...under.map((i) => (totals[i]! > 0 ? crestOf(i) : chart.clientHeight - grid.pitch)),
+      ...under.map((i) => (totals[i]! > 0 ? crestOf(i) : chart.clientHeight - FOOT - grid.pitch)),
     );
     const top = Math.max(HEADROOM - note.offsetHeight - 8, crest - note.offsetHeight - 10);
     note.style.translate = `${Math.round(left)}px ${Math.round(top)}px`;
@@ -575,7 +577,7 @@ export async function initTraffic(): Promise<void> {
     const reading = `${dayName(days, d)} · ${describeViews(totals[d]!).toLowerCase()}`;
     label.textContent = `${dayName(days, d)} · ${formatCount(totals[d]!)}`;
     const top = place(label, d) + label.offsetHeight + 4;
-    const bottom = totals[d]! > 0 ? crestOf(d) - 3 : chart.clientHeight - grid.pitch;
+    const bottom = totals[d]! > 0 ? crestOf(d) - 3 : chart.clientHeight - FOOT - grid.pitch;
     guide.style.translate = `${Math.round(dayX(grid, d))}px ${Math.round(top)}px`;
     guide.style.height = `${Math.max(0, bottom - top)}px`;
     period.textContent =
@@ -674,6 +676,13 @@ export async function initTraffic(): Promise<void> {
       }
       drawn = true;
       chart.replaceChildren(svg);
+      // A description cut short beside the bio keeps its whole text in a title; one that fits
+      // needs none.
+      for (const about of list.querySelectorAll<HTMLElement>(".key-about")) {
+        const cut = about.scrollHeight > about.clientHeight + 1;
+        if (cut) about.title = about.textContent ?? "";
+        else about.removeAttribute("title");
+      }
       // The strata bring their own ground, in step with them; the CSS one held the place.
       chart.dataset.drawn = "";
       showDay(shownDay);
