@@ -207,8 +207,9 @@
     transition: opacity 400ms;
   }
 
-  /* The dates arrive with the strata; a horizon that can't load stays bare. */
-  [data-state="ready"] .horizon-axis {
+  /* The dates arrive with the strata; a horizon that can't load says so under its bare ground. */
+  [data-state="ready"] .horizon-axis,
+  [data-state="error"] .horizon-axis {
     opacity: 1;
   }
 

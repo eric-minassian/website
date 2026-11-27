@@ -465,6 +465,9 @@ function nameOthers(about: HTMLElement, apps: Project[], shown: number): void {
   if (shown < named.length) about.append(`, and ${named.length - shown} more`);
 }
 
+/** How far beyond the days a finger still reads the nearest one, px: most of a fingertip. */
+const REACH = 44;
+
 /** Whether two labels on the axis stand clear of each other, 20px apart or more. */
 const clear = (at: DOMRect, of: DOMRect): boolean =>
   at.right + 20 <= of.left || at.left - 20 >= of.right;
@@ -526,6 +529,8 @@ export async function initTraffic(): Promise<void> {
       void initTraffic();
     });
     period.replaceChildren("Traffic is unavailable right now. ", retry);
+    // Under the bare ground too, where the strata would stand: a phone shows the two far apart.
+    today.textContent = "Traffic unavailable";
     root.dataset.state = "error";
     horizon.dataset.state = "error";
     return;
@@ -553,6 +558,7 @@ export async function initTraffic(): Promise<void> {
   period.classList.add("arrive");
   /** Whether counting began within the window, so the days shown are its last few. */
   const since = days.length < slots;
+  today.textContent = "Today so far";
   start.textContent = since ? `Since ${formatDay(days[0]!)}` : formatDay(days[0]!);
   horizon.dataset.state = "ready";
 
@@ -609,11 +615,13 @@ export async function initTraffic(): Promise<void> {
     const pitch = parseFloat(style.getPropertyValue("--pitch")) || 9;
     const weight = parseFloat(style.getPropertyValue("--dot-scale")) || 1;
     grid = gridOf({ from, to }, days.length, pitch, weight, slots);
-    // Pointing anywhere from the column's left edge to the window's right reads a day: on the
-    // ground before a short run, or past today, the nearest one, so a few days on a phone aren't
-    // a few narrow targets.
-    scrub.style.left = `${from}px`;
-    scrub.style.width = `${box.width - from}px`;
+    // A finger reads the nearest day from a fingertip's reach beyond the days, so a few days on a
+    // phone aren't a few narrow targets; the rest of the ground stays clear, so a tap there puts a
+    // reading away. The mouse, being precise, reads only over the days (see `dayUnder`).
+    const edges = gridEdges(grid);
+    const left = Math.max(0, edges.from - REACH);
+    scrub.style.left = `${left}px`;
+    scrub.style.width = `${Math.min(box.width, edges.to + REACH) - left}px`;
     const offset = column.left - box.left;
     // "Today so far" holds the right edge. Then, in that order, the first day, the first app's
     // launch and each week find room on the axis, each at least 20px from the others, inside the
@@ -653,7 +661,7 @@ export async function initTraffic(): Promise<void> {
         fit(start, x, [0]);
       }
     } else {
-      fit(start, gridEdges(grid).from, [0]);
+      fit(start, edges.from, [0]);
     }
     weekLabels.replaceChildren();
     if (firstLive > 0 && firstLive < days.length) {
@@ -720,14 +728,16 @@ export async function initTraffic(): Promise<void> {
   };
 
   // The busiest day is named in the headroom once the strata have risen, so heights have a scale.
-  // Today's needs no date: "Today so far" is right under it.
+  // Today's needs no date ("Today so far" is right under it), only what the count is.
   const showPeak = () => {
     const { d, n } = busiest();
     // A month without a single view has no busiest day to name.
     peakLabel.hidden = shownDay !== null || n === 0;
     if (peakLabel.hidden) return;
     peakLabel.textContent =
-      d === days.length - 1 ? formatCount(n) : `${dayName(days, d)} · ${formatCount(n)}`;
+      d === days.length - 1
+        ? `${formatCount(n)} so far`
+        : `${dayName(days, d)} · ${formatCount(n)}`;
     place(peakLabel, d);
   };
 
@@ -776,9 +786,10 @@ export async function initTraffic(): Promise<void> {
   };
 
   // The day under the pointer; on the busiest day's note (where it was last shown, since a
-  // reading takes its place), that day, wherever along the note the pointer is.
+  // reading takes its place), that day, wherever along the note the pointer is. A mouse off the
+  // days (past a few pixels' grace) is over none.
   let peakBox: { left: number; right: number; top: number; bottom: number } | null = null;
-  const dayUnder = (e: PointerEvent) => {
+  const dayUnder = (e: PointerEvent): number | null => {
     const box = chart.getBoundingClientRect();
     if (!peakLabel.hidden) {
       const note = peakLabel.getBoundingClientRect();
@@ -797,10 +808,16 @@ export async function initTraffic(): Promise<void> {
       x <= peakBox.right &&
       y >= peakBox.top - 6 &&
       y <= peakBox.bottom + 6;
-    return onNote ? busiest().d : dayAt(grid, x);
+    if (onNote) return busiest().d;
+    const edges = gridEdges(grid);
+    const off = x < edges.from - 8 || x > edges.to + 8;
+    return e.pointerType === "mouse" && off ? null : dayAt(grid, x);
   };
   scrub.addEventListener("pointermove", (e) => {
-    if (e.pointerType === "mouse") showDay(dayUnder(e));
+    if (e.pointerType !== "mouse") return;
+    const d = dayUnder(e);
+    scrub.style.cursor = d === null ? "default" : "";
+    showDay(d);
   });
   touchScrub(
     scrub,

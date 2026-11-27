@@ -39,13 +39,13 @@ const external = { target: "_blank", rel: "noopener noreferrer" };
 
 <style>
   /*
-   * Beside the bio once there's room for both (a tablet held upright and up), so the horizon keeps
-   * the room under them; after the links until then.
+   * Beside the bio once there's room for both (past a phone), so the horizon keeps the room under
+   * them; after the links until then.
    */
-  @media (width >= 43rem) {
+  @media (width >= 40rem) {
     .home {
       display: grid;
-      grid-template-columns: minmax(20rem, 34rem) minmax(16rem, 21rem);
+      grid-template-columns: minmax(18rem, 34rem) minmax(14rem, 21rem);
       justify-content: space-between;
       column-gap: 2rem;
       align-items: baseline;
