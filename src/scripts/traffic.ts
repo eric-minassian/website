@@ -242,7 +242,13 @@ function paths(dots: Dot[]): SVGPathElement[] {
  * them from one edge of the chart to the other. Each row of each band is one path, so the strata
  * can rise row by row while a phone lays out a few dozen nodes rather than hundreds of dots.
  */
-export function strata(bands: Band[], width: number, height: number, grid: Grid): SVGSVGElement {
+export function strata(
+  bands: Band[],
+  width: number,
+  height: number,
+  grid: Grid,
+  weeks: number[] = [],
+): SVGSVGElement {
   const svg = document.createElementNS(SVG, "svg");
   svg.setAttribute("width", String(width));
   svg.setAttribute("height", String(height));
@@ -256,6 +262,20 @@ export function strata(bands: Band[], width: number, height: number, grid: Grid)
     for (let d = 0; d < days; d++) xs.push(grid.x0 + d * grid.per * pitch);
   }
   const ground = xs.map((x) => dot(x, height - pitch / 2, 0.9)).join("");
+  // Each week's first day is marked on the ground just before it, a slightly stronger dot, so the
+  // empty stretches have a measure and the dates are easier to judge.
+  const marks = weeks
+    .filter((d) => d > 0)
+    .map((d) => {
+      const x = grid.gap
+        ? grid.x0 + d * grid.per * pitch
+        : (columnsOf(grid, d - 1).at(-1)! + columnsOf(grid, d)[0]!) / 2;
+      return dot(x, height - pitch / 2, 1.35);
+    })
+    .join("");
+  const week = document.createElementNS(SVG, "path");
+  week.setAttribute("d", marks);
+  week.setAttribute("class", "fill-band-3");
   const floor = document.createElementNS(SVG, "path");
   floor.setAttribute("d", ground);
   floor.setAttribute("class", "fill-faint");
@@ -267,7 +287,7 @@ export function strata(bands: Band[], width: number, height: number, grid: Grid)
   const rows = Math.max(1, ...dots.map((dt) => dt.row + 1));
   // However tall the strata, the rise from the ground takes under half a second.
   svg.style.setProperty("--stagger", `${Math.min(24, 300 / rows)}ms`);
-  svg.append(floor, ...paths(dots));
+  svg.append(floor, week, ...paths(dots));
   return svg;
 }
 
@@ -358,7 +378,8 @@ function keyRow(row: Band, band: number, position: number): HTMLLIElement {
   total.dataset.total = "";
   figure(total, totalOf(row.daily));
 
-  // What it is: the app's description, or the others' names, each kept whole across a line break.
+  // What it is: the app's description, or the others' names, each kept whole across a line break;
+  // a description longer than the key has room for keeps its whole text in its title.
   const about = document.createElement("span");
   about.className = "key-about";
   if (row.apps.length === 1 && only) {
@@ -372,6 +393,7 @@ function keyRow(row: Band, band: number, position: number): HTMLLIElement {
       about.append(whole);
     });
   }
+  about.title = about.textContent ?? "";
   li.append(mark, name, total, about);
   return li;
 }
@@ -453,6 +475,10 @@ export async function initTraffic(): Promise<void> {
 
   const totals = days.map((_, d) => totalOf(bands.map((b) => b.daily[d]!)));
   const peakDay = totals.indexOf(Math.max(...totals));
+  /** The Mondays, each the start of a week the ground marks. */
+  const weeks = days.flatMap((day, d) =>
+    new Date(`${day}T00:00:00Z`).getUTCDay() === 1 ? [d] : [],
+  );
   /** The day being read out, if any. */
   let shownDay: number | null = null;
 
@@ -636,7 +662,7 @@ export async function initTraffic(): Promise<void> {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {
       measure();
-      const svg = strata(bands, chart.clientWidth, chart.clientHeight, grid);
+      const svg = strata(bands, chart.clientWidth, chart.clientHeight, grid, weeks);
       // The strata rise from the ground the first time, the busiest day's note after them; a
       // resize just redraws them.
       if (!drawn) {
