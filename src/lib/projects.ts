@@ -79,7 +79,7 @@ export function parseProjects(body: unknown): Projects {
 }
 
 /** How long to wait for the directory before showing that it couldn't load. */
-const TIMEOUT_MS = 8_000;
+const TIMEOUT_MS = 6_000;
 
 export async function loadProjects(): Promise<Projects> {
   const res = await fetch(PROJECTS_URL, {

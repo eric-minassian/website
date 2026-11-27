@@ -46,14 +46,15 @@ const iconClass = "theme-icon absolute inset-0 m-auto size-5";
 </button>
 
 <style>
+  /* The icon going fades out quickly; the one coming turns in just after, never both at half. */
   .theme-icon {
     opacity: 0;
     rotate: -40deg;
     scale: 0.7;
     transition:
-      opacity 200ms,
-      rotate 300ms var(--ease-out-soft),
-      scale 300ms var(--ease-out-soft);
+      opacity 90ms ease-out,
+      rotate 200ms ease-out,
+      scale 200ms ease-out;
   }
 
   :global(html:not(.dark)) [data-theme-icon="dark"],
@@ -61,5 +62,9 @@ const iconClass = "theme-icon absolute inset-0 m-auto size-5";
     opacity: 1;
     rotate: 0deg;
     scale: 1;
+    transition:
+      opacity 160ms ease-out 90ms,
+      rotate 320ms var(--ease-out-soft) 60ms,
+      scale 320ms var(--ease-out-soft) 60ms;
   }
 </style>

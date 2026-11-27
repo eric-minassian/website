@@ -28,7 +28,8 @@
   </div>
   <div data-horizon-axis class="horizon-axis page text-sm text-muted tabular-nums" aria-hidden="true">
     <span data-horizon-start>&nbsp;</span>
-    <span>Today</span>
+    <span data-horizon-weeks class="horizon-weeks"></span>
+    <span data-horizon-today>Today so far</span>
   </div>
 </div>
 
@@ -46,7 +47,7 @@
     position: relative;
     flex: 1 1 auto;
     min-height: 7rem;
-    max-height: min(50vh, 40rem);
+    max-height: min(56vh, 48rem);
     /* Its own box paints nothing (the ground is a layer below); see `::before`. */
     background: none;
   }
@@ -90,9 +91,10 @@
     inset: 0;
   }
 
-  /* A horizon with nothing to stand on it isn't drawn at all; a drawn one brings its own ground. */
-  [data-state="error"] .horizon-plot::before,
-  [data-state="empty"] .horizon-plot::before,
+  /*
+   * A drawn horizon brings its own ground. One with nothing to stand on it (an error, nothing
+   * running) keeps the bare ground, as the 404 page does.
+   */
   .horizon-plot:has(> [data-drawn])::before {
     display: none;
   }
@@ -117,15 +119,9 @@
     opacity: 0.2;
   }
 
-  /* Today's top row, still counting: rings rather than dots, that breathe a few times and rest. */
+  /* Today's top row, still counting: rings rather than dots (the date below says "so far"). */
   .horizon-chart :global(path.today) {
     stroke-width: 1;
-  }
-
-  .horizon-chart :global(.rise > path.today) {
-    animation:
-      rise 360ms var(--ease-out-soft) calc(var(--row) * var(--stagger, 20ms)) both,
-      breathe 2.8s ease-in-out 1s 3;
   }
 
   /* While the data loads, a light passes slowly along the ground. */
@@ -160,6 +156,7 @@
   }
 
   .horizon-axis {
+    position: relative;
     display: flex;
     justify-content: space-between;
     padding-top: 0.5rem;
@@ -171,6 +168,26 @@
   /* The dates arrive with the strata; a horizon that can't load stays bare. */
   [data-state="ready"] .horizon-axis {
     opacity: 1;
+  }
+
+  /* The weeks' dates, each under its tick; on a phone the first and last dates are enough. */
+  .horizon-weeks {
+    position: absolute;
+    inset: 0.5rem 0 auto 0;
+    pointer-events: none;
+  }
+
+  .horizon-weeks :global(span) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    white-space: nowrap;
+  }
+
+  @media (width < 40rem) {
+    .horizon-weeks {
+      display: none;
+    }
   }
 
   /* A thread from a day's reading down to the top of its block. */
@@ -198,15 +215,13 @@
   }
 
   /*
-   * On a touch screen, where nothing shows the days can be read until one is, the busiest day's
-   * note is dotted underneath like a term with more to it; a tap on it reads that day.
+   * The busiest day's note is dotted underneath, like a term with more to it: pointing at it, or
+   * tapping it, reads that day, and the other days can be read the same way.
    */
-  @media (hover: none) {
-    [data-horizon-peak] {
-      text-decoration: underline dotted;
-      text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
-      text-underline-offset: 0.25em;
-    }
+  [data-horizon-peak] {
+    text-decoration: underline dotted;
+    text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
+    text-underline-offset: 0.25em;
   }
 
   /* The busiest day's note waits for its block to rise beneath it. */
@@ -217,12 +232,6 @@
   @media (prefers-reduced-motion: reduce) {
     [data-state="loading"] .horizon-plot::after {
       display: none;
-    }
-  }
-
-  @keyframes breathe {
-    50% {
-      opacity: 0.4;
     }
   }
 

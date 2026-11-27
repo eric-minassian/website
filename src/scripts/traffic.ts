@@ -4,6 +4,7 @@
 // Pointing at a day, tapping it or stepping through the days with the arrow keys reads out its
 // exact counts, above its block and app by app in the key.
 import { arrow } from "../lib/icons";
+import { leave } from "../lib/leave";
 import {
   dayName,
   describeViews,
@@ -62,14 +63,17 @@ export function bandsOf(apps: Project[], max = FILLS.length): Band[] {
         ]
       : []),
   ];
-  // Busiest first, the others too when together they outdo the apps named on their own, so the
-  // darkest band at the bottom is always the largest.
-  return bands.toSorted((a, b) => totalOf(b.daily) - totalOf(a.daily));
+  // The named apps by share, busiest first and darkest, at the bottom of the stack; the others are
+  // what's left over, always last, lightest and on top, however much they add up to.
+  return bands;
 }
 
 /** A dot as path data: two arcs, so a row's dots are one element. */
 const dot = (x: number, y: number, r: number): string =>
   `M${(x - r).toFixed(1)} ${y.toFixed(1)}a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0`;
+
+/** The most dot columns a day gets, its gap included: a few days don't become slabs. */
+const MAX_PER = 6;
 
 /**
  * Which dot columns each day owns. Every day gets the same whole number of columns, and the days
@@ -108,8 +112,14 @@ export function gridOf(
           : best,
       1,
     );
-  const pitch = width / (per * days);
   // A gap only when a day keeps at least two columns of dots; on a phone, days stand side by side.
+  if (per > MAX_PER) {
+    // Too few days to fill the column at a day's widest: they keep the target spacing and stand at
+    // its right edge, today last, the ground running on to their left.
+    const x0 = column.to - (MAX_PER * days - 0.5) * target;
+    return { pitch: target, weight, days, x0, per: MAX_PER, gap: true };
+  }
+  const pitch = width / (per * days);
   return { pitch, weight, days, x0: column.from + pitch / 2, per, gap: per >= 3 };
 }
 
@@ -205,7 +215,8 @@ function dotsOf(bands: Band[], grid: Grid, height: number, d: number, peak: numb
         {
           x,
           y: ground,
-          r: Math.max(1.1, RADIUS[band]! * scale * share),
+          // Never much smaller than half a full dot, so it stands clear of the faint ground.
+          r: Math.max(1.6 * grid.weight, RADIUS[band]! * scale * share),
           band,
           row: 0,
           ring: today,
@@ -245,38 +256,48 @@ function paths(dots: Dot[]): SVGPathElement[] {
  * them from one edge of the chart to the other. Each row of each band is one path, so the strata
  * can rise row by row while a phone lays out a few dozen nodes rather than hundreds of dots.
  */
+/** Where the tick before day `d` (the start of a week) stands. */
+export const weekX = (grid: Grid, d: number): number =>
+  grid.gap
+    ? grid.x0 + d * grid.per * grid.pitch
+    : (columnsOf(grid, d - 1).at(-1)! + columnsOf(grid, d)[0]!) / 2;
+
 export function strata(
   bands: Band[],
   width: number,
   height: number,
   grid: Grid,
-  weeks: number[] = [],
+  { weeks = [], firstLive = 0 }: { weeks?: number[]; firstLive?: number } = {},
 ): SVGSVGElement {
   const svg = document.createElementNS(SVG, "svg");
   svg.setAttribute("width", String(width));
   svg.setAttribute("height", String(height));
   const { days, pitch } = grid;
   // The ground: in step with the days' columns across the grid, on the grid's pitch either side.
+  // Under the days before any app was live it's fainter still: those days weren't quiet, there was
+  // nothing there yet.
   const edges = gridEdges(grid);
-  const xs = Array.from({ length: days }, (_, d) => columnsOf(grid, d)).flat();
+  const ofDay = (d: number) => [
+    ...columnsOf(grid, d),
+    ...(grid.gap ? [grid.x0 + d * grid.per * pitch] : []),
+  ];
+  const launched = Math.min(firstLive, days);
+  const early = Array.from({ length: launched }, (_, d) => ofDay(d)).flat();
+  const xs = Array.from({ length: days - launched }, (_, i) => ofDay(i + launched)).flat();
   for (let x = edges.from - pitch / 2; x > 0; x -= pitch) xs.push(x);
   for (let x = edges.to + pitch / 2; x < width; x += pitch) xs.push(x);
-  if (grid.gap) {
-    for (let d = 0; d < days; d++) xs.push(grid.x0 + d * grid.per * pitch);
-  }
-  const ground = xs.map((x) => dot(x, height - FOOT - pitch / 2, 0.9)).join("");
+  const groundAt = (x: number) => dot(x, height - FOOT - pitch / 2, 0.9);
+  const ground = xs.map(groundAt).join("");
   // Each week's first day is marked by a short tick under the ground, just before it: a mark of
   // its own shape and tone, below the row the data stands on, so it can't be read as traffic, and
   // the empty stretches have a measure.
   const marks = weeks
     .filter((d) => d > 0)
-    .map((d) => {
-      const x = grid.gap
-        ? grid.x0 + d * grid.per * pitch
-        : (columnsOf(grid, d - 1).at(-1)! + columnsOf(grid, d)[0]!) / 2;
-      return `M${(x - 0.5).toFixed(1)} ${height - FOOT + 2}h1v${FOOT - 2}h-1z`;
-    })
+    .map((d) => `M${(weekX(grid, d) - 0.5).toFixed(1)} ${height - FOOT + 2}h1v${FOOT - 2}h-1z`)
     .join("");
+  const before = document.createElementNS(SVG, "path");
+  before.setAttribute("d", early.map(groundAt).join(""));
+  before.setAttribute("class", "fill-faint opacity-40");
   const week = document.createElementNS(SVG, "path");
   week.setAttribute("d", marks);
   week.setAttribute("class", "fill-muted");
@@ -291,7 +312,7 @@ export function strata(
   const rows = Math.max(1, ...dots.map((dt) => dt.row + 1));
   // However tall the strata, the rise from the ground takes under half a second.
   svg.style.setProperty("--stagger", `${Math.min(24, 300 / rows)}ms`);
-  svg.append(floor, week, ...paths(dots));
+  svg.append(before, floor, week, ...paths(dots));
   return svg;
 }
 
@@ -323,15 +344,19 @@ function swatch(band: number): SVGSVGElement {
 }
 
 /** A count as shown, with what a screen reader hears beside it. */
-function figure(el: HTMLElement, n: number): void {
+/**
+ * A count as shown, with what a screen reader hears beside it: a total compactly ("9.1k"), a
+ * day's count exactly ("2,844"), and an en dash for a day before the app was live.
+ */
+function figure(el: HTMLElement, n: number | null, exact = false): void {
   const shown = document.createElement("span");
   shown.setAttribute("aria-hidden", "true");
-  shown.textContent = formatViews(n);
+  shown.textContent = n === null ? "–" : exact ? formatCount(n) : formatViews(n);
   const heard = document.createElement("span");
   heard.className = "sr-only";
-  heard.textContent = describeViews(n);
+  heard.textContent = n === null ? "Not live yet" : describeViews(n);
   el.replaceChildren(shown, heard);
-  el.classList.toggle("text-muted", n === 0);
+  el.classList.toggle("text-muted", !n);
 }
 
 /**
@@ -370,10 +395,10 @@ function keyRow(row: Band, band: number, position: number): HTMLLIElement {
     link.append(arrow("right"));
   }
   name.append(link);
-  if (row.apps.some((p) => p.up === false)) {
+  if (row.apps.length === 1 && only?.up === false) {
     const down = document.createElement("span");
     down.className = "key-down";
-    down.textContent = "down";
+    down.textContent = "Down";
     name.append(down);
   }
 
@@ -388,11 +413,18 @@ function keyRow(row: Band, band: number, position: number): HTMLLIElement {
   if (row.apps.length === 1 && only) {
     about.textContent = only.description ?? "";
   } else {
+    // Among the others, one that's down says so after its name.
     row.apps.forEach((p, i) => {
       if (i) about.append(", ");
       const whole = document.createElement("span");
       whole.className = "whitespace-nowrap";
       whole.textContent = p.name;
+      if (p.up === false) {
+        const down = document.createElement("span");
+        down.className = "key-down";
+        down.textContent = " (Down)";
+        whole.append(down);
+      }
       about.append(whole);
     });
   }
@@ -430,6 +462,8 @@ export async function initTraffic(): Promise<void> {
   const label = horizon.querySelector<HTMLElement>("[data-horizon-label]")!;
   const peakLabel = horizon.querySelector<HTMLElement>("[data-horizon-peak]")!;
   const start = horizon.querySelector<HTMLElement>("[data-horizon-start]")!;
+  const today = horizon.querySelector<HTMLElement>("[data-horizon-today]")!;
+  const weekLabels = horizon.querySelector<HTMLElement>("[data-horizon-weeks]")!;
 
   let projects: Projects;
   try {
@@ -457,7 +491,7 @@ export async function initTraffic(): Promise<void> {
     return;
   }
 
-  placeholder.hidden = true;
+  leave(placeholder);
   const { days, apps: counts } = counted(projects);
   const bands = bandsOf(ranked(counts));
   root.dataset.state = "ready";
@@ -481,6 +515,14 @@ export async function initTraffic(): Promise<void> {
   const weeks = days.flatMap((day, d) =>
     new Date(`${day}T00:00:00Z`).getUTCDay() === 1 ? [d] : [],
   );
+  /** The first day each app was live, and the first any was: the days before weren't quiet. */
+  const liveFrom = (p: Project) => {
+    const at = days.findIndex((day) => day >= p.liveSince.slice(0, 10));
+    return at === -1 ? days.length : at;
+  };
+  const firstLive = Math.min(...counts.map(liveFrom));
+  /** Whether any of a band's apps was live on day `d`. */
+  const liveOn = (band: Band, d: number) => band.apps.some((p) => liveFrom(p) <= d);
   /** The day being read out, if any. */
   let shownDay: number | null = null;
 
@@ -515,6 +557,26 @@ export async function initTraffic(): Promise<void> {
     const edges = gridEdges(grid);
     scrub.style.left = `${edges.from}px`;
     scrub.style.width = `${edges.to - edges.from}px`;
+    // The first date under the first day, wherever a short run of days left it.
+    start.style.paddingLeft = `${Math.max(0, Math.round(edges.from - from))}px`;
+    // Each week's date under its tick, where there's room between the first date and today's.
+    const offset = column.left - box.left;
+    const ends = [start, today].map((el) => el.getBoundingClientRect());
+    weekLabels.replaceChildren(
+      ...weeks
+        .filter((d) => d > 0)
+        .map((d) => {
+          const el = document.createElement("span");
+          el.textContent = formatDay(days[d]!);
+          el.dataset.x = String(weekX(grid, d) - offset);
+          return el;
+        }),
+    );
+    for (const el of weekLabels.querySelectorAll<HTMLElement>("span")) {
+      el.style.translate = `${Math.round(Number(el.dataset.x) - el.offsetWidth / 2)}px 0`;
+      const at = el.getBoundingClientRect();
+      el.hidden = ends.some((end) => at.right + 12 > end.left && at.left - 12 < end.right);
+    }
   };
 
   /** Where day `d`'s top dot's top edge is, px from the chart's top. */
@@ -548,7 +610,8 @@ export async function initTraffic(): Promise<void> {
 
   // The busiest day is named in the headroom once the strata have risen, so heights have a scale.
   const showPeak = () => {
-    peakLabel.hidden = shownDay !== null;
+    // A month without a single view has no busiest day to name.
+    peakLabel.hidden = shownDay !== null || totals[peakDay] === 0;
     if (peakLabel.hidden) return;
     peakLabel.textContent = `${dayName(days, peakDay)} · ${formatCount(totals[peakDay]!)}`;
     place(peakLabel, peakDay);
@@ -561,7 +624,8 @@ export async function initTraffic(): Promise<void> {
     for (const row of rows) {
       const band = bands[bandOfRow(row)]!;
       const total = row.querySelector<HTMLElement>("[data-total]")!;
-      figure(total, d === null ? totalOf(band.daily) : band.daily[d]!);
+      if (d === null) figure(total, totalOf(band.daily));
+      else figure(total, liveOn(band, d) ? band.daily[d]! : null, true);
     }
     label.hidden = guide.hidden = d === null;
     showPeak();
@@ -574,8 +638,11 @@ export async function initTraffic(): Promise<void> {
     }
     svg?.append(dayLayer(bands, chart.clientHeight, grid, d));
     // On the chart, the short form; the slider's value and the key's caption say it in full.
-    const reading = `${dayName(days, d)} · ${describeViews(totals[d]!).toLowerCase()}`;
-    label.textContent = `${dayName(days, d)} · ${formatCount(totals[d]!)}`;
+    const before = d < firstLive;
+    const reading = before
+      ? `${dayName(days, d)} · no apps yet`
+      : `${dayName(days, d)} · ${describeViews(totals[d]!).toLowerCase()}`;
+    label.textContent = before ? reading : `${dayName(days, d)} · ${formatCount(totals[d]!)}`;
     const top = place(label, d) + label.offsetHeight + 4;
     const bottom = totals[d]! > 0 ? crestOf(d) - 3 : chart.clientHeight - FOOT - grid.pitch;
     guide.style.translate = `${Math.round(dayX(grid, d))}px ${Math.round(top)}px`;
@@ -610,11 +677,15 @@ export async function initTraffic(): Promise<void> {
       y <= peakBox.bottom + 6;
     return onNote ? peakDay : dayAt(grid, x);
   };
-  scrub.addEventListener("pointermove", (e) => {
-    if (e.pointerType === "mouse") showDay(dayUnder(e));
-  });
+  // A finger or pen reads the day it touches and, dragged sideways, each day it crosses; the page
+  // still scrolls when the drag is upright (`touch-action: pan-y`).
   scrub.addEventListener("pointerdown", (e) => {
-    if (e.pointerType !== "mouse") showDay(dayUnder(e));
+    if (e.pointerType === "mouse") return;
+    scrub.setPointerCapture(e.pointerId);
+    showDay(dayUnder(e));
+  });
+  scrub.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "mouse" || scrub.hasPointerCapture(e.pointerId)) showDay(dayUnder(e));
   });
   scrub.addEventListener("pointerleave", (e) => {
     if (e.pointerType === "mouse" && !scrub.matches(":focus-visible")) showDay(null);
@@ -664,7 +735,7 @@ export async function initTraffic(): Promise<void> {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {
       measure();
-      const svg = strata(bands, chart.clientWidth, chart.clientHeight, grid, weeks);
+      const svg = strata(bands, chart.clientWidth, chart.clientHeight, grid, { weeks, firstLive });
       // The strata rise from the ground the first time, the busiest day's note after them; a
       // resize just redraws them.
       if (!drawn) {
