@@ -31,8 +31,10 @@ const ways = [
       </ul>
     </nav>
   </div>
-  <!-- The home page's horizon, with no traffic on it: the ground at the foot of the window. -->
-  <div class="ground mt-auto mb-14 h-[var(--pitch)]" aria-hidden="true"></div>
+  <!-- The home page's horizon, with no traffic on it: its ground, where it stands at the window's foot. -->
+  <div class="horizon-frame mt-auto" aria-hidden="true">
+    <div class="ground bare-ground"></div>
+  </div>
 </Layout>
 
 <style>
@@ -50,6 +52,11 @@ const ways = [
 
   .elsewhere {
     margin-top: 2rem;
+  }
+
+  .bare-ground {
+    height: var(--step);
+    margin-bottom: var(--horizon-foot);
   }
 
   /* Laid out like the home page: the sentence in the text's place, the ways on in the key's. */

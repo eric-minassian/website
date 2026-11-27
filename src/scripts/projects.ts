@@ -45,59 +45,68 @@ function figure(el: HTMLElement, n: number): void {
   el.classList.toggle("text-muted", n === 0);
 }
 
-/** How a sparkline is drawn: its days' width and spacing, its height, and the rise per dot. */
+/** How a sparkline is drawn: the spacing of its dots, across and up, and how many rows it stands. */
 interface Dots {
-  bar: number;
-  gap: number;
-  height: number;
-  rise: number;
+  pitch: number;
+  rows: number;
 }
 
+/** How wide a day's reading beside the dots can be on a phone ("Today so far · 12,345"), px. */
+const READING = 150;
+
 /**
- * Beside the description, small dots in a narrow column. On a phone the days have a line of their
- * own, so they span it, as wide as `width` allows, and are easier to touch.
+ * The home page's halftone in small: a column of dots per day on a square 5px pitch, about 36px
+ * tall, its texture finer than the 6px dotted rules between the rows so the two never read as one.
+ * On a phone a day's reading stands beside the dots, so they close up a little where that's tight.
  */
 const dotsFor = (phone: boolean, width: number): Dots => {
-  if (!phone) return { bar: 3, gap: 1, height: 32, rise: 3.5 };
-  const step = Math.max(6, Math.min(12, Math.floor((width + 2) / 30)));
-  return { bar: step - 2, gap: 2, height: 36, rise: 5 };
+  const pitch = phone ? Math.max(4, Math.min(5, Math.floor(((width - READING) / 30) * 2) / 2)) : 5;
+  return { pitch, rows: Math.floor(36 / pitch) };
 };
 
 /**
- * The project's 30 days as columns of small dots like the home page's horizon, in its darkest
- * tone. Each is scaled to the app's own busiest day (but never fewer than ten views, so a handful
- * doesn't stand full height); the footnote says so and the totals compare the rows. Any traffic
- * at all stands at least one dot; a day with none has a small dot in the third band's tone; a day
- * before the app was live, or before the platform counted, is left blank.
+ * The project's 30 days as columns of dots like the home page's horizon, in its darkest tone,
+ * standing on a ground of faint dots that runs the whole window, so every row's days line up.
+ * Each is scaled to the app's own busiest day (but never fewer than ten views, so a handful doesn't
+ * stand full height); the footnote says so and the totals compare the rows. Any traffic at all
+ * stands at least one dot; a day with none is a small dot in the third band's tone; a day before
+ * the app was live, or before the platform counted, is the bare ground.
  */
 function sparkline(pageViews: number[], from: number, peak: number, dots: Dots): SVGSVGElement {
-  const { bar, gap, height, rise } = dots;
-  const step = bar + gap;
-  const width = pageViews.length * step - gap;
+  const { pitch, rows } = dots;
+  const width = pageViews.length * pitch;
+  const height = rows * pitch;
   const svg = document.createElementNS(SVG, "svg");
   svg.setAttribute("width", String(width));
   svg.setAttribute("height", String(height));
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("aria-hidden", "true");
   svg.setAttribute("class", "block");
-  const r = bar * 0.42;
-  const rows = Math.floor(height / rise);
+  const r = pitch * 0.4;
   const scale = Math.max(10, peak);
-  const ground = height - rise / 2;
+  const ground = height - pitch / 2;
+  const bare: string[] = [];
   pageViews.forEach((views, day) => {
-    if (day < from) return;
-    const x = day * step + bar / 2;
+    const x = (day + 0.5) * pitch;
+    if (day < from) {
+      bare.push(dot(x, ground, 0.9));
+      return;
+    }
     const count = views === 0 ? 0 : Math.max(1, Math.round((views / scale) * rows));
     const path = document.createElementNS(SVG, "path");
     const marks =
       count === 0
-        ? [dot(x, ground, Math.max(1, r * 0.5))]
-        : Array.from({ length: count }, (_, i) => dot(x, ground - i * rise, r));
+        ? [dot(x, ground, Math.max(1, pitch * 0.25))]
+        : Array.from({ length: count }, (_, i) => dot(x, ground - i * pitch, r));
     path.setAttribute("d", marks.join(""));
     path.setAttribute("class", views === 0 ? "fill-band-3" : "fill-band-1");
     path.dataset.day = String(day);
     svg.append(path);
   });
+  const floor = document.createElementNS(SVG, "path");
+  floor.setAttribute("d", bare.join(""));
+  floor.setAttribute("class", "fill-faint");
+  svg.prepend(floor);
   return svg;
 }
 
@@ -106,7 +115,7 @@ const dot = (x: number, y: number, r: number): string =>
   `M${(x - r).toFixed(2)} ${y.toFixed(2)}a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0`;
 
 /** A sparkline size, to tell whether a new one differs. */
-const sizeOf = ({ bar, height }: Dots): string => `${bar}:${height}`;
+const sizeOf = ({ pitch, rows }: Dots): string => `${pitch}:${rows}`;
 
 /** The days the ledger covers and the first the platform counted. */
 interface Span {
@@ -132,7 +141,10 @@ const shownTotal = (project: Project, days: string[], counting: number): number 
 
 function row(project: Project, index: number, span: Span, start: Dots, signal: AbortSignal): Row {
   const { days } = span;
+  /** The app's first day; the days from `counting` on can be read, those before it as not live. */
   const from = firstDayOf(project, days, span.from);
+  const counting = span.from;
+  const last = days.length - 1;
   const li = element("li", "ledger-row rule-above arrive");
   li.style.setProperty("--i", String(index));
   const name = element("span", "ledger-name");
@@ -157,15 +169,15 @@ function row(project: Project, index: number, span: Span, start: Dots, signal: A
 
   const peak = Math.max(1, ...counted);
   const spark = element("div", "ledger-spark");
-  // A day's reading, under the dots in room kept for it, so nothing moves. The slider's value is
-  // what a screen reader hears.
+  // A day's reading, beside the dots on a phone and under them beside the description, in room kept
+  // for it, so nothing moves. The slider's value is what a screen reader hears.
   const reading = element("span", "spark-reading text-sm tabular-nums");
   reading.setAttribute("aria-hidden", "true");
   spark.setAttribute("role", "slider");
   spark.tabIndex = 0;
   spark.setAttribute("aria-label", `${project.name}, page views by day`);
-  spark.setAttribute("aria-valuemin", String(from));
-  spark.setAttribute("aria-valuemax", String(days.length - 1));
+  spark.setAttribute("aria-valuemin", String(counting));
+  spark.setAttribute("aria-valuemax", String(last));
   let dots = start;
   let svg = sparkline(project.pageViews, from, peak, dots);
   spark.append(svg, reading);
@@ -182,19 +194,22 @@ function row(project: Project, index: number, span: Span, start: Dots, signal: A
     }
     spark.dataset.day = String(d);
     mark();
-    reading.textContent = `${dayName(days, d)} · ${formatCount(project.pageViews[d]!)}`;
+    const views = project.pageViews[d]!;
+    reading.textContent = `${dayName(days, d)} · ${d < from ? "not live yet" : formatCount(views)}`;
     spark.setAttribute("aria-valuenow", String(d));
     spark.setAttribute(
       "aria-valuetext",
-      `${dayName(days, d)}: ${describeViews(project.pageViews[d]!).toLowerCase()}`,
+      `${dayName(days, d)}: ${d < from ? "not live yet" : describeViews(views).toLowerCase()}`,
     );
   };
   show(null);
-  spark.setAttribute("aria-valuenow", String(days.length - 1));
+  spark.setAttribute("aria-valuenow", String(last));
 
-  const dayUnder = (e: PointerEvent) => {
+  // The day under the pointer; on the ground before the platform counted, none.
+  const dayUnder = (e: PointerEvent): number | null => {
     const x = e.clientX - svg.getBoundingClientRect().left;
-    return Math.min(days.length - 1, Math.max(from, Math.floor(x / (dots.bar + dots.gap))));
+    const d = Math.floor(x / dots.pitch);
+    return d < counting ? null : Math.min(last, d);
   };
   spark.addEventListener("pointermove", (e) => {
     if (e.pointerType === "mouse") show(dayUnder(e));
@@ -217,11 +232,11 @@ function row(project: Project, index: number, span: Span, start: Dots, signal: A
   );
   // From the keyboard the dots are a slider over the days, starting from today.
   spark.addEventListener("focus", () => {
-    if (spark.matches(":focus-visible")) show(shown ?? days.length - 1);
+    if (spark.matches(":focus-visible")) show(shown ?? last);
   });
   spark.addEventListener("blur", () => show(null));
   spark.addEventListener("keydown", (e) => {
-    const d = shown ?? days.length - 1;
+    const d = shown ?? last;
     const step: Record<string, number> = {
       ArrowLeft: d - 1,
       ArrowDown: d - 1,
@@ -229,14 +244,14 @@ function row(project: Project, index: number, span: Span, start: Dots, signal: A
       ArrowUp: d + 1,
       PageDown: d - 7,
       PageUp: d + 7,
-      Home: from,
-      End: days.length - 1,
+      Home: counting,
+      End: last,
     };
     // Escape puts the reading away and leaves the keyboard where it was.
     if (e.key === "Escape") return show(null);
     if (!(e.key in step)) return;
     e.preventDefault();
-    show(Math.min(days.length - 1, Math.max(from, step[e.key]!)));
+    show(Math.min(last, Math.max(counting, step[e.key]!)));
   });
 
   li.append(about, spark, total);
@@ -284,6 +299,9 @@ export async function initProjects(): Promise<void> {
     list.setAttribute("aria-busy", "true");
     note.replaceChildren();
     head.textContent = "";
+    // The head and the footnote arrive with the rows, each time.
+    head.classList.remove("arrive");
+    note.classList.remove("arrive");
     try {
       const projects: Projects = await loadProjects();
       const from = firstCounted(projects);
@@ -306,17 +324,22 @@ export async function initProjects(): Promise<void> {
       note.textContent = apps.length
         ? "Each app’s days are scaled to its own busiest one."
         : "Nothing is running right now.";
+      head.classList.add("arrive");
+      note.classList.add("arrive");
+      note.style.setProperty("--i", String(apps.length));
       leave(placeholder);
     } catch (error) {
       console.error(error);
       list.hidden = true;
       placeholder.hidden = true;
-      const retry = element("button", "link tap cursor-pointer", "Try again");
+      // The way on, in the ink of a link, from a note in muted text.
+      const retry = element("button", "link tap cursor-pointer text-ink", "Try again");
       retry.type = "button";
-      retry.addEventListener("click", async () => {
-        await load();
-        // The button is gone; carry the keyboard on to the list, or to the next try.
-        (list.querySelector("a") ?? note.querySelector("button"))?.focus();
+      retry.addEventListener("click", () => {
+        // The button is about to go: the keyboard waits on the page's name, as the home page's
+        // does on its key's, rather than dropping to the page.
+        document.querySelector<HTMLElement>("#page-heading")?.focus();
+        void load();
       });
       note.replaceChildren("The projects couldn’t be loaded. ", retry);
     } finally {

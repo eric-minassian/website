@@ -8,7 +8,7 @@
 // (ProjectsKey.astro). The chart takes whatever height the window leaves it, within limits.
 ---
 
-<div data-horizon data-state="loading" class="horizon">
+<div data-horizon data-state="loading" class="horizon horizon-frame">
   <div class="horizon-plot ground">
     <div data-horizon-chart class="horizon-chart" aria-hidden="true"></div>
     <div
@@ -24,6 +24,7 @@
     <span data-horizon-peak class="horizon-note text-sm text-muted tabular-nums" aria-hidden="true" hidden
     ></span>
     <span data-horizon-guide class="horizon-guide" aria-hidden="true" hidden></span>
+    <span data-horizon-mark class="horizon-mark" aria-hidden="true" hidden></span>
     <span data-horizon-label class="horizon-note text-sm tabular-nums" aria-hidden="true" hidden></span>
   </div>
   <div data-horizon-axis class="horizon-axis page text-sm text-muted tabular-nums" aria-hidden="true">
@@ -32,6 +33,23 @@
     <span data-horizon-today>Today so far</span>
   </div>
 </div>
+
+<script is:inline>
+  // A window a little short of the whole page would scroll just to show the dates: there, the
+  // strata give those pixels up (`--give`, at most 48, so never under 7rem) and the page fits. Run
+  // as the page is read, so the first paint already fits, and again whenever its height changes.
+  (() => {
+    const horizon = document.querySelector("[data-horizon]");
+    const fit = () => {
+      const give = parseFloat(horizon.style.getPropertyValue("--give")) || 0;
+      const over = document.documentElement.scrollHeight - innerHeight + give;
+      const next = over > 0 && over <= 48 ? Math.ceil(over) : 0;
+      if (next !== give) horizon.style.setProperty("--give", `${next}px`);
+    };
+    fit();
+    new ResizeObserver(fit).observe(document.body);
+  })();
+</script>
 
 <style>
   /* Grows into the room the page leaves, three parts to the sky's one, standing on the window's foot. */
@@ -46,7 +64,7 @@
   .horizon-plot {
     position: relative;
     flex: 1 1 auto;
-    min-height: 7rem;
+    min-height: calc(7rem - var(--give, 0px));
     max-height: min(56vh, 48rem);
     /* Its own box paints nothing (the ground is a layer below); see `::before`. */
     background: none;
@@ -58,32 +76,32 @@
   }
 
   /*
-   * While the data loads, the ground row: a layer one dot high pinned to the plot's foot, which
-   * stays at the window's foot, so as the key above settles and the plot grows or shrinks, nothing
-   * drawn moves.
+   * While the data loads, the ground row (`.ground` in globals.css): a layer one dot high pinned to
+   * the plot's foot, which stays at the window's foot, so as the key above settles and the plot
+   * grows or shrinks, nothing drawn moves; the strata's own ground then lands dot for dot on it.
    */
   .horizon-plot::before {
     content: "";
     position: absolute;
     /* Above the strip kept for the weeks' ticks (FOOT in traffic.ts). */
     inset: auto 0 6px;
-    height: var(--pitch);
-    background-image: radial-gradient(circle, var(--color-faint) 0.9px, transparent 1.4px);
-    background-size: var(--pitch) var(--pitch);
+    height: var(--step);
+    background-image: var(--ground);
+    background-size: var(--step) var(--step);
     background-repeat: repeat-x;
-    background-position: right bottom;
+    background-position: calc((100cqw - var(--column)) / 2) bottom;
   }
 
   @media (width < 40rem) {
     .horizon-plot {
-      min-height: 10rem;
+      min-height: calc(10rem - var(--give, 0px));
     }
   }
 
   /* On a short window the strata give up a little height, and the dates a little air, to fit. */
   @media (width >= 40rem) and (height < 40rem) {
     .horizon-plot {
-      min-height: 6rem;
+      min-height: calc(6rem - var(--give, 0px));
     }
 
     .horizon-axis {
@@ -134,11 +152,11 @@
     content: "";
     position: absolute;
     inset: auto 0 6px;
-    height: var(--pitch);
-    background-image: radial-gradient(circle, var(--color-muted) 0.9px, transparent 1.4px);
-    background-size: var(--pitch) var(--pitch);
+    height: var(--step);
+    background-image: radial-gradient(circle, var(--color-muted) 0.65px, transparent 1.15px);
+    background-size: var(--step) var(--step);
     background-repeat: repeat-x;
-    background-position: right bottom;
+    background-position: calc((100cqw - var(--column)) / 2) bottom;
     mask-image: linear-gradient(90deg, transparent, black, transparent);
     mask-size: 30% 100%;
     mask-repeat: no-repeat;
@@ -154,10 +172,21 @@
     touch-action: pan-y;
   }
 
-  /* Focused, the strata get a rule under their ground, and today's reading above. */
+  /*
+   * Focused, the strata read out a day (today, to begin with), and the day in hand is underlined
+   * in the foot (`.horizon-mark`): the focus is the day, not the whole chart.
+   */
   .horizon-scrub:focus-visible {
     outline: none;
-    box-shadow: 0 3px 0 0 var(--color-ink);
+  }
+
+  .horizon-mark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background-color: var(--color-ink);
+    pointer-events: none;
   }
 
   /* "Today so far" at the right edge; the other dates are placed under their days by the script. */
@@ -183,7 +212,7 @@
     left: 0;
   }
 
-  /* The weeks' dates, each under its tick; on a phone, the first and last dates and the launch's. */
+  /* The weeks' dates, each under its tick, as many as there's room for (traffic.ts). */
   .horizon-weeks {
     position: absolute;
     inset: 0.5rem 0 auto 0;
@@ -195,12 +224,6 @@
     top: 0;
     left: 0;
     white-space: nowrap;
-  }
-
-  @media (width < 40rem) {
-    .horizon-weeks :global(span:not([data-launch])) {
-      display: none;
-    }
   }
 
   /* A thread from a day's reading down to the top of its block. */
@@ -242,10 +265,15 @@
     animation: settle 300ms ease-out 450ms both;
   }
 
+  /* Without JavaScript nothing is on its way: the bare ground stays, as on the 404 page. */
   @media (prefers-reduced-motion: reduce) {
     [data-state="loading"] .horizon-plot::after {
       display: none;
     }
+  }
+
+  :global(.no-js) [data-state="loading"] .horizon-plot::after {
+    display: none;
   }
 
   @keyframes sweep {
