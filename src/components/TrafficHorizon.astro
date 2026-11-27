@@ -50,6 +50,11 @@
     max-height: min(56vh, 48rem);
     /* Its own box paints nothing (the ground is a layer below); see `::before`. */
     background: none;
+    /*
+     * What moves inside (the readings, as a finger drags across the days) stays inside, as far as
+     * the page's layout knows: without it, a touch drag reaching today scrolled the page in Chromium.
+     */
+    contain: layout;
   }
 
   /*
@@ -155,10 +160,12 @@
     box-shadow: 0 3px 0 0 var(--color-ink);
   }
 
+  /* "Today so far" at the right edge; the other dates are placed under their days by the script. */
   .horizon-axis {
     position: relative;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
+    white-space: nowrap;
     padding-top: 0.5rem;
     padding-bottom: 1rem;
     opacity: 0;
@@ -168,6 +175,12 @@
   /* The dates arrive with the strata; a horizon that can't load stays bare. */
   [data-state="ready"] .horizon-axis {
     opacity: 1;
+  }
+
+  [data-horizon-start] {
+    position: absolute;
+    top: 0.5rem;
+    left: 0;
   }
 
   /* The weeks' dates, each under its tick; on a phone the first and last dates are enough. */

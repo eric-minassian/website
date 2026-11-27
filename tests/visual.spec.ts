@@ -221,6 +221,23 @@ test.describe("home page", () => {
   });
 });
 
+test.describe("home page on a phone", () => {
+  test("a tap reads the day under it", async ({ page, isMobile }) => {
+    test.skip(!isMobile, "touch");
+    await serveProjects(page);
+    await page.goto("/");
+    await waitForTraffic(page);
+    const scrub = page.locator("[data-horizon-scrub]");
+    await scrub.scrollIntoViewIfNeeded();
+    const box = (await scrub.boundingBox())!;
+    await page.touchscreen.tap(box.x + box.width - 2, box.y + box.height / 2);
+    await expect(page.locator("[data-horizon-label]")).toHaveText("Today so far · 3,215");
+    // A tap anywhere else puts it away.
+    await page.touchscreen.tap(box.x + 4, box.y - 60);
+    await expect(page.locator("[data-horizon-label]")).toBeHidden();
+  });
+});
+
 test.describe("home page, unusual data", () => {
   test("names no busiest day when there were no views at all", async ({ page }) => {
     const quiet = {
