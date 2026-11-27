@@ -207,10 +207,19 @@
     transition: opacity 400ms;
   }
 
-  /* The dates arrive with the strata; a horizon that can't load says so under its bare ground. */
-  [data-state="ready"] .horizon-axis,
-  [data-state="error"] .horizon-axis {
+  /* The dates arrive with the strata; a horizon that can't load stays bare. */
+  [data-state="ready"] .horizon-axis {
     opacity: 1;
+  }
+
+  /*
+   * On a phone, where the page scrolls down to it, a horizon with nothing to stand on it (it
+   * couldn't load, or nothing's running) gives its room up: the key above says why.
+   */
+  @media (width < 40rem) {
+    .horizon:is([data-state="error"], [data-state="empty"]) {
+      display: none;
+    }
   }
 
   [data-horizon-start] {

@@ -140,8 +140,9 @@ test.describe("home page", () => {
     await expect(peak).toHaveText("Nov 17 · 8,436");
     await expect(page.locator("[data-horizon-start]")).toHaveText("Oct 28");
     await key.getByRole("listitem").first().hover();
-    // Today's needs no date: "Today so far" is under it.
-    await expect(peak).toHaveText("2,872 so far");
+    // When that's today, its count joins "Today so far" under it instead.
+    await expect(peak).toBeHidden();
+    await expect(page.locator("[data-horizon-today]")).toHaveText("Today so far · 2,872");
     await page.mouse.move(0, 0);
     await expect(peak).toHaveText("Nov 17 · 8,436");
     await key.getByRole("link", { name: "Projects" }).click();

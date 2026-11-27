@@ -63,7 +63,7 @@ const ways = [
   @media (width >= 40rem) {
     .not-found {
       display: grid;
-      grid-template-columns: minmax(18rem, 34rem) minmax(14rem, 21rem);
+      grid-template-columns: minmax(0, 1fr) minmax(15rem, 1fr);
       justify-content: space-between;
       column-gap: 2rem;
       align-items: baseline;
@@ -71,6 +71,12 @@ const ways = [
 
     .elsewhere {
       margin-top: 0;
+    }
+  }
+
+  @media (width >= 48rem) {
+    .not-found {
+      grid-template-columns: minmax(18rem, 34rem) minmax(14rem, 21rem);
     }
   }
 </style>

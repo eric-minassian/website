@@ -118,14 +118,32 @@ const placeholders = [
     text-wrap: pretty;
   }
 
-  /* Beside other text, never more than those two lines; the whole text is on /projects. */
+  /*
+   * Beside the bio, never more than two lines (three while the two share the column evenly and the
+   * key is narrow); the whole text is on /projects.
+   */
   @media (width >= 40rem) {
     .projects-key :global(.key-about) {
       display: -webkit-box;
       overflow: hidden;
       -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+    }
+
+    .key-rows {
+      min-height: calc(3 * (0.75rem + 1.5 * var(--text-sm)) + 7 * 1.45 * var(--text-sm));
+    }
+  }
+
+  @media (width >= 48rem) {
+    .projects-key :global(.key-about) {
       -webkit-line-clamp: 2;
       line-clamp: 2;
+    }
+
+    .key-rows {
+      min-height: calc(3 * (0.75rem + 1.5 * var(--text-sm)) + 5 * 1.45 * var(--text-sm));
     }
   }
 
