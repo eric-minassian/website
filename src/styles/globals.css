@@ -7,41 +7,341 @@
 }
 
 @theme {
+  /* Paper and a warm ink, so text sits in the page rather than on it. */
   --color-canvas: #f8f5ed;
-  --color-ink: var(--color-neutral-800);
-  /* Not neutral-500: that's 4.35:1 on the canvas, under AA's 4.5:1 for small text. */
-  --color-muted: #6b6b6b;
-  --color-faint: var(--color-neutral-300);
+  --color-ink: #2a2622;
+  /* 5.3:1 on the canvas; AA for small text. */
+  --color-muted: #6b655d;
+  /* Placeholders, the chart's ground and the dotted rules (1.75:1). */
+  --color-faint: color-mix(in srgb, var(--color-ink) 28%, var(--color-canvas));
+  /*
+   * The traffic chart's bands, busiest first: steps of the ink toward the canvas at least 1.6:1
+   * apart, so neighbours read as different layers, and the lightest still 3:1 on the canvas
+   * (8.4, 5.2, 3.2:1).
+   */
+  --color-band-1: color-mix(in srgb, var(--color-ink) 84%, var(--color-canvas));
+  --color-band-2: color-mix(in srgb, var(--color-ink) 69%, var(--color-canvas));
+  --color-band-3: color-mix(in srgb, var(--color-ink) 51%, var(--color-canvas));
+  /* An app that's down: the one colour the site has, 5.8:1 on the canvas. */
+  --color-alert: #a4402e;
+
+  /* One small size, for every caption, note, count and label. */
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dark {
-  --color-canvas: var(--color-neutral-900);
-  --color-ink: var(--color-neutral-200);
-  --color-muted: var(--color-neutral-400);
-  --color-faint: var(--color-neutral-700);
+  --color-canvas: #1a1917;
+  --color-ink: #e7e2d8;
+  --color-muted: #a19a8f;
+  --color-faint: color-mix(in srgb, var(--color-ink) 24%, var(--color-canvas));
+  --color-alert: #e88a72;
+  /* Dimmer than the ink, so the chart never outshines the name (8.4, 5.2, 3.2:1). */
+  --color-band-1: color-mix(in srgb, var(--color-ink) 76%, var(--color-canvas));
+  --color-band-2: color-mix(in srgb, var(--color-ink) 57%, var(--color-canvas));
+  --color-band-3: color-mix(in srgb, var(--color-ink) 39%, var(--color-canvas));
 }
 
 @layer base {
+  :root {
+    --gutter: 1.5rem;
+  }
+
+  @media (width >= 40rem) {
+    :root {
+      --gutter: 2rem;
+    }
+  }
+
   html {
     background-color: var(--color-canvas);
+    font-size: 100%;
     color: var(--color-ink);
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  /* A wide window scales the whole page up a step, so the column isn't an island in it. */
+  @media (width >= 105rem) {
+    html {
+      font-size: 106.25%;
+    }
+  }
+
+  @media (width >= 140rem) {
+    html {
+      font-size: 118.75%;
+    }
   }
 
   body {
     font-family: var(--font-serif);
+    font-size: 1.0625rem;
+    line-height: 1.65;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  a {
-    text-decoration: underline;
+  @media (width >= 40rem) {
+    body {
+      font-size: 1.125rem;
+      line-height: 1.6;
+    }
+  }
+
+  h1,
+  h2 {
+    text-wrap: balance;
+  }
+
+  p,
+  li {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-ink) 16%, transparent);
+  }
+
+  a,
+  .link {
+    text-decoration-line: underline;
     text-decoration-thickness: 1px;
-    text-underline-offset: 2px;
-    text-decoration-color: var(--color-muted);
+    text-underline-offset: 0.22em;
+    text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+    /* Not colour: a theme flip would fade links through the new background (see theme.ts). */
     transition: text-decoration-color 150ms;
   }
 
-  a:hover {
-    text-decoration-color: var(--color-ink);
+  a:hover,
+  .link:hover {
+    text-decoration-color: currentColor;
+  }
+
+  a:active,
+  .link:active {
+    color: var(--color-muted);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* While the theme flips, everything takes its new colours at once; only the toggle's icon turns. */
+  html.flipping *:not(.theme-icon),
+  html.flipping ::before,
+  html.flipping ::after {
+    transition: none !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      transition-duration: 0s !important;
+      animation-duration: 0s !important;
+      animation-delay: 0s !important;
+    }
+  }
+}
+
+/*
+ * The column every page lines up on, the same at every width: the masthead spans it, so the theme
+ * toggle sits at its right edge on every page, and running text keeps to `measure` inside it.
+ */
+@utility page {
+  width: 100%;
+  max-width: calc(58rem + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* A comfortable line of running text: about 65 characters. */
+@utility measure {
+  max-width: 36rem;
+}
+
+@layer components {
+  /* The page's name: the largest type on every page. */
+  .masthead {
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.005em;
+  }
+
+  /* A subpage's "Eric Minassian / Projects" shrinks on a narrow phone to stay on one line. */
+  .masthead-path {
+    font-size: clamp(1.125rem, 5.6vw, 1.5rem);
+  }
+
+  @media (width >= 40rem) {
+    .masthead,
+    .masthead-path {
+      font-size: 1.75rem;
+    }
+  }
+
+  .masthead-home {
+    color: var(--color-muted);
+  }
+
+  .masthead-home:hover {
+    color: var(--color-ink);
+  }
+
+  /* A section's name: a clear step above the text, and a step below the page's name. */
+  .section-heading {
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  @media (width >= 40rem) {
+    .section-heading {
+      font-size: 1.375rem;
+    }
+  }
+
+  /*
+   * Links in a list of links, where being a link is plain without an underline: it appears on
+   * hover, and focus has its ring. Links in running text keep theirs.
+   */
+  .link-quiet {
+    text-decoration-color: transparent;
+  }
+
+  .link-quiet:hover {
+    text-decoration-color: currentColor;
+  }
+
+  /* A quiet link's trailing ↗ says, faintly, that it opens elsewhere; pointing at it says so plainly. */
+  .link-quiet .arrow-out {
+    opacity: 0.45;
+    transition: opacity 150ms;
+  }
+
+  .link-quiet:hover .arrow-out,
+  .link-quiet:focus-visible .arrow-out {
+    opacity: 1;
+  }
+
+  /* On a touch screen, a standalone link's target grows to a full 44px without moving the text. */
+  @media (pointer: coarse) {
+    .tap {
+      display: inline-block;
+      padding-block: 0.625rem;
+      margin-block: -0.625rem;
+    }
+  }
+
+  /* The drawn arrows (src/lib/icons.ts): a stroke the weight of the text, sitting on its x-height. */
+  .arrow {
+    display: inline-block;
+    width: 0.8em;
+    height: 0.8em;
+    vertical-align: -0.05em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* A link with a trailing arrow that leans on hover; one box, so its focus ring is one rectangle. */
+  .arrow-link {
+    display: inline-block;
+  }
+
+  .arrow-link .arrow {
+    margin-left: 0.3em;
+    transition: translate 200ms var(--ease-out-soft);
+  }
+
+  .arrow-link:hover .arrow {
+    translate: 0.2em 0;
+  }
+
+  /*
+   * The traffic horizon's ground while its data loads (TrafficHorizon.astro): a faint dot every
+   * `--pitch` along the bottom row. The drawn strata bring a ground of their own, in step with
+   * their days; `--pitch` is the spacing they aim for.
+   */
+  .ground {
+    --pitch: 7px;
+    --dot-scale: 1;
+    background-image: radial-gradient(circle, var(--color-faint) 0.9px, transparent 1.4px);
+    background-size: var(--pitch) var(--pitch);
+    background-repeat: repeat-x;
+    background-position: right bottom;
+  }
+
+  /* Light dots on a dark ground look larger than they are; drawn a little smaller, they weigh the same. */
+  .dark .ground {
+    --dot-scale: 0.9;
+  }
+
+  /* A finer grid on a phone, so a month of days fits the narrow column with room for texture. */
+  @media (width < 30rem) {
+    .ground {
+      --pitch: 6px;
+    }
+  }
+
+  /*
+   * A rule drawn in the horizon's dots: a faint dot every 6px along the top (or foot) of a box.
+   * The site's dividers are made of the same stuff as its chart.
+   */
+  .rule-above,
+  .rule-below {
+    background-image: radial-gradient(circle, var(--color-faint) 0.8px, transparent 1.2px);
+    background-size: 6px 3px;
+    background-repeat: repeat-x;
+  }
+
+  .rule-above {
+    background-position: left top;
+  }
+
+  .rule-below {
+    background-position: left bottom;
+  }
+
+  /* A placeholder bar while data loads: the shape of the text to come, breathing gently. */
+  .skeleton {
+    display: inline-block;
+    height: 0.6em;
+    border-radius: 2px;
+    background-color: var(--color-faint);
+    vertical-align: middle;
+    animation: skeleton-pulse 1.6s ease-in-out infinite;
+  }
+
+  /* Rows that arrive with the data rise into place one after another. */
+  .arrive {
+    animation: arrive 420ms var(--ease-out-soft) both;
+    animation-delay: calc(var(--i, 0) * 45ms);
+  }
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* From about where the placeholders were, so there's no blank frame between them and the rows. */
+@keyframes arrive {
+  from {
+    opacity: 0.3;
+    transform: translateY(3px);
   }
 }

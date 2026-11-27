@@ -1,18 +1,22 @@
 // Fills the projects ledger (Projects.astro) from the platform's directory once the page loads.
+import { arrow } from "../lib/icons";
 import {
+  dayName,
   describeViews,
+  firstCounted,
+  formatCount,
   formatDay,
   formatViews,
   loadProjects,
+  periodOf,
   type Project,
   type Projects,
   totalOf,
 } from "../lib/projects";
 
 const SVG = "http://www.w3.org/2000/svg";
-const BAR_WIDTH = 2;
 const BAR_GAP = 1;
-const HEIGHT = 14;
+const HEIGHT = 28;
 
 const element = <K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -33,83 +37,208 @@ const link = (href: string, text: string, className = ""): HTMLAnchorElement => 
   return a;
 };
 
-/** 30 thin bars scaled to the project's own busiest day; a day with none is a 1px tick. */
-function sparkline(pageViews: number[]): SVGSVGElement {
-  const width = pageViews.length * (BAR_WIDTH + BAR_GAP) - BAR_GAP;
+/** A total as shown, with what a screen reader hears beside it. */
+function figure(el: HTMLElement, n: number): void {
+  const seen = element("span", "", formatViews(n));
+  seen.setAttribute("aria-hidden", "true");
+  el.replaceChildren(seen, element("span", "sr-only", describeViews(n)));
+  el.classList.toggle("text-muted", n === 0);
+}
+
+/**
+ * The project's counted days, from `from` on, as columns of small dots like the home page's
+ * horizon, each scaled to the app's own busiest day so every row shows its shape (the footnote
+ * says so; the totals compare the rows). Any traffic at all stands at least one dot; a day with
+ * none keeps a faint dot on the ground, so the days read.
+ */
+function sparkline(pageViews: number[], from: number, peak: number, bar: number): SVGSVGElement {
+  const step = bar + BAR_GAP;
+  const width = (pageViews.length - from) * step - BAR_GAP;
   const svg = document.createElementNS(SVG, "svg");
-  svg.setAttribute("aria-hidden", "true");
   svg.setAttribute("width", String(width));
   svg.setAttribute("height", String(HEIGHT));
   svg.setAttribute("viewBox", `0 0 ${width} ${HEIGHT}`);
-  svg.setAttribute("shape-rendering", "crispEdges");
-  svg.setAttribute("class", "col-start-2 row-start-1 sm:col-start-3");
-  const max = Math.max(...pageViews);
-  const quiet = document.createElementNS(SVG, "g");
-  quiet.setAttribute("class", "fill-faint");
-  const busy = document.createElementNS(SVG, "g");
-  busy.setAttribute("class", "fill-ink");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("class", "block");
+  const r = bar * 0.42;
+  const rows = Math.floor(HEIGHT / step);
   pageViews.forEach((views, day) => {
-    // Any traffic at all stands at least 2px, clear of the tick drawn for a day with none.
-    const height = views === 0 ? 1 : Math.max(2, Math.round((views / max) * HEIGHT));
-    const bar = document.createElementNS(SVG, "rect");
-    bar.setAttribute("x", String(day * (BAR_WIDTH + BAR_GAP)));
-    bar.setAttribute("y", String(HEIGHT - height));
-    bar.setAttribute("width", String(BAR_WIDTH));
-    bar.setAttribute("height", String(height));
-    (views === 0 ? quiet : busy).append(bar);
+    if (day < from) return;
+    const x = (day - from) * step + bar / 2;
+    const count = views === 0 ? 0 : Math.max(1, Math.round((views / peak) * rows));
+    const path = document.createElementNS(SVG, "path");
+    const dots =
+      count === 0
+        ? [dot(x, HEIGHT - step / 2, r * 0.55)]
+        : Array.from({ length: count }, (_, i) => dot(x, HEIGHT - step / 2 - i * step, r));
+    path.setAttribute("d", dots.join(""));
+    path.setAttribute("class", views === 0 ? "fill-faint" : "fill-ink");
+    path.dataset.day = String(day);
+    svg.append(path);
   });
-  svg.append(quiet, busy);
   return svg;
 }
 
-function row(project: Project): HTMLLIElement {
-  const li = element(
-    "li",
-    "col-span-full grid grid-cols-subgrid items-baseline border-t border-faint py-3",
-  );
-  li.append(link(project.url, project.name, "col-start-1 row-start-1"));
+/** A dot as path data. */
+const dot = (x: number, y: number, r: number): string =>
+  `M${(x - r).toFixed(2)} ${y.toFixed(2)}a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0`;
 
-  const about = element(
-    "div",
-    "col-span-full row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1",
-  );
-  if (project.description) about.append(element("p", "text-muted", project.description));
-  const meta = element("p", "text-sm text-muted", `Deployed ${formatDay(project.lastDeployedAt)}`);
-  if (project.source) meta.append(" · ", link(project.source, "Source"));
-  if (project.up === false) meta.append(" · Down");
-  about.append(meta);
-  li.append(about, sparkline(project.pageViews));
+/** The days the ledger covers, the first the platform counted, and the bars' width. */
+interface Span {
+  days: string[];
+  from: number;
+  bar: number;
+}
 
-  const total = totalOf(project.pageViews);
-  const figure = element("span", "col-start-3 row-start-1 text-right tabular-nums sm:col-start-4");
-  const shown = element("span", "", formatViews(total));
-  shown.setAttribute("aria-hidden", "true");
-  figure.append(shown, element("span", "sr-only", describeViews(total)));
-  li.append(figure);
+function row(project: Project, index: number, span: Span): HTMLLIElement {
+  const { days, from, bar } = span;
+  const li = element("li", "ledger-row rule-above arrive");
+  li.style.setProperty("--i", String(index));
+  const name = link(project.url, "", "ledger-name link-quiet tap");
+  name.title = project.name;
+  name.append(element("span", "ledger-name-text", project.name), arrow("out"));
+  li.append(name);
+
+  const about = element("div", "ledger-about");
+  if (project.description) about.append(element("p", "", project.description));
+  const meta = element("p", "ledger-meta text-sm text-muted");
+  const sep = () => element("span", "ledger-sep", "·");
+  meta.append(`Deployed ${formatDay(project.lastDeployedAt)}`);
+  if (project.source) meta.append(sep(), link(project.source, "Source", "tap"));
+  if (project.up === false) meta.append(sep(), element("span", "ledger-down", "Down"));
+  // A day's reading: on a phone in the deploy line's place, beside the bars where there's room;
+  // either way nothing moves. The slider's value is what a screen reader hears.
+  const reading = element("p", "ledger-reading text-sm tabular-nums");
+  reading.setAttribute("aria-hidden", "true");
+  about.append(meta, reading);
+
+  const total = element("span", "ledger-total");
+  const counted = project.pageViews.slice(from);
+  figure(total, totalOf(counted));
+
+  const peak = Math.max(1, ...counted);
+  const svg = sparkline(project.pageViews, from, peak, bar);
+  const spark = element("div", "ledger-spark");
+  const besideBars = element("span", "spark-reading text-sm tabular-nums");
+  besideBars.setAttribute("aria-hidden", "true");
+  spark.setAttribute("role", "slider");
+  spark.tabIndex = 0;
+  spark.setAttribute("aria-label", `${project.name}, page views by day`);
+  spark.setAttribute("aria-valuemin", String(from));
+  spark.setAttribute("aria-valuemax", String(days.length - 1));
+  spark.append(svg, besideBars);
+  const bars = [...svg.querySelectorAll("path")];
+  let shown: number | null = null;
+  const show = (d: number | null) => {
+    shown = d;
+    if (d === null) {
+      delete spark.dataset.day;
+      delete li.dataset.reading;
+      return;
+    }
+    spark.dataset.day = String(d);
+    li.dataset.reading = "";
+    for (const mark of bars) mark.classList.toggle("is-day", mark.dataset.day === String(d));
+    const text = `${dayName(days, d)} · ${describeViews(project.pageViews[d]!).toLowerCase()}`;
+    reading.textContent = text;
+    // Beside the bars there's only their width: the date and the count.
+    besideBars.textContent = `${dayName(days, d)} · ${formatCount(project.pageViews[d]!)}`;
+    spark.setAttribute("aria-valuenow", String(d));
+    spark.setAttribute("aria-valuetext", text);
+  };
+  show(null);
+  spark.setAttribute("aria-valuenow", String(days.length - 1));
+
+  const dayUnder = (e: PointerEvent) => {
+    const x = e.clientX - svg.getBoundingClientRect().left;
+    return Math.min(days.length - 1, from + Math.max(0, Math.floor(x / (bar + BAR_GAP))));
+  };
+  spark.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "mouse") show(dayUnder(e));
+  });
+  spark.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "mouse") show(dayUnder(e));
+  });
+  spark.addEventListener("pointerleave", (e) => {
+    if (e.pointerType === "mouse" && !spark.matches(":focus-visible")) show(null);
+  });
+  // A tap anywhere else puts a tapped-out reading away.
+  document.addEventListener("pointerdown", (e) => {
+    if (shown !== null && e.target instanceof Node && !spark.contains(e.target)) show(null);
+  });
+  // From the keyboard the bars are a slider over the days, starting from today.
+  spark.addEventListener("focus", () => {
+    if (spark.matches(":focus-visible")) show(shown ?? days.length - 1);
+  });
+  spark.addEventListener("blur", () => show(null));
+  spark.addEventListener("keydown", (e) => {
+    const d = shown ?? days.length - 1;
+    const step: Record<string, number> = {
+      ArrowLeft: d - 1,
+      ArrowDown: d - 1,
+      ArrowRight: d + 1,
+      ArrowUp: d + 1,
+      PageDown: d - 7,
+      PageUp: d + 7,
+      Home: from,
+      End: days.length - 1,
+    };
+    // Escape puts the reading away and leaves the keyboard where it was.
+    if (e.key === "Escape") return show(null);
+    if (!(e.key in step)) return;
+    e.preventDefault();
+    show(Math.min(days.length - 1, Math.max(from, step[e.key]!)));
+  });
+
+  li.append(about, spark, total);
   return li;
 }
 
-/** What the totals cover: the whole window, or the days since counting began. */
-const period = ({ days, countingSince }: Projects): string =>
-  countingSince
-    ? `Page views since ${formatDay(countingSince)}, today included.`
-    : `Page views over the last ${days.length} days, today included.`;
+/** The busiest first, like the home page's key; among equals, the latest deployed. */
+const byTraffic = (a: Project, b: Project): number =>
+  totalOf(b.pageViews) - totalOf(a.pageViews) ||
+  Date.parse(b.lastDeployedAt) - Date.parse(a.lastDeployedAt);
 
 export async function initProjects(): Promise<void> {
   const root = document.querySelector<HTMLElement>("[data-projects]");
   if (!root) return;
+  const placeholder = root.querySelector<HTMLElement>("[data-projects-placeholder]")!;
   const list = root.querySelector<HTMLUListElement>("[data-projects-list]")!;
   const note = root.querySelector<HTMLElement>("[data-projects-note]")!;
-  try {
-    const projects = await loadProjects();
-    list.replaceChildren(...projects.projects.map(row));
-    list.hidden = projects.projects.length === 0;
-    note.textContent = period(projects);
-  } catch (error) {
-    console.error(error);
-    note.textContent = "The projects couldn't be loaded. Reload to try again.";
-  } finally {
-    list.removeAttribute("aria-busy");
-    root.dataset.state = "ready";
-  }
+
+  const load = async (): Promise<void> => {
+    root.dataset.state = "loading";
+    placeholder.hidden = false;
+    list.setAttribute("aria-busy", "true");
+    note.replaceChildren();
+    try {
+      const projects: Projects = await loadProjects();
+      const from = firstCounted(projects);
+      const apps = projects.projects.toSorted(byTraffic);
+      // Narrower bars on a small phone, so the name keeps its room.
+      const bar = matchMedia("(width >= 26rem)").matches ? 3 : 2;
+      const span = { days: projects.days, from, bar };
+      list.replaceChildren(...apps.map((p, i) => row(p, i, span)));
+      list.hidden = apps.length === 0;
+      note.textContent = apps.length
+        ? `${periodOf(projects)}. Each app’s bars are scaled to its own busiest day.`
+        : "Nothing is running right now.";
+    } catch (error) {
+      console.error(error);
+      list.hidden = true;
+      const retry = element("button", "link tap cursor-pointer", "Try again");
+      retry.type = "button";
+      retry.addEventListener("click", async () => {
+        await load();
+        // The button is gone; carry the keyboard on to the list, or to the next try.
+        (list.querySelector("a") ?? note.querySelector("button"))?.focus();
+      });
+      note.replaceChildren("The projects couldn’t be loaded. ", retry);
+    } finally {
+      placeholder.hidden = true;
+      list.removeAttribute("aria-busy");
+      root.dataset.state = "ready";
+    }
+  };
+  await load();
 }

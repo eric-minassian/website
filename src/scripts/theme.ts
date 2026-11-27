@@ -1,66 +1,82 @@
-type Theme = "system" | "light" | "dark";
+// The page follows the system's light or dark setting until the visitor flips it. A flip always
+// changes what's on screen, and flipping back to what the system wants forgets the choice, so the
+// page follows the system again.
+type Theme = "light" | "dark";
 
 const STORAGE_KEY = "theme";
-const THEMES: Theme[] = ["system", "dark", "light"];
+/** Each theme's canvas (globals.css), for the browser's own chrome. */
+const CANVAS: Record<Theme, string> = { light: "#f8f5ed", dark: "#1a1917" };
 
-const isTheme = (value: string | null): value is Theme =>
-  value === "system" || value === "light" || value === "dark";
-
-export const getTheme = (): Theme => {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return isTheme(stored) ? stored : "system";
+const stored = (): Theme | null => {
+  const value = localStorage.getItem(STORAGE_KEY);
+  return value === "light" || value === "dark" ? value : null;
 };
 
-export const prefersDark = (): boolean => matchMedia("(prefers-color-scheme: dark)").matches;
+const system = (): Theme => (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 
-export const isDark = (theme: Theme = getTheme()): boolean =>
-  theme === "dark" || (theme === "system" && prefersDark());
+/** The theme on screen. */
+export const currentTheme = (): Theme => stored() ?? system();
 
+/** Runs in the head before the first paint, so the page never flashes the other theme. */
 export const getThemeScript = (): string => `
 {
-  const t = localStorage.getItem("${STORAGE_KEY}") || "system";
-  const d = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+  const t = localStorage.getItem("${STORAGE_KEY}");
+  const d = t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
   if (d) document.documentElement.classList.add("dark");
+  if (t === "light" || t === "dark") {
+    const c = ${JSON.stringify(CANVAS)}[t];
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", c));
+  }
 }
 `;
 
-export const applyDarkClass = (): void => {
-  document.documentElement.classList.toggle("dark", isDark());
-};
-
+/**
+ * The toggle names what it will do, and its icon shows it (CSS, from the `dark` class); the
+ * browser's chrome takes the chosen canvas, or each scheme's own while the page follows the system.
+ */
 const updateUI = (): void => {
-  const theme = getTheme();
-  document.querySelectorAll<HTMLElement>("[data-theme-icon]").forEach((el) => {
-    el.classList.toggle("active", el.dataset.themeIcon === theme);
+  const next = currentTheme() === "dark" ? "light" : "dark";
+  document.querySelectorAll<HTMLElement>("[data-theme-toggle]").forEach((btn) => {
+    btn.setAttribute("aria-label", `Switch to ${next} theme`);
+    btn.title = `Switch to ${next} theme`;
   });
-  document.querySelectorAll("[data-theme-toggle]").forEach((btn) => {
-    btn.setAttribute("aria-label", `Theme: ${theme} (click to change)`);
+  const chosen = stored();
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((meta) => {
+    meta.content = CANVAS[chosen ?? (meta.media.includes("dark") ? "dark" : "light")];
   });
 };
 
-export const applyTheme = (): void => {
-  applyDarkClass();
+const applyTheme = (): void => {
+  document.documentElement.classList.toggle("dark", currentTheme() === "dark");
   updateUI();
 };
 
-const cycleTheme = (): void => {
-  const next = THEMES[(THEMES.indexOf(getTheme()) + 1) % THEMES.length];
-  if (!next) return;
-  localStorage.setItem(STORAGE_KEY, next);
+/**
+ * Flips the theme at once: the toggle's icon turning is the only motion. Transitions are held off
+ * for the frame of the swap (`flipping` in globals.css), so nothing fades through the new
+ * background on its way to its new colour.
+ */
+const flipTheme = (): void => {
+  const next: Theme = currentTheme() === "dark" ? "light" : "dark";
+  if (next === system()) localStorage.removeItem(STORAGE_KEY);
+  else localStorage.setItem(STORAGE_KEY, next);
+  const root = document.documentElement;
+  root.classList.add("flipping");
   applyTheme();
+  requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("flipping")));
 };
 
 export const initTheme = (): void => {
   updateUI();
 
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-    if (getTheme() === "system") applyTheme();
+    if (!stored()) applyTheme();
   });
 
   document.addEventListener("click", (e) => {
     if (!(e.target instanceof Element)) return;
     if (!e.target.closest("[data-theme-toggle]")) return;
     e.preventDefault();
-    cycleTheme();
+    flipTheme();
   });
 };
