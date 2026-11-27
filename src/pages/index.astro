@@ -40,15 +40,22 @@ const external = { target: "_blank", rel: "noopener noreferrer" };
 <style>
   /*
    * Beside the bio once there's room for both (past a phone), so the horizon keeps the room under
-   * them; after the links until then.
+   * them, the two sharing the column evenly until the bio can have a line of its own length; after
+   * the links until then.
    */
   @media (width >= 40rem) {
     .home {
       display: grid;
-      grid-template-columns: minmax(18rem, 34rem) minmax(14rem, 21rem);
+      grid-template-columns: minmax(0, 1fr) minmax(15rem, 1fr);
       justify-content: space-between;
       column-gap: 2rem;
       align-items: baseline;
+    }
+  }
+
+  @media (width >= 48rem) {
+    .home {
+      grid-template-columns: minmax(18rem, 34rem) minmax(14rem, 21rem);
     }
   }
 

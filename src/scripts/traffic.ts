@@ -465,12 +465,21 @@ function nameOthers(about: HTMLElement, apps: Project[], shown: number): void {
   if (shown < named.length) about.append(`, and ${named.length - shown} more`);
 }
 
+/** Today's date on the axis, with its count when today is the busiest day and nothing's read. */
+const todayText = (n: number | null): string =>
+  n === null ? "Today so far" : `Today so far · ${formatCount(n)}`;
+
 /** How far beyond the days a finger still reads the nearest one, px: most of a fingertip. */
 const REACH = 44;
 
 /** Whether two labels on the axis stand clear of each other, 20px apart or more. */
-const clear = (at: DOMRect, of: DOMRect): boolean =>
-  at.right + 20 <= of.left || at.left - 20 >= of.right;
+const clear = (at: Span, of: Span): boolean => at.right + 20 <= of.left || at.left - 20 >= of.right;
+
+/** Where a label runs across the page, px. */
+interface Span {
+  left: number;
+  right: number;
+}
 
 /** The band a row of the key names. */
 const bandOfRow = (row: HTMLLIElement): number => Number(row.dataset.band);
@@ -529,8 +538,6 @@ export async function initTraffic(): Promise<void> {
       void initTraffic();
     });
     period.replaceChildren("Traffic is unavailable right now. ", retry);
-    // Under the bare ground too, where the strata would stand: a phone shows the two far apart.
-    today.textContent = "Traffic unavailable";
     root.dataset.state = "error";
     horizon.dataset.state = "error";
     return;
@@ -558,7 +565,6 @@ export async function initTraffic(): Promise<void> {
   period.classList.add("arrive");
   /** Whether counting began within the window, so the days shown are its last few. */
   const since = days.length < slots;
-  today.textContent = "Today so far";
   start.textContent = since ? `Since ${formatDay(days[0]!)}` : formatDay(days[0]!);
   horizon.dataset.state = "ready";
 
@@ -623,9 +629,13 @@ export async function initTraffic(): Promise<void> {
     scrub.style.left = `${left}px`;
     scrub.style.width = `${Math.min(box.width, edges.to + REACH) - left}px`;
     const offset = column.left - box.left;
-    // "Today so far" holds the right edge. Then, in that order, the first day, the first app's
+    // "Today so far" holds the right edge, as it reads with nothing picked out (with today's
+    // count, when today is the busiest day). Then, in that order, the first day, the first app's
     // launch and each week find room on the axis, each at least 20px from the others, inside the
-    // column, or go unnamed.
+    // column, or go unnamed. Each keeps where it fits, for `settle`.
+    today.textContent = todayText(
+      peakDay === days.length - 1 && totals[peakDay]! > 0 ? totals[peakDay]! : null,
+    );
     const kept = [today.getBoundingClientRect()];
     const fit = (el: HTMLElement, x: number, shifts: number[]): boolean => {
       el.hidden = false;
@@ -635,9 +645,11 @@ export async function initTraffic(): Promise<void> {
         const inside = at.left >= box.left + from - 0.5 && at.right <= box.left + to + 0.5;
         if (!inside || !kept.every((other) => clear(at, other))) return false;
         kept.push(at);
+        el.dataset.span = `${at.left} ${at.right}`;
         return true;
       });
       el.hidden = !fits;
+      if (!fits) delete el.dataset.span;
       return fits;
     };
     // A run that began within the window is named beside its tick, above the ground and ending
@@ -727,17 +739,30 @@ export async function initTraffic(): Promise<void> {
     return { d: picked === null ? peakDay : daily.indexOf(n), n };
   };
 
+  /**
+   * The axis's dates as they fit beside "Today so far" as it reads now: one that today's count
+   * (beside it, for an app picked out) would crowd steps aside until it goes again.
+   */
+  const settle = () => {
+    const at = today.getBoundingClientRect();
+    for (const el of [start, ...weekLabels.querySelectorAll<HTMLElement>("span")]) {
+      if (el.dataset.span === undefined) continue;
+      const [left, right] = el.dataset.span.split(" ").map(Number);
+      el.hidden = !clear({ left: left!, right: right! }, at);
+    }
+  };
+
   // The busiest day is named in the headroom once the strata have risen, so heights have a scale.
-  // Today's needs no date ("Today so far" is right under it), only what the count is.
+  // When that's today, its count joins "Today so far" right under it instead.
   const showPeak = () => {
     const { d, n } = busiest();
+    const onToday = d === days.length - 1;
+    today.textContent = todayText(shownDay === null && onToday && n > 0 ? n : null);
+    settle();
     // A month without a single view has no busiest day to name.
-    peakLabel.hidden = shownDay !== null || n === 0;
+    peakLabel.hidden = shownDay !== null || n === 0 || onToday;
     if (peakLabel.hidden) return;
-    peakLabel.textContent =
-      d === days.length - 1
-        ? `${formatCount(n)} so far`
-        : `${dayName(days, d)} · ${formatCount(n)}`;
+    peakLabel.textContent = `${dayName(days, d)} · ${formatCount(n)}`;
     place(peakLabel, d);
   };
 
