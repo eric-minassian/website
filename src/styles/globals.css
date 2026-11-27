@@ -290,7 +290,9 @@
 
   .arrow-link .arrow {
     margin-left: 0.3em;
-    transition: translate 200ms var(--ease-out-soft);
+    transition:
+      opacity 150ms,
+      translate 200ms var(--ease-out-soft);
   }
 
   .arrow-link:hover .arrow {
@@ -343,13 +345,18 @@
   }
 
   /* A placeholder bar while data loads: the shape of the text to come, breathing gently. */
+  /*
+   * A placeholder for text while data loads: a run of faint dots as long as the text to come, in
+   * the horizon's idiom, breathing at the same tempo as the light along its ground.
+   */
   .skeleton {
     display: inline-block;
     height: 0.5em;
-    border-radius: 2px;
-    background-color: color-mix(in srgb, var(--color-faint) 70%, transparent);
+    background-image: radial-gradient(circle, var(--color-faint) 1.4px, transparent 1.9px);
+    background-size: 5px 100%;
+    background-repeat: repeat-x;
+    background-position: left center;
     vertical-align: middle;
-    /* The same tempo as the light along the horizon's ground while it loads. */
     animation: skeleton-pulse 2.4s ease-in-out infinite;
   }
 
@@ -358,13 +365,16 @@
     position: absolute;
     inset: 0 0 auto;
     pointer-events: none;
-    animation: leave 280ms ease-out both;
+    animation: leave 140ms ease-out both;
   }
 
-  /* Rows that arrive with the data rise into place one after another. */
+  /*
+   * Rows that arrive with the data rise into place one after another, starting as the placeholders
+   * finish fading, so the two are never drawn over each other at strength.
+   */
   .arrive {
     animation: arrive 420ms var(--ease-out-soft) both;
-    animation-delay: calc(var(--i, 0) * 45ms);
+    animation-delay: calc(110ms + var(--i, 0) * 45ms);
   }
 }
 

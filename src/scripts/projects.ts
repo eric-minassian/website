@@ -14,12 +14,9 @@ import {
   type Projects,
   totalOf,
 } from "../lib/projects";
+import { touchScrub } from "../lib/scrub";
 
 const SVG = "http://www.w3.org/2000/svg";
-const BAR_GAP = 1;
-const HEIGHT = 32;
-/** The rise from one dot to the next up a column, px. */
-const RISE = 3.5;
 
 const element = <K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -48,34 +45,57 @@ function figure(el: HTMLElement, n: number): void {
   el.classList.toggle("text-muted", n === 0);
 }
 
+/** How a sparkline is drawn: its days' width and spacing, its height, and the rise per dot. */
+interface Dots {
+  bar: number;
+  gap: number;
+  height: number;
+  rise: number;
+}
+
+/** On a phone the days have a line of their own, so they can be wider and easier to touch. */
+const dotsFor = (wide: boolean): Dots =>
+  wide ? { bar: 6, gap: 2, height: 36, rise: 5 } : { bar: 3, gap: 1, height: 32, rise: 3.5 };
+
 /**
  * The project's 30 days as columns of small dots like the home page's horizon, in its darkest
- * tone, each scaled to the app's own busiest day so every row shows its shape (the footnote says
- * so; the totals compare the rows). Any traffic at all stands at least one dot; a day with none
- * keeps a faint dot on the ground; a day before the app was live, or before the platform counted,
- * is left blank.
+ * tone, on a faint track that shows the whole month. Each is scaled to the app's own busiest day
+ * (but never fewer than ten views, so a handful doesn't stand full height); the footnote says so
+ * and the totals compare the rows. Any traffic at all stands at least one dot; a day with none has
+ * a small dot in the third band's tone; a day before the app was live, or before the platform
+ * counted, has only the track.
  */
-function sparkline(pageViews: number[], from: number, peak: number, bar: number): SVGSVGElement {
-  const step = bar + BAR_GAP;
-  const width = pageViews.length * step - BAR_GAP;
+function sparkline(pageViews: number[], from: number, peak: number, dots: Dots): SVGSVGElement {
+  const { bar, gap, height, rise } = dots;
+  const step = bar + gap;
+  const width = pageViews.length * step - gap;
   const svg = document.createElementNS(SVG, "svg");
   svg.setAttribute("width", String(width));
-  svg.setAttribute("height", String(HEIGHT));
-  svg.setAttribute("viewBox", `0 0 ${width} ${HEIGHT}`);
+  svg.setAttribute("height", String(height));
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("aria-hidden", "true");
   svg.setAttribute("class", "block");
   const r = bar * 0.42;
-  const rows = Math.floor(HEIGHT / RISE);
+  const rows = Math.floor(height / rise);
+  const scale = Math.max(10, peak);
+  const ground = height - rise / 2;
+  const track = document.createElementNS(SVG, "path");
+  track.setAttribute(
+    "d",
+    pageViews.map((_, day) => dot(day * step + bar / 2, ground, 0.6)).join(""),
+  );
+  track.setAttribute("class", "fill-faint");
+  svg.append(track);
   pageViews.forEach((views, day) => {
     if (day < from) return;
     const x = day * step + bar / 2;
-    const count = views === 0 ? 0 : Math.max(1, Math.round((views / peak) * rows));
+    const count = views === 0 ? 0 : Math.max(1, Math.round((views / scale) * rows));
     const path = document.createElementNS(SVG, "path");
-    const dots =
+    const marks =
       count === 0
-        ? [dot(x, HEIGHT - RISE / 2, r * 0.5)]
-        : Array.from({ length: count }, (_, i) => dot(x, HEIGHT - RISE / 2 - i * RISE, r));
-    path.setAttribute("d", dots.join(""));
+        ? [dot(x, ground, Math.max(1, r * 0.5))]
+        : Array.from({ length: count }, (_, i) => dot(x, ground - i * rise, r));
+    path.setAttribute("d", marks.join(""));
     path.setAttribute("class", views === 0 ? "fill-band-3" : "fill-band-1");
     path.dataset.day = String(day);
     svg.append(path);
@@ -87,18 +107,26 @@ function sparkline(pageViews: number[], from: number, peak: number, bar: number)
 const dot = (x: number, y: number, r: number): string =>
   `M${(x - r).toFixed(2)} ${y.toFixed(2)}a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0`;
 
-/** The days the ledger covers, the first the platform counted, and the bars' width. */
+/** The days the ledger covers, the first the platform counted, and how the dots are drawn. */
 interface Span {
   days: string[];
   from: number;
-  bar: number;
+  dots: Dots;
 }
 
-function row(project: Project, index: number, span: Span): HTMLLIElement {
-  const { days, bar } = span;
-  // The app's first day: the first the platform counted, or the day it went live if later.
+/** The app's first day in the ledger: the first the platform counted, or the day it went live. */
+const firstDayOf = (project: Project, days: string[], counting: number): number => {
   const live = days.findIndex((day) => day >= project.liveSince.slice(0, 10));
-  const from = Math.max(span.from, live === -1 ? days.length - 1 : live);
+  return Math.max(counting, live === -1 ? days.length - 1 : live);
+};
+
+/** The page views the ledger shows for an app: those from its first day on. */
+const shownTotal = (project: Project, days: string[], counting: number): number =>
+  totalOf(project.pageViews.slice(firstDayOf(project, days, counting)));
+
+function row(project: Project, index: number, span: Span): HTMLLIElement {
+  const { days, dots } = span;
+  const from = firstDayOf(project, days, span.from);
   const li = element("li", "ledger-row rule-above arrive");
   li.style.setProperty("--i", String(index));
   const name = element("span", "ledger-name");
@@ -122,7 +150,7 @@ function row(project: Project, index: number, span: Span): HTMLLIElement {
   figure(total, totalOf(counted));
 
   const peak = Math.max(1, ...counted);
-  const svg = sparkline(project.pageViews, from, peak, bar);
+  const svg = sparkline(project.pageViews, from, peak, dots);
   const spark = element("div", "ledger-spark");
   // A day's reading, beside the dots on a phone and under them where the description sits beside
   // the name; either way nothing moves. The slider's value is what a screen reader hears.
@@ -156,17 +184,16 @@ function row(project: Project, index: number, span: Span): HTMLLIElement {
 
   const dayUnder = (e: PointerEvent) => {
     const x = e.clientX - svg.getBoundingClientRect().left;
-    return Math.min(days.length - 1, Math.max(from, Math.floor(x / (bar + BAR_GAP))));
+    return Math.min(days.length - 1, Math.max(from, Math.floor(x / (dots.bar + dots.gap))));
   };
-  // A finger or pen reads the day it touches and, dragged sideways, each day it crosses.
-  spark.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "mouse") return;
-    spark.setPointerCapture(e.pointerId);
-    show(dayUnder(e));
-  });
   spark.addEventListener("pointermove", (e) => {
-    if (e.pointerType === "mouse" || spark.hasPointerCapture(e.pointerId)) show(dayUnder(e));
+    if (e.pointerType === "mouse") show(dayUnder(e));
   });
+  touchScrub(
+    spark,
+    (e) => show(dayUnder(e)),
+    () => show(null),
+  );
   spark.addEventListener("pointerleave", (e) => {
     if (e.pointerType === "mouse" && !spark.matches(":focus-visible")) show(null);
   });
@@ -202,11 +229,6 @@ function row(project: Project, index: number, span: Span): HTMLLIElement {
   return li;
 }
 
-/** The busiest first, like the home page's key; among equals, the latest deployed. */
-const byTraffic = (a: Project, b: Project): number =>
-  totalOf(b.pageViews) - totalOf(a.pageViews) ||
-  Date.parse(b.lastDeployedAt) - Date.parse(a.lastDeployedAt);
-
 export async function initProjects(): Promise<void> {
   const root = document.querySelector<HTMLElement>("[data-projects]");
   if (!root) return;
@@ -222,10 +244,15 @@ export async function initProjects(): Promise<void> {
     try {
       const projects: Projects = await loadProjects();
       const from = firstCounted(projects);
-      const apps = projects.projects.toSorted(byTraffic);
-      // Narrower bars on a small phone, so the name keeps its room.
-      const bar = matchMedia("(width >= 26rem)").matches ? 3 : 2;
-      const span = { days: projects.days, from, bar };
+      const { days } = projects;
+      // The busiest first by the totals shown, like the home page's key; among equals, the latest
+      // deployed.
+      const apps = projects.projects.toSorted(
+        (a, b) =>
+          shownTotal(b, days, from) - shownTotal(a, days, from) ||
+          Date.parse(b.lastDeployedAt) - Date.parse(a.lastDeployedAt),
+      );
+      const span = { days, from, dots: dotsFor(!matchMedia("(width >= 52rem)").matches) };
       list.replaceChildren(...apps.map((p, i) => row(p, i, span)));
       list.hidden = apps.length === 0;
       note.textContent = apps.length
