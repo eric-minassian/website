@@ -55,6 +55,17 @@
     }
   }
 
+  /* On a short window the strata give up a little height, and the dates a little air, to fit. */
+  @media (width >= 40rem) and (height < 40rem) {
+    .horizon-plot {
+      min-height: 6rem;
+    }
+
+    .horizon-axis {
+      padding-bottom: 0.5rem;
+    }
+  }
+
   .horizon-chart {
     position: absolute;
     inset: 0;
@@ -167,11 +178,16 @@
     color: var(--color-ink);
   }
 
-  /* The busiest day's note is dotted underneath, like a term with more to it: the days can be read. */
-  [data-horizon-peak] {
-    text-decoration: underline dotted;
-    text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
-    text-underline-offset: 0.25em;
+  /*
+   * On a touch screen, where nothing shows the days can be read until one is, the busiest day's
+   * note is dotted underneath like a term with more to it; a tap on it reads that day.
+   */
+  @media (hover: none) {
+    [data-horizon-peak] {
+      text-decoration: underline dotted;
+      text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
+      text-underline-offset: 0.25em;
+    }
   }
 
   /* The busiest day's note waits for its block to rise beneath it. */

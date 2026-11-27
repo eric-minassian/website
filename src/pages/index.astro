@@ -33,17 +33,18 @@ const external = { target: "_blank", rel: "noopener noreferrer" };
     <ProjectsKey />
   </div>
   <!-- Sky between the text and the horizon: a share of the room the window leaves, never none. -->
-  <div class="min-h-10 flex-[1_1_0]" aria-hidden="true"></div>
+  <div class="min-h-10 flex-[1_1_0] [@media(height<40rem)]:min-h-6" aria-hidden="true"></div>
   <TrafficHorizon />
 </Layout>
 
 <style>
   /* Beside the bio once there's room for both; after the links until then. */
-  @media (width >= 64rem) {
+  @media (width >= 60rem) {
     .home {
       display: grid;
-      grid-template-columns: minmax(0, 36rem) 17rem;
+      grid-template-columns: minmax(0, 34rem) 21rem;
       justify-content: space-between;
+      column-gap: 2rem;
       align-items: baseline;
     }
   }

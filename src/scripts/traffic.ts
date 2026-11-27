@@ -358,12 +358,20 @@ function keyRow(row: Band, band: number, position: number): HTMLLIElement {
   total.dataset.total = "";
   figure(total, totalOf(row.daily));
 
+  // What it is: the app's description, or the others' names, each kept whole across a line break.
   const about = document.createElement("span");
   about.className = "key-about";
-  about.textContent =
-    row.apps.length === 1 && only
-      ? (only.description ?? "")
-      : row.apps.map((p) => p.name).join(", ");
+  if (row.apps.length === 1 && only) {
+    about.textContent = only.description ?? "";
+  } else {
+    row.apps.forEach((p, i) => {
+      if (i) about.append(", ");
+      const whole = document.createElement("span");
+      whole.className = "whitespace-nowrap";
+      whole.textContent = p.name;
+      about.append(whole);
+    });
+  }
   li.append(mark, name, total, about);
   return li;
 }
@@ -434,11 +442,9 @@ export async function initTraffic(): Promise<void> {
     horizon.dataset.state = "empty";
     return;
   }
-  // The key names the apps first, busiest first, and the others after them, whatever their tone.
-  const order = bands
-    .map((_, i) => i)
-    .toSorted((a, b) => Number(bands[a]!.apps.length > 1) - Number(bands[b]!.apps.length > 1));
-  list.replaceChildren(...order.map((band, position) => keyRow(bands[band]!, band, position)));
+  // The key reads as a scale, busiest first, like the stack from the ground up and the tones from
+  // darkest; the others take their place by their share like any app, marked by their →.
+  list.replaceChildren(...bands.map((band, i) => keyRow(band, i, i)));
   list.hidden = false;
   const periodText = periodOf(projects);
   period.textContent = periodText;
@@ -552,7 +558,30 @@ export async function initTraffic(): Promise<void> {
     scrub.setAttribute("aria-valuetext", reading.replace(" · ", ": "));
   };
 
-  const dayUnder = (e: PointerEvent) => dayAt(grid, e.clientX - chart.getBoundingClientRect().left);
+  // The day under the pointer; on the busiest day's note (where it was last shown, since a
+  // reading takes its place), that day, wherever along the note the pointer is.
+  let peakBox: { left: number; right: number; top: number; bottom: number } | null = null;
+  const dayUnder = (e: PointerEvent) => {
+    const box = chart.getBoundingClientRect();
+    if (!peakLabel.hidden) {
+      const note = peakLabel.getBoundingClientRect();
+      peakBox = {
+        left: note.left - box.left,
+        right: note.right - box.left,
+        top: note.top - box.top,
+        bottom: note.bottom - box.top,
+      };
+    }
+    const x = e.clientX - box.left;
+    const y = e.clientY - box.top;
+    const onNote =
+      peakBox !== null &&
+      x >= peakBox.left &&
+      x <= peakBox.right &&
+      y >= peakBox.top - 6 &&
+      y <= peakBox.bottom + 6;
+    return onNote ? peakDay : dayAt(grid, x);
+  };
   scrub.addEventListener("pointermove", (e) => {
     if (e.pointerType === "mouse") showDay(dayUnder(e));
   });
