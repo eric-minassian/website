@@ -197,20 +197,35 @@
     letter-spacing: -0.005em;
   }
 
-  /* A subpage's "Eric Minassian / Projects" shrinks on a narrow phone to stay on one line. */
-  .masthead-path {
-    font-size: clamp(1.125rem, 5.6vw, 1.5rem);
+  @media (width >= 40rem) {
+    .masthead {
+      font-size: 1.75rem;
+    }
   }
 
-  @media (width >= 40rem) {
-    .masthead,
+  /*
+   * On a subpage the name leads to the page's own, a step smaller and quieter, like the path it
+   * is: the page's name is the largest type, and "Eric Minassian / Not found" fits a 320px phone
+   * (where the page's name gives up a little, still well above the text).
+   */
+  .masthead-home,
+  .masthead-sep {
+    font-size: 0.75em;
+  }
+
+  @media (width < 22.5rem) {
     .masthead-path {
-      font-size: 1.75rem;
+      font-size: 1.3125rem;
     }
   }
 
   .masthead-home {
     color: var(--color-muted);
+  }
+
+  /* Focus is put on the page's name while what it heads reloads; it isn't a control. */
+  #page-heading:focus-visible {
+    outline: none;
   }
 
   .masthead-home:hover {
@@ -300,17 +315,53 @@
   }
 
   /*
-   * The traffic horizon's ground while its data loads (TrafficHorizon.astro): a faint dot every
-   * `--pitch` along the bottom row. The drawn strata bring a ground of their own, in step with
-   * their days; `--pitch` is the spacing they aim for.
+   * A full-width box the horizon's ground is worked out from (`100cqw` below): the home page's
+   * horizon, and the 404's bare ground.
+   */
+  .horizon-frame {
+    container-type: inline-size;
+  }
+
+  /*
+   * The horizon's ground row, a faint dot on every column of its grid from one edge of the window
+   * to the other: what the home page shows while its data loads (TrafficHorizon.astro) and the 404
+   * shows for good. The grid is `gridOf` in traffic.ts worked out the same way, so the strata's
+   * own ground lands exactly on this one: the page's column holds the platform's 30-day window,
+   * each day `--per` whole columns, as near `--pitch` apart as rounding gets.
    */
   .ground {
     --pitch: 7px;
     --dot-scale: 1;
-    background-image: radial-gradient(circle, var(--color-faint) 0.9px, transparent 1.4px);
-    background-size: var(--pitch) var(--pitch);
+    --per: 2;
+    --column: calc(min(100cqw, 58rem + 2 * var(--gutter)) - 2 * var(--gutter));
+    --step: calc(var(--column) / (30 * var(--per)));
+    --ground: radial-gradient(circle, var(--color-faint) 0.65px, transparent 1.15px);
+    background-image: var(--ground);
+    background-size: var(--step) var(--step);
     background-repeat: repeat-x;
-    background-position: right bottom;
+    background-position: calc((100cqw - var(--column)) / 2) bottom;
+  }
+
+  /*
+   * `--per` is the column's width over 30 days of `--pitch`, rounded: 2 below a 573px frame,
+   * 3 below 799px (where the gutters are 2rem), 4 up to the 105rem step in the root size, then 5.
+   */
+  @container (width >= 573px) {
+    .ground {
+      --per: 3;
+    }
+  }
+
+  @container (width >= 799px) {
+    .ground {
+      --per: 4;
+    }
+  }
+
+  @media (width >= 105rem) {
+    .ground {
+      --per: 5;
+    }
   }
 
   /* Light dots on a dark ground look larger than they are; drawn a little smaller, they weigh the same. */
@@ -318,10 +369,33 @@
     --dot-scale: 0.9;
   }
 
-  /* A finer grid on a phone, so a month of days fits the narrow column with room for texture. */
+  /*
+   * A finer grid on a phone, so a month of days fits the narrow column with room for texture: a
+   * day is two columns from a 318px frame (gutters of 1.5rem), one below it.
+   */
   @media (width < 30rem) {
     .ground {
       --pitch: 6px;
+    }
+  }
+
+  @container (width < 318px) {
+    .ground {
+      --per: 1;
+    }
+  }
+
+  /*
+   * The room under the ground row: the strip for the weeks' ticks (FOOT in traffic.ts) and the
+   * line of dates under it, so a bare ground (the 404's) stands where the home page's does.
+   */
+  :root {
+    --horizon-foot: calc(6px + 1.5rem + 1.5 * var(--text-sm));
+  }
+
+  @media (width >= 40rem) and (height < 40rem) {
+    :root {
+      --horizon-foot: calc(6px + 1rem + 1.5 * var(--text-sm));
     }
   }
 

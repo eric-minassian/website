@@ -195,10 +195,11 @@ const jsonLd = {
     <noscript>
       <style>
         [data-theme-toggle],
-        [data-horizon],
         [data-traffic-placeholder],
         [data-traffic-period],
-        [data-projects-placeholder] {
+        [data-projects-placeholder],
+        [data-projects-head],
+        [data-projects-note] {
           display: none !important;
         }
       </style>
@@ -216,19 +217,19 @@ const jsonLd = {
   >
     <!-- More air above the masthead on a large window, when there's height to spare. -->
     <header
-      class="page flex items-center justify-between gap-4 pt-10 sm:pt-16 [@media(height>=40rem)_and_(height<45rem)]:pt-8 [@media(height<40rem)]:pt-6 [@media(width>=64rem)_and_(height>=48rem)]:pt-24"
+      class="page flex items-center justify-between gap-3 pt-10 sm:pt-16 [@media(height>=40rem)_and_(height<45rem)]:pt-8 [@media(height<40rem)]:pt-6 [@media(width>=64rem)_and_(height>=48rem)]:pt-24"
     >
       {
         page ? (
-          <div class="masthead masthead-path flex min-w-0 flex-wrap items-baseline gap-x-2.5">
+          <div class="masthead masthead-path flex min-w-0 flex-wrap items-baseline gap-x-2">
             <a href="/" class="masthead-home link-quiet tap">
               {SITE.name}
             </a>
-            <span class="flex items-baseline gap-x-2.5 whitespace-nowrap">
-              <span aria-hidden="true" class="text-muted">
+            <span class="flex items-baseline gap-x-2 whitespace-nowrap">
+              <span aria-hidden="true" class="masthead-sep text-muted">
                 /
               </span>
-              <h1 id="page-heading">{page}</h1>
+              <h1 id="page-heading" tabindex="-1">{page}</h1>
             </span>
           </div>
         ) : (

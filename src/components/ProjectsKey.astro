@@ -64,49 +64,44 @@ const placeholders = [
 <style>
   .projects-key {
     display: grid;
-    grid-template-areas: "head" "body";
     row-gap: 0.75rem;
     margin-top: 3rem;
     padding-top: 2rem;
   }
 
-  .key-head {
-    grid-area: head;
-  }
-
-  .key-body {
-    grid-area: body;
-  }
-
-  /* The rows, over which the placeholders fade out (src/lib/leave.ts). */
+  /*
+   * The rows, over which the placeholders fade out (src/lib/leave.ts). They keep room for a full
+   * key (three rows, five lines of description between them), so what arrives seldom needs more
+   * and the page below doesn't move; no more than that, or a window that just fits would scroll.
+   */
   .key-rows {
     position: relative;
+    min-height: calc(3 * (0.75rem + 1.5 * var(--text-sm)) + 5 * 1.45 * var(--text-sm));
     margin-top: 0.25rem;
   }
 
-  /* A line kept for the caption, so nothing moves when it arrives with the counts. */
+  /*
+   * A line kept for the caption, so nothing moves when it arrives with the counts. Over them, it
+   * heads their column, as the ledger's does on /projects; a note in its place (an error, nothing
+   * running) reads from the left.
+   */
   .key-period {
     min-height: 1.5em;
   }
 
-  /*
-   * With room beside it, the section's name sits on the left and the key on the right, its counts
-   * on the toggle's line and its caption right under them.
-   */
-  @media (width >= 40rem) {
-    .projects-key {
-      grid-template-columns: minmax(0, 1fr) 21rem;
-      grid-template-areas: "head body";
-      align-items: start;
-      column-gap: 2rem;
-    }
+  .key-period[data-caption] {
+    text-align: right;
+  }
+
+  /* Under the bio, as wide as its text: the counts stay near the names they belong to. */
+  .projects-key {
+    max-width: 36rem;
   }
 
   /* Beside the bio on a large window, where the whitespace is separation enough. */
   @media (width >= 56rem) {
     .projects-key {
-      grid-template-columns: none;
-      grid-template-areas: "head" "body";
+      max-width: none;
       margin-top: 0;
       padding-top: 0;
       background: none;
@@ -115,7 +110,7 @@ const placeholders = [
 
   .projects-key :global(.key-row) {
     display: grid;
-    grid-template-columns: 1rem minmax(0, 1fr) auto;
+    grid-template-columns: 1em minmax(0, 1fr) auto;
     align-items: center;
     column-gap: 0.625rem;
     padding-block: 0.375rem;
@@ -145,8 +140,11 @@ const placeholders = [
     place-items: center;
   }
 
+  /* A patch of the band's dots as tall as the text, at any text size. */
   .projects-key :global(.key-swatch svg) {
     display: block;
+    width: 1em;
+    height: 1em;
   }
 
   /* The name's link is only as wide as the name, and a long one ends in an ellipsis. */
@@ -185,6 +183,6 @@ const placeholders = [
 
   /* Pointing at (or focusing) one app in the key quiets the others, here and on the horizon. */
   [data-focus] :global(li.key-row:not(.is-focused)) {
-    opacity: 0.7;
+    opacity: 0.45;
   }
 </style>

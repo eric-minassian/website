@@ -135,9 +135,15 @@ test.describe("home page", () => {
     await expect(key.getByRole("listitem").nth(1)).toContainText("A live, interactive model");
     await expect(key.getByRole("listitem").nth(2)).toContainText("encore, virtual-fly");
     await expect(key).toContainText("Page views over the last 30 days");
-    // The busiest day is named above its column.
-    await expect(page.locator("[data-horizon-peak]")).toHaveText("Nov 17 · 8,436");
+    // The busiest day is named above its column; pointing at an app in the key, its own busiest.
+    const peak = page.locator("[data-horizon-peak]");
+    await expect(peak).toHaveText("Nov 17 · 8,436");
     await expect(page.locator("[data-horizon-start]")).toHaveText("Oct 28");
+    await key.getByRole("listitem").first().hover();
+    // Today's needs no date: "Today so far" is under it.
+    await expect(peak).toHaveText("2,872");
+    await page.mouse.move(0, 0);
+    await expect(peak).toHaveText("Nov 17 · 8,436");
     await key.getByRole("link", { name: "Projects" }).click();
     await expect(page).toHaveURL(/\/projects$/);
   });
@@ -197,8 +203,9 @@ test.describe("home page", () => {
     await page.goto("/");
     const key = page.getByRole("region", { name: "Projects" });
     await expect(key).toContainText("Page views since Nov 24");
-    // The horizon starts where the counting did.
-    await expect(page.locator("[data-horizon-start]")).toHaveText("Nov 24");
+    // The horizon starts where the counting did, a few days at the end of the window.
+    await expect(page.locator("[data-horizon-start]")).toHaveText("Since Nov 24");
+    await expect(page.locator("[data-horizon-start]")).toBeVisible();
 
     await page.unroute(SITE.projectsUrl);
     await failProjects(page);
@@ -291,8 +298,11 @@ test.describe("projects page", () => {
     const row = page.getByRole("list", { name: "Projects" }).getByRole("listitem").first();
     const reading = row.locator(".spark-reading");
     const box = (await row.locator(".ledger-spark svg").boundingBox())!;
-    // Each of the 30 days owns a column and the 1px gap after it; day 20 is Nov 16, 2,844 views.
-    const day = (box.width + 1) / 30;
+    // Each of the 30 days owns a column of dots; day 19 is Nov 16, 2,844 views.
+    const day = box.width / 30;
+    // Before the app went live (Nov 14), the ground says so.
+    await page.mouse.move(box.x + 5.5 * day, box.y + box.height - 2);
+    await expect(reading).toHaveText("Nov 2 · not live yet");
     await page.mouse.move(box.x + 19.5 * day, box.y + 10);
     // The reading sits by the dots, so the row's links and lines stay as they are.
     await expect(reading).toHaveText("Nov 16 · 2,844");
@@ -335,6 +345,8 @@ test.describe("projects page", () => {
     await page.unroute(SITE.projectsUrl);
     await serveProjects(page);
     await page.getByRole("button", { name: "Try again" }).click();
+    // The keyboard waits on the page's name while the list comes back.
+    await expect(page.locator("#page-heading")).toBeFocused();
     await expect(page.getByRole("list", { name: "Projects" }).getByRole("listitem")).toHaveCount(4);
     await expect(page.getByText("The projects couldn’t be loaded.")).toBeHidden();
   });
