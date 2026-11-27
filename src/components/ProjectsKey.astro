@@ -4,10 +4,12 @@
 // the platform's directory loads; until then it holds the shape of the rows to come.
 import { ARROW_RIGHT } from "../lib/icons";
 
+// The shape of a typical key: the busiest app's description over two lines, the others' over one,
+// so that what arrives takes the room the placeholder kept.
 const placeholders = [
-  { name: "5.5rem", about: "13rem" },
-  { name: "3.5rem", about: "10rem" },
-  { name: "4.5rem", about: "8rem" },
+  { name: "5.5rem", about: ["15rem", "9rem"] },
+  { name: "3.5rem", about: ["12rem"] },
+  { name: "4.5rem", about: ["8rem"] },
 ];
 ---
 
@@ -40,7 +42,11 @@ const placeholders = [
               <span class="skeleton w-8" />
             </span>
             <span class="key-about">
-              <span class="skeleton" style={{ width: about }} />
+              {about.map((width) => (
+                <span class="block">
+                  <span class="skeleton" style={{ width }} />
+                </span>
+              ))}
             </span>
           </div>
         ))
@@ -105,16 +111,12 @@ const placeholders = [
     grid-template-columns: 1rem minmax(0, 1fr) auto;
     align-items: center;
     column-gap: 0.625rem;
-    padding-block: 0.25rem;
+    padding-block: 0.375rem;
   }
 
-  /*
-   * What the app is, under its name, quieter. Two lines are kept for it, which every description
-   * the platform has fills or fits, so the rows keep one rhythm and nothing moves when they arrive.
-   */
+  /* What the app is, under its name, quieter; rows take their own height, evenly spaced. */
   .projects-key :global(.key-about) {
     grid-column: 2 / -1;
-    min-height: 2.9em;
     color: var(--color-muted);
     line-height: 1.45;
     text-wrap: pretty;
