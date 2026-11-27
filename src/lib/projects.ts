@@ -78,8 +78,14 @@ export function parseProjects(body: unknown): Projects {
   };
 }
 
+/** How long to wait for the directory before showing that it couldn't load. */
+const TIMEOUT_MS = 8_000;
+
 export async function loadProjects(): Promise<Projects> {
-  const res = await fetch(PROJECTS_URL, { headers: { accept: "application/json" } });
+  const res = await fetch(PROJECTS_URL, {
+    headers: { accept: "application/json" },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
   if (!res.ok) throw new Error(`the project directory answered ${res.status}`);
   return parseProjects(await res.json());
 }
@@ -91,12 +97,28 @@ const full = new Intl.NumberFormat("en-US");
 /** `Nov 26`, for a date or a timestamp, in UTC like the counts. */
 export const formatDay = (when: string): string => day.format(new Date(when));
 
-/** A page-view total as shown: `6.4k`, `329`, or an en dash for none. */
-export const formatViews = (n: number): string =>
-  n === 0 ? "–" : compact.format(n).replace("K", "k");
+/** A page-view count as shown: `6.4k`, `329`, `0`. */
+export const formatViews = (n: number): string => compact.format(n).replace("K", "k");
+
+/** A count in full: `2,844`. */
+export const formatCount = (n: number): string => full.format(n);
 
 /** The same total as a screen reader hears it. */
 export const describeViews = (n: number): string =>
   n === 0 ? "No page views" : `${full.format(n)} page views`;
 
 export const totalOf = (counts: number[]): number => counts.reduce((sum, n) => sum + n, 0);
+
+/** The index of the first day the platform counted: 0, or `countingSince`'s place in `days`. */
+export const firstCounted = ({ days, countingSince }: Projects): number =>
+  countingSince ? Math.max(0, days.indexOf(countingSince)) : 0;
+
+/** What the counts cover, as the pages caption them. */
+export const periodOf = (projects: Projects): string =>
+  projects.countingSince
+    ? `Page views since ${formatDay(projects.countingSince)}`
+    : `Page views over the last ${projects.days.length} days`;
+
+/** A day as a readout names it: `Today so far` for the last, which is still counting. */
+export const dayName = (days: string[], d: number): string =>
+  d === days.length - 1 ? "Today so far" : formatDay(days[d]!);

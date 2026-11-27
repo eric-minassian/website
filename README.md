@@ -20,8 +20,9 @@ pnpm test:visual:update # Update visual regression snapshots
 - `src/pages/projects.astro` — Projects page
 - `src/pages/404.astro` — 404 error page
 - `src/layouts/Layout.astro` — Base HTML layout and SEO
-- `src/components/ThemeToggle.astro` — System / dark / light toggle
-- `src/components/ProjectsCorner.astro` — The home page's key and halftone chart of the projects' traffic
+- `src/components/ThemeToggle.astro` — Light / dark toggle that follows the system until flipped
+- `src/components/ProjectsKey.astro` — The home page's key to the projects' traffic
+- `src/components/TrafficHorizon.astro` — The projects' traffic as a halftone horizon
 - `src/components/Projects.astro` — Apps running on my platform, with 30-day page views
 - `src/lib/projects.ts` — Fetches the project list from the platform in the browser
 - `src/styles/globals.css` — Global styles and Tailwind theme

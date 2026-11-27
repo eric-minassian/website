@@ -1,7 +1,8 @@
 ---
 // The apps running on my platform, as a ledger: what each is, when it last shipped, and its page
 // views over the last 30 days. The browser fills it from the platform's directory as the page
-// loads (src/scripts/projects.ts), so it's current without a deploy.
+// loads (src/scripts/projects.ts), so it's current without a deploy; until then it holds the shape
+// of the rows to come.
 
 interface Props {
   /** The id of the heading that names the list. */
@@ -9,20 +10,216 @@ interface Props {
 }
 
 const { labelledBy } = Astro.props;
+const placeholders = [
+  { name: "4.5rem", about: "85%" },
+  { name: "3.5rem", about: "70%" },
+  { name: "5rem", about: "90%" },
+  { name: "3rem", about: "60%" },
+];
 ---
 
-<div data-projects data-state="loading">
-  <ul
-    data-projects-list
-    aria-labelledby={labelledBy}
-    aria-busy="true"
-    hidden
-    class="mt-6 grid list-none grid-cols-[1fr_auto_auto] gap-x-4 border-b border-faint pl-0 sm:grid-cols-[max-content_1fr_auto_auto] sm:gap-x-6"
-  >
+<div data-projects data-state="loading" class="ledger mt-6">
+  <div data-projects-placeholder aria-hidden="true" class="ledger-grid rule-below">
+    {
+      placeholders.map(({ name, about }) => (
+        <div class="ledger-row rule-above">
+          <span class="ledger-name">
+            <span class="skeleton" style={{ width: name }} />
+          </span>
+          <span class="ledger-about">
+            <span>
+              <span class="skeleton" style={{ width: about }} />
+            </span>
+            <span class="text-sm">
+              <span class="skeleton" style={{ width: "8rem" }} />
+            </span>
+          </span>
+          <span class="ledger-spark">
+            <span class="skeleton spark-skeleton" />
+          </span>
+          <span class="ledger-total">
+            <span class="skeleton w-8" />
+          </span>
+        </div>
+      ))
+    }
+  </div>
+  <ul data-projects-list aria-labelledby={labelledBy} aria-busy="true" hidden class="ledger-grid rule-below list-none pl-0">
   </ul>
-  <p data-projects-note class="mt-3 text-sm text-muted" aria-live="polite"></p>
-  <noscript><p class="text-sm text-muted">The list loads with JavaScript.</p></noscript>
+  <p data-projects-note class="mt-4 text-sm text-muted" aria-live="polite"></p>
+  <noscript><p class="mt-4 text-sm text-muted">The list loads with JavaScript.</p></noscript>
 </div>
+
+<style>
+  /* On a phone: name, sparkline and total on one line, what the app is below them. */
+  .ledger-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 3.25rem;
+    column-gap: 1rem;
+  }
+
+  /* With room for it, what the app is sits beside its name. */
+  @media (width >= 52rem) {
+    .ledger-grid {
+      grid-template-columns: minmax(6rem, 11rem) minmax(0, 1fr) auto 3.75rem;
+      column-gap: 2rem;
+    }
+  }
+
+  .ledger :global(.ledger-row) {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+    row-gap: 0.25rem;
+    padding-block: 1.125rem;
+  }
+
+  /* As wide as the name and no wider; a long one ends in an ellipsis (its title has it whole). */
+  .ledger :global(.ledger-name) {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+    display: inline-flex;
+    max-width: 100%;
+    min-width: 0;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 500;
+  }
+
+  .ledger :global(.ledger-name-text) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ledger :global(.ledger-name .arrow-out) {
+    flex: none;
+  }
+
+  .ledger :global(.ledger-about) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    max-width: 36rem;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .ledger :global(.ledger-sep) {
+    margin-inline: 0.4em;
+  }
+
+  /*
+   * A day's reading. On a phone it takes the deploy line's place; where the description sits
+   * beside the name, it sits under the bars instead, in the room the two-line description leaves.
+   */
+  .ledger :global(.ledger-reading),
+  .ledger :global(.spark-reading) {
+    display: none;
+    color: var(--color-ink);
+  }
+
+  .ledger :global([data-reading] .ledger-meta) {
+    display: none;
+  }
+
+  .ledger :global([data-reading] .ledger-reading) {
+    display: block;
+  }
+
+  .ledger :global(.spark-reading) {
+    position: absolute;
+    top: calc(100% + 0.375rem);
+    right: 0;
+    white-space: nowrap;
+  }
+
+  @media (width >= 52rem) {
+    .ledger :global([data-reading] .ledger-meta) {
+      display: block;
+    }
+
+    .ledger :global([data-reading] .ledger-reading) {
+      display: none;
+    }
+
+    .ledger :global([data-reading] .spark-reading) {
+      display: block;
+    }
+  }
+
+  .ledger :global(.ledger-down) {
+    font-weight: 500;
+    color: var(--color-alert);
+  }
+
+  /* The bars stand on the line's baseline, like the name and the total beside them. */
+  .ledger :global(.ledger-spark) {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    position: relative;
+    cursor: crosshair;
+    touch-action: pan-y;
+  }
+
+  /* A taller target than the bars, for a finger or an unsteady pointer. */
+  .ledger :global(.ledger-spark::before) {
+    content: "";
+    position: absolute;
+    inset: -0.5rem -0.25rem;
+  }
+
+  .ledger :global(.ledger-spark:focus-visible) {
+    outline-offset: 4px;
+  }
+
+  .ledger :global(.ledger-total) {
+    grid-column: 3;
+    grid-row: 1;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (width >= 52rem) {
+    .ledger :global(.ledger-about) {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .ledger :global(.ledger-spark) {
+      grid-column: 3;
+    }
+
+    .ledger :global(.ledger-total) {
+      grid-column: 4;
+    }
+  }
+
+  /* A sparkline before its data: a placeholder bar along its foot, its width. */
+  .spark-skeleton {
+    display: block;
+    width: 89px;
+    height: 0.375rem;
+    margin-top: calc(28px - 0.375rem);
+  }
+
+  @media (width >= 26rem) {
+    .spark-skeleton {
+      width: 119px;
+    }
+  }
+
+  .ledger :global(.ledger-spark path) {
+    transition: opacity 120ms;
+  }
+
+  .ledger :global(.ledger-spark[data-day] path:not(.is-day)) {
+    opacity: 0.25;
+  }
+</style>
 
 <script>
   import { initProjects } from "../scripts/projects";

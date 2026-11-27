@@ -10,9 +10,11 @@ interface Props {
   title?: string;
   description?: string;
   noindex?: boolean;
+  /** The page's own heading, after the name in the masthead; the home page has none. */
+  page?: string;
 }
 
-const { title = SITE.name, description = SITE.description, noindex = false } = Astro.props;
+const { title = SITE.name, description = SITE.description, noindex = false, page } = Astro.props;
 
 const site = Astro.site ?? new URL(SITE.url);
 const siteUrl = site.origin;
@@ -90,16 +92,16 @@ const jsonLd = {
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Eric Minassian - Software Engineer & Tech Lead" />
+    <meta property="og:image:alt" content="Eric Minassian, software engineer and tech lead at Amazon" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
-    <meta name="twitter:image:alt" content="Eric Minassian - Software Engineer & Tech Lead" />
+    <meta name="twitter:image:alt" content="Eric Minassian, software engineer and tech lead at Amazon" />
 
     <meta name="theme-color" content="#f8f5ed" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#171717" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#1a1917" media="(prefers-color-scheme: dark)" />
 
     <script is:inline define:vars={{ gaId }}>
       function queueGtag() {
@@ -176,9 +178,8 @@ const jsonLd = {
           if (!(event.target instanceof Element)) return;
           if (!event.target.closest("[data-theme-toggle]")) return;
 
-          const themes = ["system", "dark", "light"];
-          const current = localStorage.getItem("theme") || "system";
-          const next = themes[(themes.indexOf(current) + 1) % themes.length];
+          // This listener runs before the toggle's own, so the class is still the current theme.
+          const next = document.documentElement.classList.contains("dark") ? "light" : "dark";
 
           window.gtag("event", "theme_toggle", {
             event_category: "engagement",
@@ -190,18 +191,56 @@ const jsonLd = {
 
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
     <script is:inline set:html={getThemeScript()}></script>
+    <!-- Without JavaScript there's no theme to flip and no data to wait for. -->
+    <noscript>
+      <style>
+        [data-theme-toggle],
+        [data-horizon],
+        [data-traffic-placeholder],
+        [data-traffic-period],
+        [data-projects-placeholder] {
+          display: none !important;
+        }
+      </style>
+    </noscript>
     <script>
       import { initTheme } from "../scripts/theme";
       initTheme();
     </script>
   </head>
 
-  <body class="mx-auto max-w-[650px] px-8 py-16">
-    <main class="w-full md:mt-16">
+  <body
+    class="flex min-h-dvh flex-col"
+    itemscope={page ? undefined : true}
+    itemtype={page ? undefined : "https://schema.org/Person"}
+  >
+    <!-- More air above the masthead on a large window, when there's height to spare. -->
+    <header
+      class="page flex items-center justify-between gap-4 pt-10 sm:pt-16 [@media(height<45rem)]:pt-8 [@media(width>=64rem)_and_(height>=48rem)]:pt-24"
+    >
+      {
+        page ? (
+          <div class="masthead masthead-path flex min-w-0 flex-wrap items-baseline gap-x-2.5">
+            <a href="/" class="masthead-home link-quiet tap">
+              {SITE.name}
+            </a>
+            <span class="flex items-baseline gap-x-2.5 whitespace-nowrap">
+              <span aria-hidden="true" class="text-muted">
+                /
+              </span>
+              <h1 id="page-heading">{page}</h1>
+            </span>
+          </div>
+        ) : (
+          <h1 class="masthead" itemprop="name">
+            {SITE.name}
+          </h1>
+        )
+      }
+      <ThemeToggle />
+    </header>
+    <main class="flex flex-1 flex-col">
       <slot />
     </main>
-    <footer class="mt-16 flex justify-center">
-      <ThemeToggle />
-    </footer>
   </body>
 </html>

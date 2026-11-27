@@ -1,0 +1,220 @@
+---
+// The projects' traffic as a halftone horizon at the foot of the home page: a block of dots per
+// day in the page's column, the oldest day at its left edge and today at its right, standing on a
+// ground row of faint dots that runs from one edge of the window to the other. The ground is drawn
+// in CSS while the data loads; src/scripts/traffic.ts then raises the strata on a ground of their
+// own and names the busiest day. Pointing at a day (or tapping it, or focusing the strata and
+// using the arrow keys) reads it out above its block and, app by app, in the key
+// (ProjectsKey.astro). The chart takes whatever height the window leaves it, within limits.
+---
+
+<div data-horizon data-state="loading" class="horizon">
+  <div class="horizon-plot">
+    <div data-horizon-chart class="horizon-chart ground" aria-hidden="true"></div>
+    <div
+      data-horizon-scrub
+      class="horizon-scrub"
+      role="slider"
+      tabindex="-1"
+      aria-label="Page views by day"
+      aria-valuemin="0"
+      hidden
+    >
+    </div>
+    <span data-horizon-peak class="horizon-note text-sm text-muted tabular-nums" aria-hidden="true" hidden
+    ></span>
+    <span data-horizon-guide class="horizon-guide" aria-hidden="true" hidden></span>
+    <span data-horizon-label class="horizon-note text-sm tabular-nums" aria-hidden="true" hidden></span>
+  </div>
+  <div data-horizon-axis class="horizon-axis page text-sm text-muted tabular-nums" aria-hidden="true">
+    <span data-horizon-start>&nbsp;</span>
+    <span>Today</span>
+  </div>
+</div>
+
+<style>
+  /* Grows into the room the page leaves, three parts to the sky's one, standing on the window's foot. */
+  .horizon {
+    display: flex;
+    flex: 3 1 0;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  /* Taller on a tall window, so the room goes to the strata rather than to empty sky. */
+  .horizon-plot {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 7rem;
+    max-height: min(50vh, 40rem);
+  }
+
+  @media (width < 40rem) {
+    .horizon-plot {
+      min-height: 10rem;
+    }
+  }
+
+  .horizon-chart {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* A horizon with nothing to stand on it isn't drawn at all; a drawn one brings its own ground. */
+  [data-state="error"] .horizon-chart,
+  [data-state="empty"] .horizon-chart,
+  .horizon-chart[data-drawn] {
+    background: none;
+  }
+
+  .horizon-chart :global(svg) {
+    display: block;
+  }
+
+  /* The strata rise from the ground a row at a time, the whole rise under half a second. */
+  .horizon-chart :global(.rise > path[data-band]) {
+    animation: rise 360ms var(--ease-out-soft) both;
+    animation-delay: calc(var(--row) * var(--stagger, 20ms));
+  }
+
+  .horizon-chart :global(path) {
+    transition: opacity 150ms;
+  }
+
+  /* An app picked out in the key, or a day being read: everything else steps back. */
+  .horizon-chart :global(path.is-quiet),
+  .horizon-chart :global(.is-reading > path[data-band]) {
+    opacity: 0.2;
+  }
+
+  /* Today's top row, still counting: rings rather than dots, that breathe a few times and rest. */
+  .horizon-chart :global(path.today) {
+    stroke-width: 1;
+  }
+
+  .horizon-chart :global(.rise > path.today) {
+    animation:
+      rise 360ms var(--ease-out-soft) calc(var(--row) * var(--stagger, 20ms)) both,
+      breathe 2.8s ease-in-out 1s 3;
+  }
+
+  /* While the data loads, a light passes slowly along the ground. */
+  [data-state="loading"] .horizon-chart::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: var(--pitch);
+    background-image: radial-gradient(circle, var(--color-muted) 0.9px, transparent 1.4px);
+    background-size: var(--pitch) var(--pitch);
+    background-repeat: repeat-x;
+    background-position: right bottom;
+    mask-image: linear-gradient(90deg, transparent, black, transparent);
+    mask-size: 30% 100%;
+    mask-repeat: no-repeat;
+    animation: sweep 2.4s ease-in-out infinite;
+  }
+
+  /* Over the strata only, not the ground beside them: where a day can be read. */
+  .horizon-scrub {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    cursor: crosshair;
+    touch-action: pan-y;
+  }
+
+  /* Focused, the strata get a rule under their ground, and today's reading above. */
+  .horizon-scrub:focus-visible {
+    outline: none;
+    box-shadow: 0 3px 0 0 var(--color-ink);
+  }
+
+  .horizon-axis {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 0.5rem;
+    padding-bottom: 1rem;
+    opacity: 0;
+    transition: opacity 400ms;
+  }
+
+  /* The dates arrive with the strata; a horizon that can't load stays bare. */
+  [data-state="ready"] .horizon-axis {
+    opacity: 1;
+  }
+
+  /* A thread from a day's reading down to the top of its block. */
+  .horizon-guide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    background-color: var(--color-muted);
+    pointer-events: none;
+  }
+
+  /* Notes set by the script in the headroom above the strata, clear of every block. */
+  .horizon-note {
+    position: absolute;
+    top: 0;
+    left: 0;
+    white-space: nowrap;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  [data-horizon-label] {
+    color: var(--color-ink);
+  }
+
+  /* The busiest day's note is dotted underneath, like a term with more to it: the days can be read. */
+  [data-horizon-peak] {
+    text-decoration: underline dotted;
+    text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
+    text-underline-offset: 0.25em;
+  }
+
+  /* The busiest day's note waits for its block to rise beneath it. */
+  [data-horizon-peak].after-rise {
+    animation: settle 300ms ease-out 450ms both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-state="loading"] .horizon-chart::after {
+      display: none;
+    }
+  }
+
+  @keyframes breathe {
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  @keyframes sweep {
+    from {
+      mask-position: -50% 0;
+    }
+    to {
+      mask-position: 150% 0;
+    }
+  }
+
+  @keyframes settle {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(3px);
+    }
+  }
+</style>
+
+<script>
+  import { initTraffic } from "../scripts/traffic";
+  void initTraffic();
+</script>

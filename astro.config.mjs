@@ -30,7 +30,7 @@ export default defineConfig({
           {
             weight: "300 800",
             style: "normal",
-            src: ["@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2"],
+            src: ["@fontsource-variable/newsreader/files/newsreader-latin-opsz-normal.woff2"],
           },
         ],
       },
