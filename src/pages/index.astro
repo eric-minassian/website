@@ -40,8 +40,8 @@ const external = { target: "_blank", rel: "noopener noreferrer" };
 <style>
   /*
    * Beside the bio once there's room for both (past a phone), so the horizon keeps the room under
-   * them, the two sharing the column evenly until the bio can have a line of its own length; after
-   * the links until then.
+   * them: the two share the column evenly until the key is its full 21rem (at 48rem, where the two
+   * are the same), and the bio has the rest; after the links until then.
    */
   @media (width >= 40rem) {
     .home {
@@ -55,7 +55,7 @@ const external = { target: "_blank", rel: "noopener noreferrer" };
 
   @media (width >= 48rem) {
     .home {
-      grid-template-columns: minmax(18rem, 34rem) minmax(14rem, 21rem);
+      grid-template-columns: minmax(0, 34rem) 21rem;
     }
   }
 

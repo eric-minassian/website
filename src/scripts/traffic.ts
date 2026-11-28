@@ -465,9 +465,23 @@ function nameOthers(about: HTMLElement, apps: Project[], shown: number): void {
   if (shown < named.length) about.append(`, and ${named.length - shown} more`);
 }
 
-/** Today's date on the axis, with its count when today is the busiest day and nothing's read. */
-const todayText = (n: number | null): string =>
-  n === null ? "Today so far" : `Today so far · ${formatCount(n)}`;
+/**
+ * Today's date on the axis, with its count when today is the busiest day: dotted like the busiest
+ * day's note, it reads today when pointed at or tapped, so the chart says it can be read.
+ */
+const setToday = (el: HTMLElement, n: number | null): void => {
+  const text = n === null ? "Today so far" : `Today so far · ${formatCount(n)}`;
+  if (el.textContent === text) return;
+  if (n === null) return el.replaceChildren(text);
+  const count = document.createElement("span");
+  count.className = "horizon-count";
+  count.textContent = formatCount(n);
+  el.replaceChildren("Today so far · ", count);
+};
+
+/** Whether a pointer is on today's count on the axis. */
+const onCount = (e: PointerEvent): boolean =>
+  e.target instanceof Element && e.target.closest(".horizon-count") !== null;
 
 /** How far beyond the days a finger still reads the nearest one, px: most of a fingertip. */
 const REACH = 44;
@@ -633,9 +647,7 @@ export async function initTraffic(): Promise<void> {
     // count, when today is the busiest day). Then, in that order, the first day, the first app's
     // launch and each week find room on the axis, each at least 20px from the others, inside the
     // column, or go unnamed. Each keeps where it fits, for `settle`.
-    today.textContent = todayText(
-      peakDay === days.length - 1 && totals[peakDay]! > 0 ? totals[peakDay]! : null,
-    );
+    setToday(today, peakDay === days.length - 1 && totals[peakDay]! > 0 ? totals[peakDay]! : null);
     const kept = [today.getBoundingClientRect()];
     const fit = (el: HTMLElement, x: number, shifts: number[]): boolean => {
       el.hidden = false;
@@ -757,7 +769,8 @@ export async function initTraffic(): Promise<void> {
   const showPeak = () => {
     const { d, n } = busiest();
     const onToday = d === days.length - 1;
-    today.textContent = todayText(shownDay === null && onToday && n > 0 ? n : null);
+    // The same whether or not a day is being read, so the axis holds still under a reading.
+    setToday(today, onToday && n > 0 ? n : null);
     settle();
     // A month without a single view has no busiest day to name.
     peakLabel.hidden = shownDay !== null || n === 0 || onToday;
@@ -857,6 +870,16 @@ export async function initTraffic(): Promise<void> {
     if (shownDay !== null && e.target instanceof Node && !scrub.contains(e.target)) {
       showDay(null);
     }
+  });
+  // Today's count on the axis reads today, as the busiest day's note reads its day.
+  today.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "mouse" && onCount(e)) showDay(days.length - 1);
+  });
+  today.addEventListener("pointerleave", (e) => {
+    if (e.pointerType === "mouse" && !scrub.matches(":focus-visible")) showDay(null);
+  });
+  today.addEventListener("pointerup", (e) => {
+    if (e.pointerType !== "mouse" && onCount(e)) showDay(days.length - 1);
   });
 
   // From the keyboard the strata are a slider over the days, starting from today.

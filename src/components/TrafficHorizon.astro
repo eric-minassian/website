@@ -222,6 +222,14 @@
     }
   }
 
+  /* Today's count, when today is the busiest day: dotted like the busiest day's note, and read alike. */
+  .horizon-axis :global(.horizon-count) {
+    text-decoration: underline dotted;
+    text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
+    text-underline-offset: 0.25em;
+    cursor: default;
+  }
+
   [data-horizon-start] {
     position: absolute;
     top: 0.5rem;
