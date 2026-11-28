@@ -126,40 +126,37 @@ const placeholders = [
     padding-block: 0.375rem;
   }
 
-  /* What the app is, under its name, quieter; rows take their own height, evenly spaced. */
+  /*
+   * What the app is, under its name, quieter; rows take their own height, evenly spaced. Never more
+   * than two lines (three while the key shares the column evenly with the bio and is narrow), the
+   * others' names one, so the key never outgrows the room kept for it; the whole text is on
+   * /projects.
+   */
   .projects-key :global(.key-about) {
     grid-column: 2 / -1;
+    display: -webkit-box;
+    overflow: hidden;
     color: var(--color-muted);
     line-height: 1.45;
     text-wrap: pretty;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
-  /*
-   * Beside the bio, never more than two lines (three while the two share the column evenly and the
-   * key is narrow); the whole text is on /projects.
-   */
-  @media (width >= 40rem) {
-    .projects-key :global(.key-about) {
-      display: -webkit-box;
-      overflow: hidden;
-      -webkit-box-orient: vertical;
+  .projects-key :global(.key-about.key-others) {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+
+  @media (width >= 40rem) and (width < 48rem) {
+    .projects-key :global(.key-about:not(.key-others)) {
       -webkit-line-clamp: 3;
       line-clamp: 3;
     }
 
     .key-rows {
       min-height: calc(3 * (0.75rem + 1.5 * var(--text-sm)) + 7 * 1.45 * var(--text-sm));
-    }
-  }
-
-  @media (width >= 48rem) {
-    .projects-key :global(.key-about) {
-      -webkit-line-clamp: 2;
-      line-clamp: 2;
-    }
-
-    .key-rows {
-      min-height: calc(3 * (0.75rem + 1.5 * var(--text-sm)) + 5 * 1.45 * var(--text-sm));
     }
   }
 

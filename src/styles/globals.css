@@ -225,9 +225,17 @@
     animation-timing-function: var(--ease-out-soft);
   }
 
-  /* Scaled from the old name's box to its own, whole, never stretched. */
+  /*
+   * Scaled from the old name's box to its own. The site's name fills the box exactly at both ends:
+   * its optical size makes the large and the small a hair different in shape (2%), and fitted
+   * whole their ends would drift apart and show twice; stretched that little, they cross as one.
+   */
   html:active-view-transition-type(page)::view-transition-old(site-name),
-  html:active-view-transition-type(page)::view-transition-new(site-name),
+  html:active-view-transition-type(page)::view-transition-new(site-name) {
+    height: 100%;
+    object-fit: fill;
+  }
+
   html:active-view-transition-type(page)::view-transition-new(projects-title) {
     height: 100%;
     object-fit: contain;
@@ -250,11 +258,21 @@
     animation: none;
   }
 
-  html:active-view-transition-type(page)::view-transition-new(path-sep) {
+  /*
+   * What only one page has comes and goes with its page: the /projects name arriving from the 404
+   * (where there's no "Projects" to carry) comes in with the page around it, and the path's "/"
+   * comes after the name has settled, or goes at once, but stays put between two pages that both
+   * have it.
+   */
+  html:active-view-transition-type(page)::view-transition-new(projects-title):only-child {
+    animation: 170ms ease-out 150ms both page-in;
+  }
+
+  html:active-view-transition-type(page)::view-transition-new(path-sep):only-child {
     animation: 150ms ease-out 230ms both page-in;
   }
 
-  html:active-view-transition-type(page)::view-transition-old(path-sep) {
+  html:active-view-transition-type(page)::view-transition-old(path-sep):only-child {
     animation: 80ms ease-out both page-out;
   }
 
