@@ -86,9 +86,10 @@ const KEPT = "projects";
 
 /**
  * How long a directory this browser already has stands in for a fresh one: long enough that going
- * from page to page draws at once, short enough that today's counts stay current.
+ * from page to page draws at once, even after a while reading the one before; short enough that
+ * today's counts stay as current as the platform's own few minutes of caching keep them.
  */
-const KEEP_MS = 2 * 60_000;
+const KEEP_MS = 10 * 60_000;
 
 /**
  * The directory this browser fetched in the last couple of minutes, checked, if there is one and

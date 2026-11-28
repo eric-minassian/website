@@ -224,19 +224,20 @@ const jsonLd = {
       {
         page ? (
           <div class="masthead masthead-path flex min-w-0 flex-wrap items-baseline gap-x-2">
-            <a href="/" class="masthead-home masthead-name link-quiet tap">
-              {SITE.name}
-            </a>
+            <!-- The path ends in its "/", so a narrow line breaks before the page's name, not after the name. -->
             <span class="flex items-baseline gap-x-2 whitespace-nowrap">
+              <a href="/" class="masthead-home link-quiet tap">
+                <span class="masthead-name">{SITE.name}</span>
+              </a>
               <span aria-hidden="true" class="masthead-sep text-muted">
                 /
               </span>
-              <h1 id="page-heading" data-title={page} tabindex="-1">{page}</h1>
             </span>
+            <h1 id="page-heading" data-title={page} tabindex="-1">{page}</h1>
           </div>
         ) : (
-          <h1 class="masthead masthead-name" itemprop="name">
-            {SITE.name}
+          <h1 class="masthead" itemprop="name">
+            <span class="masthead-name">{SITE.name}</span>
           </h1>
         )
       }
