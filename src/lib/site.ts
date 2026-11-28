@@ -9,4 +9,6 @@ export const SITE = {
   gaId: "G-YWLR571NDY",
   /** The platform's public directory of the apps it runs, which the projects pages read live. */
   projectsUrl: "https://platform.ericminassian.com/v1/public/apps",
+  /** This site's own app on the platform (`name` in plat.config.ts). */
+  app: "website",
 } as const;
