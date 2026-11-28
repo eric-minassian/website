@@ -16,6 +16,12 @@ const DEFAULT_REQUIRED_SCORE = 1;
 const REQUIRED_SCORE_OVERRIDES = {
   mobile: { performance: 0.99 },
 };
+// Shared CI runners differ several-fold in CPU speed, even between runs of one commit (Lighthouse's
+// benchmarkIndex has ranged from under 100 to over 4,000), and mobile performance is measured
+// through 4x CPU throttling, so one slow runner can sink a run of a page that's fine. A run that
+// falls short is tried again, up to this many times in all, and judged by its median scores: two
+// of three must meet the bar, so a page that's really slower still fails.
+const ATTEMPTS = 3;
 const PERF_DIAGNOSTIC_AUDITS = [
   "first-contentful-paint",
   "largest-contentful-paint",
@@ -200,8 +206,8 @@ function logPerformanceDiagnostics(name, report) {
   console.log(lines.join("\n"));
 }
 
-async function runSingleLighthouse(baseUrl, { name, extraArgs }) {
-  const outputPath = path.join(REPORT_DIR, name);
+async function runSingleLighthouse(baseUrl, { name, extraArgs }, attempt) {
+  const outputPath = path.join(REPORT_DIR, attempt === 1 ? name : `${name}-${attempt}`);
 
   await run("npx", [
     "--yes",
@@ -225,24 +231,56 @@ async function runSingleLighthouse(baseUrl, { name, extraArgs }) {
   };
 
   console.log(
-    `${name}:`,
+    `${name}${attempt === 1 ? "" : ` (attempt ${attempt})`}:`,
     Object.entries(scores)
       .map(([category, score]) => `${category}=${roundedScore(score)}`)
       .join(" "),
   );
+  return { scores, report };
+}
 
+/** Each category's median score across runs (the lower of two middles). */
+function medianScores(results) {
+  const categories = Object.keys(results[0].scores);
+  return Object.fromEntries(
+    categories.map((category) => {
+      const sorted = results.map((r) => r.scores[category]).toSorted((a, b) => a - b);
+      return [category, sorted[Math.floor((sorted.length - 1) / 2)]];
+    }),
+  );
+}
+
+/** The categories whose score falls short of what `name` requires. */
+function shortfalls(name, scores) {
   const overrides = REQUIRED_SCORE_OVERRIDES[name] ?? {};
-  for (const [category, score] of Object.entries(scores)) {
+  return Object.entries(scores).flatMap(([category, score]) => {
     const required = overrides[category] ?? DEFAULT_REQUIRED_SCORE;
-    if (score < required) {
-      if (category === "performance") {
-        logPerformanceDiagnostics(name, report);
-      }
-      throw new Error(
-        `${name} ${category} score was ${roundedScore(score)}; required ${roundedScore(required)}`,
-      );
-    }
+    return score < required ? [{ category, score, required }] : [];
+  });
+}
+
+/**
+ * Runs Lighthouse for one form factor, again while its median scores fall short and attempts
+ * remain (sequentially: parallel Chrome sessions inflate mobile TBT on CI), and throws if they
+ * still do.
+ */
+async function runLighthouse(baseUrl, config, results = []) {
+  const result = await runSingleLighthouse(baseUrl, config, results.length + 1);
+  const all = [...results, result];
+  const short = shortfalls(config.name, medianScores(all));
+  if (short.length > 0 && all.length < ATTEMPTS) return runLighthouse(baseUrl, config, all);
+  if (short.length === 0) return;
+  if (short.some((s) => s.category === "performance")) {
+    logPerformanceDiagnostics(config.name, result.report);
   }
+  throw new Error(
+    short
+      .map(
+        ({ category, score, required }) =>
+          `${config.name} ${category} median score was ${roundedScore(score)} over ${all.length} runs; required ${roundedScore(required)}`,
+      )
+      .join("; "),
+  );
 }
 
 await mkdir(REPORT_DIR, { recursive: true });
@@ -254,7 +292,7 @@ try {
     try {
       // Sequential on purpose: parallel Chrome sessions inflate mobile TBT on CI.
       // eslint-disable-next-line no-await-in-loop -- see comment above
-      await runSingleLighthouse(server.url, runConfig);
+      await runLighthouse(server.url, runConfig);
     } catch (error) {
       console.error(error);
       failures.push(error);
