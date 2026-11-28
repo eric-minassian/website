@@ -13,5 +13,8 @@
   "sortTailwindcss": {
     "stylesheet": "src/styles/globals.css"
   },
+  // `.astro` files too, with Astro's own JSX whitespace rules. oxfmt parses them with
+  // @astrojs/compiler-rs, which it doesn't bundle, so it's a dev dependency here.
+  "astro": true,
   "ignorePatterns": ["dist/**", ".astro/**", "pnpm-lock.yaml"]
 }

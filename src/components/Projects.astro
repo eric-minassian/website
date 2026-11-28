@@ -22,9 +22,8 @@ const placeholders = [
   <!-- What the totals cover, above their column, once there are totals. -->
   <p data-projects-head class="ledger-head text-sm text-muted"></p>
   <div class="ledger-rows">
-  <div data-projects-placeholder aria-hidden="true" class="ledger-grid rule-below">
-    {
-      placeholders.map(({ name, about }) => (
+    <div data-projects-placeholder aria-hidden="true" class="ledger-grid rule-below">
+      {placeholders.map(({ name, about }) => (
         <div class="ledger-row rule-above">
           <span class="ledger-name">
             <span class="skeleton" style={{ width: name }} />
@@ -44,14 +43,20 @@ const placeholders = [
             <span class="skeleton w-8" />
           </span>
         </div>
-      ))
-    }
-  </div>
-  <ul data-projects-list aria-labelledby={labelledBy} aria-busy="true" hidden class="ledger-grid rule-below list-none pl-0">
-  </ul>
+      ))}
+    </div>
+    <ul
+      data-projects-list
+      aria-labelledby={labelledBy}
+      aria-busy="true"
+      hidden
+      class="ledger-grid rule-below list-none pl-0"
+    ></ul>
   </div>
   <p data-projects-note class="mt-4 text-sm text-muted" aria-live="polite"></p>
-  <noscript><p class="mt-4 text-sm text-muted">The list loads with JavaScript.</p></noscript>
+  <noscript>
+    <p class="mt-4 text-sm text-muted">The list loads with JavaScript.</p>
+  </noscript>
 </div>
 
 <style>

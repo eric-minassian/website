@@ -21,20 +21,24 @@ const placeholders = [
 >
   <div class="key-head">
     <h2 id="projects-heading" class="section-heading">
-      <a href="/projects" class="arrow-link link-quiet tap"
-        >Projects<svg class="arrow" viewBox="0 0 16 16" aria-hidden="true"><path d={ARROW_RIGHT}></path></svg></a
-      >
+      <a href="/projects" class="arrow-link link-quiet tap">
+        Projects
+        <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true">
+          <path d={ARROW_RIGHT}></path>
+        </svg>
+      </a>
     </h2>
     <p class="mt-1 text-sm text-muted">Apps I run on my own platform.</p>
   </div>
   <div class="key-body">
     <!-- What the counts below cover, once there are counts; until then a line kept for it. -->
     <p data-traffic-period class="key-period text-sm text-muted" aria-live="polite"></p>
-    <noscript><p class="text-sm text-muted">The traffic loads with JavaScript.</p></noscript>
+    <noscript>
+      <p class="text-sm text-muted">The traffic loads with JavaScript.</p>
+    </noscript>
     <div class="key-rows">
-    <div data-traffic-placeholder aria-hidden="true" class="text-sm">
-      {
-        placeholders.map(({ name, about }) => (
+      <div data-traffic-placeholder aria-hidden="true" class="text-sm">
+        {placeholders.map(({ name, about }) => (
           <div class="key-row">
             <span class="key-swatch">
               <span class="block size-2 rounded-full bg-faint" />
@@ -53,10 +57,9 @@ const placeholders = [
               ))}
             </span>
           </div>
-        ))
-      }
-    </div>
-    <ul data-traffic-list class="list-none pl-0 text-sm tabular-nums" hidden></ul>
+        ))}
+      </div>
+      <ul data-traffic-list class="list-none pl-0 text-sm tabular-nums" hidden></ul>
     </div>
   </div>
 </section>

@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
+    "@astrojs/compiler-rs": "^0.5.3",
     "@astrojs/sitemap": "^3.7.6",
     "@playwright/test": "^1.65.1",
     "@tailwindcss/vite": "^4.3.5",
