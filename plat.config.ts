@@ -11,8 +11,6 @@ const app = defineApp({
     // without one is a 404, not the home page.
     spa: false,
   },
-  // The projects pages list the platform's other apps, not this one.
-  listed: false,
 });
 
 export default app;
