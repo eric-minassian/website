@@ -27,6 +27,7 @@
     "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^26.6.11",
     "astro": "^7.4.13",
+    "lighthouse": "^13.6.0",
     "oxfmt": "^0.80.0",
     "oxlint": "^1.95.0",
     "oxlint-tsgolint": "^7.0.2009",

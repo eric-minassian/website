@@ -3,7 +3,10 @@ import { createReadStream } from "node:fs";
 import { mkdir, readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
+// The Lighthouse the lockfile pins, run on this Node.
+const LIGHTHOUSE_CLI = fileURLToPath(import.meta.resolve("lighthouse/cli/index.js"));
 const DIST_DIR = path.resolve("dist");
 const REPORT_DIR = path.resolve("lighthouse-reports");
 const PROJECTS_FIXTURE = path.resolve("tests/fixtures/projects.json");
@@ -88,7 +91,7 @@ async function resolveAssetPath(requestPath) {
   const relativePath = cleanPath === "/" ? "index.html" : cleanPath.replace(/^\/+/, "");
   const candidatePath = path.resolve(DIST_DIR, relativePath);
 
-  if (!candidatePath.startsWith(DIST_DIR)) {
+  if (!candidatePath.startsWith(DIST_DIR + path.sep)) {
     return null;
   }
 
@@ -211,9 +214,8 @@ function logPerformanceDiagnostics(name, report) {
 async function runSingleLighthouse(baseUrl, { name, extraArgs }) {
   const outputPath = path.join(REPORT_DIR, name);
 
-  await run("npx", [
-    "--yes",
-    "lighthouse",
+  await run(process.execPath, [
+    LIGHTHOUSE_CLI,
     baseUrl,
     "--quiet",
     `--output-path=${outputPath}`,
