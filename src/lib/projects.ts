@@ -3,8 +3,6 @@
 // caches it for a few minutes.
 import { PROJECTS_URL } from "astro:env/client";
 
-import { SITE } from "./site";
-
 export interface Project {
   name: string;
   description?: string;
@@ -77,10 +75,9 @@ export function parseProjects(body: unknown): Projects {
   return {
     days,
     ...(since ? { countingSince: since } : {}),
-    // The directory lists this site too, but its projects are the platform's other apps.
-    projects: projects
-      .filter((p) => p.name !== SITE.app)
-      .toSorted((a, b) => Date.parse(b.lastDeployedAt) - Date.parse(a.lastDeployedAt)),
+    projects: projects.toSorted(
+      (a, b) => Date.parse(b.lastDeployedAt) - Date.parse(a.lastDeployedAt),
+    ),
   };
 }
 
