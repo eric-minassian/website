@@ -19,7 +19,7 @@ const ways = [
         {
           ways.map(({ href, text }) => (
             <li>
-              <a href={href} class="section-heading arrow-link link-quiet tap">
+              <a href={href} class="arrow-link link-quiet tap">
                 {text}
                 <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true">
                   <path d={ARROW_RIGHT} />
@@ -38,7 +38,7 @@ const ways = [
 </Layout>
 
 <style>
-  /* The same step as a section's name: a sentence meant to be read first. */
+  /* A step above the text, as a section's name is: the sentence is read first, the ways on after. */
   .lead {
     font-size: 1.25rem;
     line-height: 1.4;

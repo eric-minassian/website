@@ -24,16 +24,16 @@ const placeholders = [
   <div class="ledger-rows">
   <div data-projects-placeholder aria-hidden="true" class="ledger-grid rule-below">
     {
-      placeholders.map(({ name, about }) => (
-        <div class="ledger-row rule-above">
+      placeholders.map(({ name, about }, i) => (
+        <div class="ledger-row rule-above" style={{ "--i": i }}>
           <span class="ledger-name">
             <span class="skeleton" style={{ width: name }} />
           </span>
           <span class="ledger-about">
-            <span>
+            <span class="ledger-description">
               <span class="skeleton" style={{ width: about }} />
             </span>
-            <span class="text-sm">
+            <span class="ledger-meta text-sm">
               <span class="skeleton" style={{ width: "8rem" }} />
             </span>
           </span>
@@ -50,7 +50,7 @@ const placeholders = [
   <ul data-projects-list aria-labelledby={labelledBy} aria-busy="true" hidden class="ledger-grid rule-below list-none pl-0">
   </ul>
   </div>
-  <p data-projects-note class="mt-4 text-sm text-muted" aria-live="polite"></p>
+  <p data-projects-note class="ledger-note mt-4 text-sm text-muted" aria-live="polite"></p>
   <noscript><p class="mt-4 text-sm text-muted">The list loads with JavaScript.</p></noscript>
 </div>
 
@@ -67,8 +67,8 @@ const placeholders = [
   }
 
   /*
-   * On a phone: the name and its total on the first line, what the app is below, and its days at
-   * the end of a line of their own, under the total, with a day's reading beside them.
+   * On a phone: the name and its total on the first line, what the app is below, and its days
+   * ending the line that says when it was deployed, under the total.
    */
   .ledger-grid {
     display: grid;
@@ -127,13 +127,36 @@ const placeholders = [
     color: var(--color-alert);
   }
 
+  /*
+   * On a phone what the app is runs under its name and total, and the line saying when it was
+   * deployed ends in its days, under the total.
+   */
   .ledger :global(.ledger-about) {
+    display: contents;
+  }
+
+  .ledger :global(.ledger-description) {
     grid-column: 1 / -1;
     grid-row: 2;
-    display: flex;
-    max-width: 36rem;
-    flex-direction: column;
-    gap: 0.125rem;
+  }
+
+  /* As wide as its words, all on one line, so projects.ts can measure what the dots have beside it. */
+  .ledger :global(.ledger-meta) {
+    grid-column: 1;
+    grid-row: 3;
+    align-self: end;
+    width: fit-content;
+    white-space: nowrap;
+  }
+
+  /* Where the line and the dots won't both fit (projects.ts), the dots take a line of their own. */
+  .ledger :global(.spark-below .ledger-meta) {
+    grid-column: 1 / -1;
+  }
+
+  .ledger :global(.spark-below .ledger-spark) {
+    grid-column: 1 / -1;
+    grid-row: 4;
   }
 
   .ledger :global(.ledger-sep) {
@@ -147,22 +170,22 @@ const placeholders = [
     font-variant-numeric: tabular-nums;
   }
 
-  /*
-   * On a phone the days end their own line, under the total; a day's reading stands to their left,
-   * on their ground's line, and grows leftward, so the dots never move.
-   */
   .ledger :global(.ledger-spark) {
-    grid-column: 1 / -1;
+    grid-column: 2;
     grid-row: 3;
     justify-self: end;
-    display: flex;
-    flex-direction: row-reverse;
-    align-items: flex-end;
-    gap: 0.75rem;
-    margin-top: 0.25rem;
+    align-self: end;
     position: relative;
     cursor: crosshair;
     touch-action: pan-y;
+  }
+
+  /*
+   * The dots stand on the line: the strip under them for the keyboard's mark (FOOT in projects.ts)
+   * hangs below it rather than lifting them.
+   */
+  .ledger :global(.ledger-spark svg) {
+    margin-bottom: -5px;
   }
 
   /* A taller target than the dots, for a finger or an unsteady pointer. */
@@ -185,23 +208,52 @@ const placeholders = [
     visibility: visible;
   }
 
-  /* Kept in place while nothing's being read, so a reading never moves the row. */
+  /*
+   * A day's reading. On a phone it takes the place of the line the dots end while it shows, its
+   * last letters a little short of them, so nothing moves.
+   */
   .ledger :global(.spark-reading) {
+    position: absolute;
+    right: calc(100% + 1rem);
+    bottom: 0;
     color: var(--color-ink);
     white-space: nowrap;
-    line-height: 1;
+    line-height: 1.5;
   }
 
   .ledger :global(.ledger-spark:not([data-day]) .spark-reading) {
     visibility: hidden;
   }
 
+  @media (width < 52rem) {
+    .ledger :global(.ledger-grid:not(.spark-below) .ledger-row:has(.ledger-spark[data-day]) .ledger-meta) {
+      visibility: hidden;
+    }
+  }
+
+  /* With nothing to list (it couldn't load, or nothing's running), the note takes the list's place. */
+  .ledger:is([data-state="error"], [data-state="empty"]) .ledger-head {
+    display: none;
+  }
+
+  .ledger:is([data-state="error"], [data-state="empty"]) .ledger-note {
+    margin-top: 0;
+  }
+
   @media (width >= 52rem) {
-    /* Beside the name, what the app is runs on to its days. */
+    /* Beside the name, what the app is runs on to its days, the line when it was deployed under it. */
     .ledger :global(.ledger-about) {
       grid-column: 2;
       grid-row: 1;
-      max-width: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+
+    .ledger :global(.ledger-meta) {
+      align-self: auto;
+      width: auto;
+      white-space: normal;
     }
 
     /* Beside the description the dots stand on the line's baseline, the reading under them. */
@@ -210,14 +262,13 @@ const placeholders = [
       grid-row: 1;
       justify-self: end;
       align-self: baseline;
-      display: block;
-      margin-top: 0;
     }
 
     .ledger :global(.spark-reading) {
-      position: absolute;
-      top: calc(100% + 0.5rem);
+      top: calc(100% + 5px + 0.25rem);
       right: 0;
+      bottom: auto;
+      line-height: 1;
     }
 
     .ledger :global(.ledger-total) {
@@ -227,18 +278,24 @@ const placeholders = [
 
   /*
    * A sparkline before its data: a placeholder along its ground, its width and height (`dotsFor`
-   * in projects.ts: 30 days at 5px, seven rows; on a phone too narrow for that and a reading
-   * beside it, closer).
+   * in projects.ts: 30 days at 5px, seven rows; closer on a phone too narrow for that beside the
+   * "Deployed" line).
    */
   .spark-skeleton {
     display: block;
     width: 150px;
     height: 6px;
-    margin-block: 29.5px 4.5px;
+    margin-block: 29px 0;
   }
 
-  /* A phone's column under 300px: 30 days at 4.5px or 4px. */
-  @media (width < 348px) {
+  /* A phone's column too narrow for 5px beside the "Deployed" line: 4.5px, or 4px. */
+  @media (width < 379px) {
+    .spark-skeleton {
+      width: 135px;
+    }
+  }
+
+  @media (width < 364px) {
     .spark-skeleton {
       width: 120px;
     }

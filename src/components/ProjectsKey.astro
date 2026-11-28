@@ -19,23 +19,23 @@ const placeholders = [
   aria-labelledby="projects-heading"
   class="projects-key rule-above"
 >
+  <!-- The section's name, and on its line (or under it, where narrow) what the counts cover. -->
   <div class="key-head">
     <h2 id="projects-heading" class="section-heading">
       <a href="/projects" class="arrow-link link-quiet tap"
         >Projects<svg class="arrow" viewBox="0 0 16 16" aria-hidden="true"><path d={ARROW_RIGHT}></path></svg></a
       >
     </h2>
-    <p class="mt-1 text-sm text-muted">Apps I run on my own platform.</p>
-  </div>
-  <div class="key-body">
-    <!-- What the counts below cover, once there are counts; until then a line kept for it. -->
     <p data-traffic-period class="key-period text-sm text-muted" aria-live="polite"></p>
-    <noscript><p class="text-sm text-muted">The traffic loads with JavaScript.</p></noscript>
-    <div class="key-rows">
+  </div>
+  <noscript><p class="text-sm text-muted">The traffic loads with JavaScript.</p></noscript>
+  <div class="key-rows">
+    <!-- Why there are no rows (it couldn't load, or nothing's running), where they'd be. -->
+    <p data-traffic-note class="text-sm text-muted" aria-live="polite" hidden></p>
     <div data-traffic-placeholder aria-hidden="true" class="text-sm">
       {
-        placeholders.map(({ name, about }) => (
-          <div class="key-row">
+        placeholders.map(({ name, about }, i) => (
+          <div class="key-row" style={{ "--i": i }}>
             <span class="key-swatch">
               <span class="block size-2 rounded-full bg-faint" />
             </span>
@@ -57,16 +57,41 @@ const placeholders = [
       }
     </div>
     <ul data-traffic-list class="list-none pl-0 text-sm tabular-nums" hidden></ul>
-    </div>
   </div>
 </section>
 
 <style>
   .projects-key {
+    container: key / inline-size;
     display: grid;
-    row-gap: 0.75rem;
+    row-gap: 0.5rem;
     margin-top: 3rem;
     padding-top: 2rem;
+  }
+
+  /*
+   * What the counts cover heads their column, on the section name's line where there's room for
+   * both; where there isn't, on a line of its own under it, kept from the start so nothing moves
+   * when it arrives.
+   */
+  .key-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    column-gap: 1rem;
+  }
+
+  .key-period {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  @container key (width < 21rem) {
+    .key-period {
+      flex-basis: 100%;
+      min-height: 1.5em;
+    }
   }
 
   /*
@@ -80,18 +105,6 @@ const placeholders = [
     margin-top: 0.25rem;
   }
 
-  /*
-   * A line kept for the caption, so nothing moves when it arrives with the counts. Over them, it
-   * heads their column, as the ledger's does on /projects; a note in its place (an error, nothing
-   * running) reads from the left.
-   */
-  .key-period {
-    min-height: 1.5em;
-  }
-
-  .key-period[data-caption] {
-    text-align: right;
-  }
 
   /* Beside the bio once there's room (index.astro), where the whitespace is separation enough. */
   @media (width >= 40rem) {
@@ -197,6 +210,6 @@ const placeholders = [
 
   /* Pointing at (or focusing) one app in the key quiets the others, here and on the horizon. */
   [data-focus] :global(li.key-row:not(.is-focused)) {
-    opacity: 0.45;
+    opacity: 0.55;
   }
 </style>

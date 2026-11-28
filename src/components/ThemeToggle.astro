@@ -1,8 +1,8 @@
 ---
 // Flips between light and dark (src/scripts/theme.ts). The icon shows the theme a click will
-// switch to, like the button's label: the moon on a light page, the sun on a dark one. It follows
-// the `dark` class the head script sets before the first paint, so it's right before any other
-// JavaScript runs.
+// switch to, like the button's label: the moon on a light page, the sun on a dark one, drawn on the
+// arrows' grid in their stroke, the sun's rays in the horizon's dots. It follows the `dark` class
+// the head script sets before the first paint, so it's right before any other JavaScript runs.
 const iconClass = "theme-icon absolute inset-0 m-auto size-5";
 ---
 
@@ -13,34 +13,17 @@ const iconClass = "theme-icon absolute inset-0 m-auto size-5";
   title="Switch theme"
   class="theme-toggle relative -my-2 -mr-3 size-11 shrink-0 cursor-pointer rounded-full text-muted transition-[color,background-color,scale] duration-150 hover:bg-ink/6 hover:text-ink focus-visible:outline-offset-0 active:scale-92"
 >
-  <svg
-    data-theme-icon="light"
-    class={iconClass}
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke-width="1.5"
-    stroke="currentColor"
-    aria-hidden="true"
-  >
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
-    ></path>
+  <svg data-theme-icon="light" class={iconClass} viewBox="0 0 16 16" aria-hidden="true">
+    <circle cx="8" cy="8" r="2.9" fill="none" stroke="currentColor" stroke-width="1.2"></circle>
+    <path fill="currentColor" d="M12.95 8.00a.95 .95 0 1 0 1.9 0a.95 .95 0 1 0 -1.9 0M11.22 12.17a.95 .95 0 1 0 1.9 0a.95 .95 0 1 0 -1.9 0M7.05 13.90a.95 .95 0 1 0 1.9 0a.95 .95 0 1 0 -1.9 0M2.88 12.17a.95 .95 0 1 0 1.9 0a.95 .95 0 1 0 -1.9 0M1.15 8.00a.95 .95 0 1 0 1.9 0a.95 .95 0 1 0 -1.9 0M2.88 3.83a.95 .95 0 1 0 1.9 0a.95 .95 0 1 0 -1.9 0M7.05 2.10a.95 .95 0 1 0 1.9 0a.95 .95 0 1 0 -1.9 0M11.22 3.83a.95 .95 0 1 0 1.9 0a.95 .95 0 1 0 -1.9 0"></path>
   </svg>
-  <svg
-    data-theme-icon="dark"
-    class={iconClass}
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke-width="1.5"
-    stroke="currentColor"
-    aria-hidden="true"
-  >
+  <svg data-theme-icon="dark" class={iconClass} viewBox="0 0 16 16" aria-hidden="true">
     <path
-      stroke-linecap="round"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.2"
       stroke-linejoin="round"
-      d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"
+      d="M7.31 2.64A5.6 5.6 0 1 0 13.58 8.72A4.5 4.5 0 0 1 7.31 2.64Z"
     ></path>
   </svg>
 </button>
