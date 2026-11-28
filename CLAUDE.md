@@ -45,7 +45,7 @@ Tailwind CSS v4 via Vite plugin. Newsreader is self-hosted through Astro's Fonts
 
 ### Linting & Formatting
 
-[Oxc](https://oxc.rs/) toolchain: `oxlint` for linting (`.oxlintrc.json`) and `oxfmt` for formatting (`.oxfmtrc.json`). Both run in CI via `.github/workflows/lint.yml`.
+[Oxc](https://oxc.rs/) toolchain: `oxlint` for linting (`.oxlintrc.json`, type-aware through `oxlint-tsgolint`) and `oxfmt` for formatting (`.oxfmtrc.json`, `.astro` files included). Both run in CI via `.github/workflows/lint.yml`. TypeScript stays on 6.x: `astro check` doesn't run on TypeScript 7 until 7.1.
 
 ### Testing
 
@@ -55,6 +55,7 @@ Playwright visual regression tests in `tests/visual.spec.ts`. Tests capture full
 
 - `.github/workflows/playwright.yml` - Runs visual regression tests on PRs and main branch pushes
 - `.github/workflows/lint.yml` - Runs oxlint and oxfmt checks on PRs and main branch pushes
+- `.github/workflows/lighthouse.yml` - Audits the built site with Lighthouse (`scripts/run-lighthouse.mjs`) on PRs and main branch pushes
 - `.github/workflows/deploy.yml` - Deploys to GitHub Pages on main branch pushes
 - `.github/workflows/update-snapshots.yml` - Manual workflow to update visual snapshots
 - `.github/dependabot.yml` - Automated weekly dependency updates for npm and GitHub Actions
