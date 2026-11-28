@@ -8,25 +8,51 @@ const external = { target: "_blank", rel: "noopener noreferrer" };
 ---
 
 <Layout>
-  <div class="page home mt-2">
+  <div class="home page mt-2">
     <article class="measure">
       <p>
-        Software engineer and tech lead at <a href="https://amazon.com" {...external} itemprop="worksFor">Amazon</a>,
-        working on <a href="https://leo.amazon.com/" {...external}>Leo</a>.
+        Software engineer and tech lead at{" "}
+        <a href="https://amazon.com" {...external} itemprop="worksFor">
+          Amazon
+        </a>
+        , working on{" "}
+        <a href="https://leo.amazon.com/" {...external}>
+          Leo
+        </a>
+        .
       </p>
       <p class="mt-3">
-        Previously led payments software at <a href="https://tech.walmart.com" {...external}>Walmart</a>.
-        CS&nbsp;+&nbsp;Business from <a href="https://uci.edu" {...external} itemprop="alumniOf">UC&nbsp;Irvine</a>, summa&nbsp;cum&nbsp;laude.
+        Previously led payments software at{" "}
+        <a href="https://tech.walmart.com" {...external}>
+          Walmart
+        </a>
+        . CS&nbsp;+&nbsp;Business from{" "}
+        <a href="https://uci.edu" {...external} itemprop="alumniOf">
+          UC&nbsp;Irvine
+        </a>
+        , summa&nbsp;cum&nbsp;laude.
       </p>
       <nav aria-label="Social links and contact" class="mt-8">
         <ul class="contact list-none pl-0">
-          <li><a href={SITE.github} target="_blank" rel="noopener noreferrer me" itemprop="sameAs">GitHub</a></li>
-          <li><a href={SITE.linkedin} target="_blank" rel="noopener noreferrer me" itemprop="sameAs">LinkedIn</a></li>
+          <li>
+            <a href={SITE.github} target="_blank" rel="noopener noreferrer me" itemprop="sameAs">
+              GitHub
+            </a>
+          </li>
+          <li>
+            <a href={SITE.linkedin} target="_blank" rel="noopener noreferrer me" itemprop="sameAs">
+              LinkedIn
+            </a>
+          </li>
           <li class="with-note">
-            <a href={`mailto:${SITE.email}?subject=hi`} itemprop="email">Email</a>
+            <a href={`mailto:${SITE.email}?subject=hi`} itemprop="email">
+              Email
+            </a>
             <span class="text-sm text-muted">(put “hi” in the subject or I won’t see&nbsp;it)</span>
           </li>
-          <li><a href={`mailto:${SITE.email}?subject=hi`}>Request my resume</a></li>
+          <li>
+            <a href={`mailto:${SITE.email}?subject=hi`}>Request my resume</a>
+          </li>
         </ul>
       </nav>
     </article>

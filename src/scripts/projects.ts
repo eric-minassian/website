@@ -1,5 +1,6 @@
-import { fitText } from "../lib/fit";
 // Fills the projects ledger (Projects.astro) from the platform's directory once the page loads.
+
+import { fitText } from "../lib/fit";
 import { arrow } from "../lib/icons";
 import { leave } from "../lib/leave";
 import {

@@ -12,7 +12,7 @@ const failProjects = (page: Page) =>
   page.route(SITE.projectsUrl, (route) => route.fulfill({ status: 503, body: "" }));
 
 // Pin the time zone and skip the fades, so pages draw the same every run.
-test.use({ timezoneId: "UTC", locale: "en-US", contextOptions: { reducedMotion: "reduce" } });
+test.use({ timezoneId: "UTC", locale: "en-US", reducedMotion: "reduce" });
 
 /** Waits for the home page's projects key to fill and the horizon to draw. */
 const waitForTraffic = async (page: Page) => {

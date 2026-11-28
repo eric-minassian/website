@@ -22,41 +22,42 @@ const placeholders = [
   <!-- The section's name, and on its line (or under it, where narrow) what the counts cover. -->
   <div class="key-head">
     <h2 id="projects-heading" class="section-heading">
-      <a href="/projects" class="arrow-link link-quiet tap"
-        ><span class="key-title">Projects</span><svg class="arrow" viewBox="0 0 16 16" aria-hidden="true"
-          ><path d={ARROW_RIGHT}></path></svg
-        ></a
-      >
+      <a href="/projects" class="arrow-link link-quiet tap">
+        <span class="key-title">Projects</span>
+        <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true">
+          <path d={ARROW_RIGHT}></path>
+        </svg>
+      </a>
     </h2>
     <p data-traffic-period class="key-period text-sm text-muted" aria-live="polite"></p>
   </div>
-  <noscript><p class="text-sm text-muted">The traffic loads with JavaScript.</p></noscript>
+  <noscript>
+    <p class="text-sm text-muted">The traffic loads with JavaScript.</p>
+  </noscript>
   <div class="key-rows">
     <!-- Why there are no rows (it couldn't load, or nothing's running), where they'd be. -->
     <p data-traffic-note class="text-sm text-muted" aria-live="polite" hidden></p>
     <div data-traffic-placeholder aria-hidden="true" class="text-sm">
-      {
-        placeholders.map(({ name, about }, i) => (
-          <div class="key-row" style={{ "--i": i }}>
-            <span class="key-swatch">
-              <span class="block size-2 rounded-full bg-faint" />
-            </span>
-            <span>
-              <span class="skeleton" style={{ width: name }} />
-            </span>
-            <span class="text-right">
-              <span class="skeleton w-8" />
-            </span>
-            <span class="key-about">
-              {about.map((width) => (
-                <span class="block">
-                  <span class="skeleton" style={{ width }} />
-                </span>
-              ))}
-            </span>
-          </div>
-        ))
-      }
+      {placeholders.map(({ name, about }, i) => (
+        <div class="key-row" style={{ "--i": i }}>
+          <span class="key-swatch">
+            <span class="block size-2 rounded-full bg-faint" />
+          </span>
+          <span>
+            <span class="skeleton" style={{ width: name }} />
+          </span>
+          <span class="text-right">
+            <span class="skeleton w-8" />
+          </span>
+          <span class="key-about">
+            {about.map((width) => (
+              <span class="block">
+                <span class="skeleton" style={{ width }} />
+              </span>
+            ))}
+          </span>
+        </div>
+      ))}
     </div>
     <ul data-traffic-list class="list-none pl-0 text-sm tabular-nums" hidden></ul>
   </div>
@@ -107,7 +108,6 @@ const placeholders = [
     min-height: calc(3 * (0.75rem + 1.5 * var(--text-sm)) + 5 * 1.45 * var(--text-sm));
     margin-top: 0.25rem;
   }
-
 
   /* Beside the bio once there's room (index.astro), where the whitespace is separation enough. */
   @media (width >= 40rem) {
