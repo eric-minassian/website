@@ -1,0 +1,28 @@
+# Check, build and deploy on the platform. PRs get a preview at
+# https://website--pr-<n>.ericminassian.com (removed when the PR closes);
+# main deploys https://website.ericminassian.com, which www.ericminassian.com
+# serves. The browser tests (`pnpm test:e2e`) run against each. No AWS
+# credentials: CI signs in to the platform with GitHub's OIDC token.
+name: platform
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: platform-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  platform:
+    uses: eric-minassian/platform/.github/workflows/app.yml@main
+    with:
+      # The site's devEngines.runtime, which the other workflows' setup-node reads.
+      node-version: "26"

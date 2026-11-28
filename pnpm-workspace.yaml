@@ -2,3 +2,9 @@
 # package-manager document that GitHub's dependency graph can't parse yet, which hides
 # every dependency from Dependabot alerts. CI still installs the exact packageManager version.
 pmOnFail: ignore
+# esbuild (used by `plat build`) installs its native binary with a build script.
+allowBuilds:
+  esbuild: true
+# The platform's own packages (eric-minassian/platform) are used the day they're released.
+minimumReleaseAgeExclude:
+  - "@ericminassian/*"

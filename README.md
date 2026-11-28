@@ -7,11 +7,13 @@ Personal website built with Astro, Tailwind CSS, and TypeScript.
 ```bash
 pnpm dev                # Start development server (localhost:4321)
 pnpm build              # Type-check and build for production
+pnpm typecheck          # Type-check with astro check
 pnpm preview            # Preview production build
 pnpm lint               # Lint with oxlint
-pnpm fmt                # Format with oxfmt
+pnpm format             # Format with oxfmt
 pnpm test:visual        # Run visual regression tests
 pnpm test:visual:update # Update visual regression snapshots
+pnpm test:e2e           # Test a deployed stage (BASE_URL)
 ```
 
 ## Structure
@@ -27,9 +29,11 @@ pnpm test:visual:update # Update visual regression snapshots
 - `src/lib/projects.ts` — Fetches the project list from the platform in the browser
 - `src/styles/globals.css` — Global styles and Tailwind theme
 - `src/lib/site.ts` — Site metadata
+- `plat.config.ts` — How my platform builds and serves the site
 
 ## Tech Stack
 
 - [Astro](https://astro.build) — Static site generator
 - [Tailwind CSS](https://tailwindcss.com) — Styling
-- [Playwright](https://playwright.dev) — Visual regression testing
+- [Playwright](https://playwright.dev) — Visual regression and deployment tests
+- [My platform](https://github.com/eric-minassian/platform) — Hosting, with a preview per PR
