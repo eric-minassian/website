@@ -1,3 +1,4 @@
+import { fitText } from "../lib/fit";
 // Fills the projects ledger (Projects.astro) from the platform's directory once the page loads.
 import { arrow } from "../lib/icons";
 import { leave } from "../lib/leave";
@@ -49,19 +50,21 @@ function figure(el: HTMLElement, n: number): void {
 interface Dots {
   pitch: number;
   rows: number;
+  /** On a phone, whether the dots end the "Deployed" line, or have a line of their own under it. */
+  beside: boolean;
 }
-
-/** How wide a day's reading beside the dots can be on a phone ("Today so far · 12,345"), px. */
-const READING = 150;
 
 /**
  * The home page's halftone in small: a column of dots per day on a square 5px pitch, about 36px
  * tall, its texture finer than the 6px dotted rules between the rows so the two never read as one.
- * On a phone a day's reading stands beside the dots, so they close up a little where that's tight.
+ * On a phone the dots end the "Deployed" line, `meta` px of it and a gap, closing up a little
+ * where that's tight; where even 4px is too wide for that, they take a line of their own.
  */
-const dotsFor = (phone: boolean, width: number): Dots => {
-  const pitch = phone ? Math.max(4, Math.min(5, Math.floor(((width - READING) / 30) * 2) / 2)) : 5;
-  return { pitch, rows: Math.floor(36 / pitch) };
+const dotsFor = (phone: boolean, width: number, meta: number): Dots => {
+  const fit = Math.floor(((width - meta - 16) / 30) * 2) / 2;
+  const beside = phone && fit >= 4;
+  const pitch = beside ? Math.min(5, fit) : 5;
+  return { pitch, rows: Math.floor(36 / pitch), beside };
 };
 
 /** Room under a sparkline's ground for the keyboard's mark under a day, px. */
@@ -125,7 +128,7 @@ const dot = (x: number, y: number, r: number): string =>
   `M${(x - r).toFixed(2)} ${y.toFixed(2)}a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0`;
 
 /** A sparkline size, to tell whether a new one differs. */
-const sizeOf = ({ pitch, rows }: Dots): string => `${pitch}:${rows}`;
+const sizeOf = ({ pitch, rows, beside }: Dots): string => `${pitch}:${rows}:${beside}`;
 
 /** The days the ledger covers and the first the platform counted. */
 interface Span {
@@ -160,13 +163,17 @@ function row(project: Project, index: number, span: Span, start: Dots, signal: A
   const name = element("span", "ledger-name");
   const out = link(project.url, "", "link-quiet tap");
   out.title = project.name;
-  out.append(element("span", "ledger-name-text", project.name), arrow("out"));
+  const text = element("span", "ledger-name-text", project.name);
+  text.dataset.name = project.name;
+  out.append(text, arrow("out"));
   name.append(out);
   if (project.up === false) name.append(element("span", "ledger-down text-sm", "Down"));
   li.append(name);
 
   const about = element("div", "ledger-about");
-  if (project.description) about.append(element("p", "text-muted", project.description));
+  if (project.description) {
+    about.append(element("p", "ledger-description text-muted", project.description));
+  }
   const meta = element("p", "ledger-meta text-sm text-muted");
   const sep = () => element("span", "ledger-sep", "·");
   meta.append(`Deployed ${formatDay(project.lastDeployedAt)}`);
@@ -288,12 +295,29 @@ export async function initProjects(): Promise<void> {
   const head = root.querySelector<HTMLElement>("[data-projects-head]")!;
   /** Whether the days have a line of their own. */
   const phone = matchMedia("(width < 52rem)");
-  const dotsNow = () => dotsFor(phone.matches, list.clientWidth);
+  /** How wide the widest "Deployed" line is, all on one line. */
+  const metaWidth = () =>
+    Math.max(
+      0,
+      ...[...list.querySelectorAll<HTMLElement>(".ledger-meta")].map((el) => el.scrollWidth),
+    );
+  const dotsNow = () => dotsFor(phone.matches, list.clientWidth, metaWidth());
+  /** Lays the rows out for how the dots are drawn: beside the "Deployed" line, or under it. */
+  const arrange = (dots: Dots) =>
+    list.classList.toggle("spark-below", phone.matches && !dots.beside);
   /** The rows drawn, and the size of their dots. */
   let rows: Row[] = [];
   let drawnAt = "";
+  /** Names too long for their line end in "…" right before their arrow (whole in its title). */
+  const fitNames = () => {
+    for (const text of list.querySelectorAll<HTMLElement>(".ledger-name-text")) {
+      fitText(text, text.dataset.name!);
+    }
+  };
   const redraw = () => {
+    fitNames();
     const dots = dotsNow();
+    arrange(dots);
     if (rows.length === 0 || sizeOf(dots) === drawnAt) return;
     drawnAt = sizeOf(dots);
     for (const r of rows) r.resize(dots);
@@ -315,6 +339,7 @@ export async function initProjects(): Promise<void> {
     // The head and the footnote arrive with the rows, each time.
     head.classList.remove("arrive");
     note.classList.remove("arrive");
+    let state = "ready";
     try {
       const projects: Projects = await loadProjects();
       const from = firstCounted(projects);
@@ -327,11 +352,12 @@ export async function initProjects(): Promise<void> {
           Date.parse(b.lastDeployedAt) - Date.parse(a.lastDeployedAt),
       );
       list.hidden = apps.length === 0;
-      const dots = dotsNow();
-      drawnAt = sizeOf(dots);
+      // Drawn once to measure the "Deployed" lines, then sized to them.
       const { signal } = drawn;
-      rows = apps.map((p, i) => row(p, i, { days, from }, dots, signal));
+      rows = apps.map((p, i) => row(p, i, { days, from }, dotsFor(false, 0, 0), signal));
       list.replaceChildren(...rows.map((r) => r.li));
+      drawnAt = "";
+      redraw();
       // What the totals cover, over them; how the days are drawn, under the list.
       head.textContent = apps.length ? periodOf(projects) : "";
       note.textContent = apps.length
@@ -340,9 +366,13 @@ export async function initProjects(): Promise<void> {
       head.classList.add("arrive");
       note.classList.add("arrive");
       note.style.setProperty("--i", String(apps.length));
-      leave(placeholder);
+      // Rows take over from the placeholders as they fade; with none to take over, they just go.
+      if (apps.length) leave(placeholder);
+      else placeholder.hidden = true;
+      state = apps.length ? "ready" : "empty";
     } catch (error) {
       console.error(error);
+      state = "error";
       list.hidden = true;
       placeholder.hidden = true;
       // The way on, in the ink of a link, from a note in muted text.
@@ -357,7 +387,8 @@ export async function initProjects(): Promise<void> {
       note.replaceChildren("The projects couldn’t be loaded. ", retry);
     } finally {
       list.removeAttribute("aria-busy");
-      root.dataset.state = "ready";
+      // An error or nothing running leaves the note where the list would start (Projects.astro).
+      root.dataset.state = state;
     }
   };
   await load();

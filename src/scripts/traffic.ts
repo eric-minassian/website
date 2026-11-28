@@ -1,3 +1,4 @@
+import { fitText } from "../lib/fit";
 // Fills the home page's projects key (ProjectsKey.astro) and raises the traffic horizon
 // (TrafficHorizon.astro): each day's page views as a block of halftone dots, as tall as its count
 // on a linear scale and split by app, the busiest at the bottom in the largest, darkest dots.
@@ -27,7 +28,7 @@ const SVG = "http://www.w3.org/2000/svg";
  */
 const FILLS = ["fill-band-1", "fill-band-2", "fill-band-3"];
 const STROKES = ["stroke-band-1", "stroke-band-2", "stroke-band-3"];
-const RADIUS = [3.4, 2.5, 1.7];
+const RADIUS = [3.4, 2.6, 2];
 
 /** A row of the key, and the band of the horizon it names. */
 export interface Band {
@@ -36,6 +37,11 @@ export interface Band {
   /** What the key calls it: the app's name, or "2 others". */
   name: string;
   daily: number[];
+  /**
+   * Its dots' radius at a 9px pitch: larger the larger its share, so a band's weight on the page
+   * is its share's, whatever its place in the stack (the others, last, can outweigh an app).
+   */
+  radius: number;
 }
 
 /** The apps by page views, busiest first; among equals, by name. */
@@ -52,7 +58,7 @@ export const ranked = (projects: Project[]): Project[] =>
 export function bandsOf(apps: Project[], max = FILLS.length): Band[] {
   const own = apps.length <= max ? apps : apps.slice(0, max - 1);
   const rest = apps.slice(own.length);
-  const bands = [
+  const groups = [
     ...own.map((p) => ({ apps: [p], name: p.name, daily: p.pageViews })),
     ...(rest.length
       ? [
@@ -66,7 +72,8 @@ export function bandsOf(apps: Project[], max = FILLS.length): Band[] {
   ];
   // Busiest first, as ranked, and the others last whatever they add up to: a group isn't an app, so
   // it never takes the darkest band from one, and the key, its tones and the stack read in one order.
-  return bands;
+  const bySize = groups.toSorted((a, b) => totalOf(b.daily) - totalOf(a.daily));
+  return groups.map((g) => ({ ...g, radius: RADIUS[bySize.indexOf(g)]! }));
 }
 
 /**
@@ -231,7 +238,7 @@ function dotsOf(bands: Band[], grid: Grid, height: number, d: number, peak: numb
           x,
           y: ground,
           // Never much smaller than half a full dot, so it stands clear of the faint ground.
-          r: Math.max(1.6 * grid.weight, RADIUS[band]! * scale * share),
+          r: Math.max(1.6 * grid.weight, bands[band]!.radius * scale * share),
           band,
           row: 0,
           ring: today,
@@ -241,7 +248,7 @@ function dotsOf(bands: Band[], grid: Grid, height: number, d: number, peak: numb
     return Array.from({ length: count }, (_, row) => {
       const band = bandOf(row);
       const ring = today && row === count - 1;
-      const r = RADIUS[band]! * scale;
+      const r = bands[band]!.radius * scale;
       return { x, y: ground - row * pitch, r: ring ? Math.max(1.4, r - 0.5) : r, band, row, ring };
     });
   });
@@ -276,7 +283,7 @@ export const weekX = (grid: Grid, d: number): number =>
 
 /** What the ground marks besides the days: the weeks named on the axis, and two moments. */
 interface Marks {
-  /** Each a week's first day, named on the axis. */
+  /** Each a week's first day, ticked under the ground. */
   weeks?: number[];
   /** The first day any app was live, if after the first day shown. */
   firstLive?: number;
@@ -352,7 +359,7 @@ export function dayLayer(bands: Band[], height: number, grid: Grid, d: number): 
 }
 
 /** A band's swatch in the key: a patch of its dots, in its size and tone. */
-function swatch(band: number): SVGSVGElement {
+function swatch(band: number, radius: number): SVGSVGElement {
   const svg = document.createElementNS(SVG, "svg");
   svg.setAttribute("width", "16");
   svg.setAttribute("height", "16");
@@ -360,7 +367,8 @@ function swatch(band: number): SVGSVGElement {
   svg.setAttribute("aria-hidden", "true");
   svg.setAttribute("class", FILLS[band]!);
   const path = document.createElementNS(SVG, "path");
-  const r = Math.max(2, RADIUS[band]! * (8 / 9));
+  // The chart's dots at the patch's 8px pitch, so the swatches differ as the bands do.
+  const r = radius * (8 / 9);
   path.setAttribute("d", [4, 12].flatMap((x) => [4, 12].map((y) => dot(x, y, r))).join(""));
   svg.append(path);
   return svg;
@@ -395,7 +403,7 @@ function keyRow(row: Band, band: number, position: number): HTMLLIElement {
   li.dataset.band = String(band);
   const mark = document.createElement("span");
   mark.className = "key-swatch";
-  mark.append(swatch(band));
+  mark.append(swatch(band, row.radius));
 
   const name = document.createElement("span");
   name.className = "key-name";
@@ -470,24 +478,15 @@ function nameOthers(about: HTMLElement, apps: Project[], shown: number): void {
  * day's note, it reads today when pointed at or tapped, so the chart says it can be read.
  */
 const setToday = (el: HTMLElement, n: number | null): void => {
-  const text = n === null ? "Today so far" : `Today so far · ${formatCount(n)}`;
-  if (el.textContent === text) return;
-  if (n === null) return el.replaceChildren(text);
-  const count = document.createElement("span");
-  count.className = "horizon-count";
-  count.textContent = formatCount(n);
-  el.replaceChildren("Today so far · ", count);
+  el.textContent = n === null ? "Today so far" : `Today so far · ${formatCount(n)}`;
+  el.classList.toggle("has-count", n !== null);
 };
-
-/** Whether a pointer is on today's count on the axis. */
-const onCount = (e: PointerEvent): boolean =>
-  e.target instanceof Element && e.target.closest(".horizon-count") !== null;
 
 /** How far beyond the days a finger still reads the nearest one, px: most of a fingertip. */
 const REACH = 44;
 
-/** Whether two labels on the axis stand clear of each other, 20px apart or more. */
-const clear = (at: Span, of: Span): boolean => at.right + 20 <= of.left || at.left - 20 >= of.right;
+/** Whether two labels on the axis stand clear of each other, 14px apart or more: a few spaces. */
+const clear = (at: Span, of: Span): boolean => at.right + 14 <= of.left || at.left - 14 >= of.right;
 
 /** Where a label runs across the page, px. */
 interface Span {
@@ -518,6 +517,7 @@ export async function initTraffic(): Promise<void> {
   const placeholder = root.querySelector<HTMLElement>("[data-traffic-placeholder]")!;
   const list = root.querySelector<HTMLUListElement>("[data-traffic-list]")!;
   const period = root.querySelector<HTMLElement>("[data-traffic-period]")!;
+  const notice = root.querySelector<HTMLElement>("[data-traffic-note]")!;
   const chart = horizon.querySelector<HTMLElement>("[data-horizon-chart]")!;
   const scrub = horizon.querySelector<HTMLElement>("[data-horizon-scrub]")!;
   const axis = horizon.querySelector<HTMLElement>("[data-horizon-axis]")!;
@@ -543,15 +543,18 @@ export async function initTraffic(): Promise<void> {
     retry.className = "link tap cursor-pointer text-ink";
     retry.textContent = "Try again";
     retry.addEventListener("click", () => {
+      notice.hidden = true;
+      notice.replaceChildren();
       placeholder.hidden = false;
-      period.textContent = "";
       root.dataset.state = "loading";
       horizon.dataset.state = "loading";
       // Keep the keyboard in the key while it reloads, rather than dropping it to the page.
       root.querySelector<HTMLElement>("#projects-heading a")?.focus();
       void initTraffic();
     });
-    period.replaceChildren("Traffic is unavailable right now. ", retry);
+    // Where the rows would be, in the words /projects uses for the same failure.
+    notice.replaceChildren("The projects couldn’t be loaded. ", retry);
+    notice.hidden = false;
     root.dataset.state = "error";
     horizon.dataset.state = "error";
     return;
@@ -564,7 +567,8 @@ export async function initTraffic(): Promise<void> {
   const bands = bandsOf(ranked(counts));
   root.dataset.state = "ready";
   if (bands.length === 0) {
-    period.textContent = "Nothing is running right now.";
+    notice.textContent = "Nothing is running right now.";
+    notice.hidden = false;
     horizon.dataset.state = "empty";
     return;
   }
@@ -575,7 +579,6 @@ export async function initTraffic(): Promise<void> {
   const periodText = periodOf(projects);
   // The caption heads the counts' column, and arrives with them.
   period.textContent = periodText;
-  period.dataset.caption = "";
   period.classList.add("arrive");
   /** Whether counting began within the window, so the days shown are its last few. */
   const since = days.length < slots;
@@ -609,8 +612,10 @@ export async function initTraffic(): Promise<void> {
     if (band === null) delete root.dataset.focus;
     else root.dataset.focus = String(band);
     for (const row of rows) row.classList.toggle("is-focused", bandOfRow(row) === band);
+    // The band picked out comes forward in ink, whatever its tone, so even the faintest shows.
     for (const path of chart.querySelectorAll<SVGPathElement>("path[data-band]")) {
       path.classList.toggle("is-quiet", band !== null && path.dataset.band !== String(band));
+      path.classList.toggle("is-picked", band !== null && path.dataset.band === String(band));
     }
     showPeak();
   };
@@ -624,6 +629,8 @@ export async function initTraffic(): Promise<void> {
   let grid: Grid = { pitch: 9, weight: 1, days: days.length, x0: 0, per: 1, gap: false };
   /** How far the tick where counting began rises to its note, if it's marked. */
   let sinceRise: number | null = null;
+  /** The weeks whose ticks the ground draws. */
+  let ticked: number[] = [];
   sinceNote.textContent = `Since ${formatDay(days[0]!)}`;
   const measure = () => {
     const box = chart.getBoundingClientRect();
@@ -645,8 +652,8 @@ export async function initTraffic(): Promise<void> {
     const offset = column.left - box.left;
     // "Today so far" holds the right edge, as it reads with nothing picked out (with today's
     // count, when today is the busiest day). Then, in that order, the first day, the first app's
-    // launch and each week find room on the axis, each at least 20px from the others, inside the
-    // column, or go unnamed. Each keeps where it fits, for `settle`.
+    // launch and the weeks, the latest first (nearest the counts), find room on the axis, each
+    // clear of the others, inside the column, or go unnamed. Each keeps where it fits, for `settle`.
     setToday(today, peakDay === days.length - 1 && totals[peakDay]! > 0 ? totals[peakDay]! : null);
     const kept = [today.getBoundingClientRect()];
     const fit = (el: HTMLElement, x: number, shifts: number[]): boolean => {
@@ -692,18 +699,29 @@ export async function initTraffic(): Promise<void> {
       const el = document.createElement("span");
       el.textContent = `${formatDay(days[firstLive]!)} · first app`;
       weekLabels.append(el);
-      // Centred under its tick, or ending or beginning at it.
+      // Ending at its tick, as the note where counting began does; or centred under it, or
+      // beginning at it.
       const width = el.offsetWidth;
-      fit(el, weekX(grid, firstLive), [width / 2, width, 0]);
+      fit(el, weekX(grid, firstLive), [width, width / 2, 0]);
     }
-    // Every week is ticked, so the ticks keep time; each is dated in full ("Nov 9", never a bare
-    // number beside the counts) where there's room under it.
-    for (const d of weeks.filter((w) => w > 0 && w !== firstLive)) {
+    // Each week is dated in full ("Nov 9", never a bare number beside the counts) where there's
+    // room under its tick.
+    for (const d of weeks.filter((w) => w > 0 && w !== firstLive).toReversed()) {
       const el = document.createElement("span");
       el.textContent = formatDay(days[d]!);
       weekLabels.append(el);
       fit(el, weekX(grid, d), [el.offsetWidth / 2]);
     }
+    // Every week is ticked, so the ticks keep time, but for one that another date stands over,
+    // which would read as naming it.
+    const over = [today, start, ...weekLabels.querySelectorAll<HTMLElement>("span")]
+      .filter((el) => !el.hidden && el.offsetWidth > 0)
+      .map((el) => el.getBoundingClientRect());
+    ticked = weeks.filter((d) => {
+      const x = box.left + weekX(grid, d);
+      const named = (r: DOMRect) => Math.abs((r.left + r.right) / 2 - x) < 2;
+      return !over.some((r) => !named(r) && x >= r.left - 3 && x <= r.right + 3);
+    });
   };
 
   /** Where day `d`'s top dot's top edge is, px from the chart's top. */
@@ -724,12 +742,10 @@ export async function initTraffic(): Promise<void> {
     const width = note.offsetWidth;
     const edges = gridEdges(grid);
     const left = Math.min(edges.to - width, Math.max(edges.from, dayX(grid, d) - width / 2));
-    const reach = (grid.per * grid.pitch) / 2;
-    const under = days
-      .map((_, i) => i)
-      .filter((i) => dayX(grid, i) + reach >= left && dayX(grid, i) - reach <= left + width);
+    // One line for every note, just above the tallest block: a reading only moves sideways as it
+    // goes from day to day, its guide running down to the day.
     const crest = Math.min(
-      ...under.map((i) => (totals[i]! > 0 ? crestOf(i) : chart.clientHeight - FOOT - grid.pitch)),
+      ...days.map((_, i) => (totals[i]! > 0 ? crestOf(i) : chart.clientHeight - FOOT - grid.pitch)),
     );
     let top = Math.max(HEADROOM - note.offsetHeight - 8, crest - note.offsetHeight - 10);
     // Clear of the note naming where counting began, too, when the two would cross.
@@ -803,6 +819,7 @@ export async function initTraffic(): Promise<void> {
     svg?.querySelector(".day-layer")?.remove();
     svg?.classList.toggle("is-reading", d !== null);
     if (d === null) {
+      today.classList.remove("is-read");
       period.textContent = periodText;
       return;
     }
@@ -813,6 +830,13 @@ export async function initTraffic(): Promise<void> {
       ? `${dayName(days, d)} · no apps yet`
       : `${dayName(days, d)} · ${describeViews(totals[d]!).toLowerCase()}`;
     label.textContent = before ? reading : `${dayName(days, d)} · ${formatCount(totals[d]!)}`;
+    // Today is named on the axis right under it, so reading it there names it once: the axis
+    // comes forward in ink, and the reading above gives only the count, or nothing at all when
+    // the axis already has the count beside it.
+    const isToday = d === days.length - 1;
+    today.classList.toggle("is-read", isToday);
+    if (isToday) label.textContent = formatCount(totals[d]!);
+    label.hidden = guide.hidden = isToday && today.classList.contains("has-count");
     const top = place(label, d) + label.offsetHeight + 4;
     const bottom = totals[d]! > 0 ? crestOf(d) - 3 : chart.clientHeight - FOOT - grid.pitch;
     guide.style.translate = `${Math.round(dayX(grid, d))}px ${Math.round(top)}px`;
@@ -871,15 +895,15 @@ export async function initTraffic(): Promise<void> {
       showDay(null);
     }
   });
-  // Today's count on the axis reads today, as the busiest day's note reads its day.
+  // "Today so far" on the axis reads today, as the busiest day's note reads its day.
   today.addEventListener("pointermove", (e) => {
-    if (e.pointerType === "mouse" && onCount(e)) showDay(days.length - 1);
+    if (e.pointerType === "mouse" && shownDay !== days.length - 1) showDay(days.length - 1);
   });
   today.addEventListener("pointerleave", (e) => {
     if (e.pointerType === "mouse" && !scrub.matches(":focus-visible")) showDay(null);
   });
   today.addEventListener("pointerup", (e) => {
-    if (e.pointerType !== "mouse" && onCount(e)) showDay(days.length - 1);
+    if (e.pointerType !== "mouse") showDay(days.length - 1);
   });
 
   // From the keyboard the strata are a slider over the days, starting from today.
@@ -921,7 +945,7 @@ export async function initTraffic(): Promise<void> {
     frame = requestAnimationFrame(() => {
       measure();
       const svg = strata(bands, chart.clientWidth, chart.clientHeight, grid, {
-        weeks,
+        weeks: ticked,
         firstLive,
         since: sinceRise,
       });
@@ -940,7 +964,11 @@ export async function initTraffic(): Promise<void> {
       // after it, and a description cut short keeps its whole text in a title.
       for (const row of rows) {
         const about = row.querySelector<HTMLElement>(".key-about")!;
-        const { apps } = bands[bandOfRow(row)]!;
+        const { apps, name } = bands[bandOfRow(row)]!;
+        // A name too long for its line ends in "…" right before its arrow, whole in its title.
+        const text = row.querySelector<HTMLElement>(".key-name-text")!;
+        fitText(text, name);
+        text.parentElement!.title = text.textContent === name ? "" : name;
         const cut = () => about.scrollHeight > about.clientHeight + 1;
         if (apps.length > 1) {
           for (let shown = apps.length; shown >= 1; shown--) {

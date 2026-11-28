@@ -162,7 +162,9 @@ test.describe("home page", () => {
     const column = (await page.locator("[data-horizon-axis] span").last().boundingBox())!;
     await page.mouse.move(column.x + column.width - 2, box.y + box.height / 2);
     // On the chart the short form; the key's caption and the slider's value say it in full.
-    await expect(page.locator("[data-horizon-label]")).toHaveText("Today so far · 3,215");
+    // Today is named on the axis right under it, which comes forward; the reading gives the count.
+    await expect(page.locator("[data-horizon-label]")).toHaveText("3,215");
+    await expect(page.locator("[data-horizon-today]")).toHaveClass(/is-read/);
     await expect(key.getByRole("listitem")).toHaveText([
       /^platform\s*2,872/,
       /^atlas\s*14/,
@@ -185,7 +187,9 @@ test.describe("home page", () => {
     await page.getByRole("region", { name: "Projects" }).getByRole("link").last().focus();
     await page.keyboard.press("Tab");
     await expect(scrub).toBeFocused();
-    await expect(page.locator("[data-horizon-label]")).toHaveText("Today so far · 3,215");
+    // Today is named on the axis right under it, which comes forward; the reading gives the count.
+    await expect(page.locator("[data-horizon-label]")).toHaveText("3,215");
+    await expect(page.locator("[data-horizon-today]")).toHaveClass(/is-read/);
     await expect(scrub).toHaveAttribute("aria-valuetext", "Today so far: 3,215 page views");
     await page.keyboard.press("ArrowLeft");
     await expect(scrub).toHaveAttribute("aria-valuetext", "Nov 25: no page views");
@@ -213,7 +217,7 @@ test.describe("home page", () => {
     await failProjects(page);
     await page.reload();
     await expect(page.locator("[data-traffic]")).toHaveAttribute("data-state", "error");
-    await expect(key).toContainText("Traffic is unavailable right now.");
+    await expect(key).toContainText("The projects couldn’t be loaded.");
     await expect(key.getByRole("listitem")).toHaveCount(0);
     await expect(key.getByRole("link", { name: "Projects" })).toHaveAttribute("href", "/projects");
 
@@ -240,7 +244,9 @@ test.describe("home page on a phone", () => {
     await scrub.scrollIntoViewIfNeeded();
     const box = (await scrub.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width - 2, box.y + box.height / 2);
-    await expect(page.locator("[data-horizon-label]")).toHaveText("Today so far · 3,215");
+    // Today is named on the axis right under it, which comes forward; the reading gives the count.
+    await expect(page.locator("[data-horizon-label]")).toHaveText("3,215");
+    await expect(page.locator("[data-horizon-today]")).toHaveClass(/is-read/);
     // A tap anywhere else puts it away.
     await page.touchscreen.tap(box.x + 4, box.y - 60);
     await expect(page.locator("[data-horizon-label]")).toBeHidden();
@@ -294,7 +300,10 @@ test.describe("projects page", () => {
     ).toBeVisible();
   });
 
-  test("reads out a day's views from a sparkline, by pointer and by keyboard", async ({ page }) => {
+  test("reads out a day's views from a sparkline, by pointer and by keyboard", async ({
+    page,
+    isMobile,
+  }) => {
     await serveProjects(page);
     await page.goto("/projects");
     const row = page.getByRole("list", { name: "Projects" }).getByRole("listitem").first();
@@ -306,10 +315,11 @@ test.describe("projects page", () => {
     await page.mouse.move(box.x + 5.5 * day, box.y + box.height - 2);
     await expect(reading).toHaveText("Nov 2 · not live yet");
     await page.mouse.move(box.x + 19.5 * day, box.y + 10);
-    // The reading sits by the dots, so the row's links and lines stay as they are.
+    // Under the dots beside the description; on a phone, in the place of the line the dots end.
     await expect(reading).toHaveText("Nov 16 · 2,844");
     await expect(reading).toBeVisible();
-    await expect(row.getByText("Deployed Nov 25")).toBeVisible();
+    if (isMobile) await expect(row.getByText("Deployed Nov 25")).toBeHidden();
+    else await expect(row.getByText("Deployed Nov 25")).toBeVisible();
     // The total stays the total.
     await expect(row.locator(".ledger-total")).toContainText("9,112 page views");
 

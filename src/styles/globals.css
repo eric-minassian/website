@@ -166,6 +166,41 @@
     animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1);
   }
 
+  /*
+   * Moving between pages crossfades them the same way, and what the two pages share is carried
+   * across rather than faded: the site's name settles from the home page's title into a subpage's
+   * path, the key's "Projects" rises into the /projects page's name (and back), and the theme
+   * toggle stays where it is. Where motion is reduced, pages simply load.
+   */
+  .masthead-name {
+    view-transition-name: site-name;
+  }
+
+  #page-heading[data-title="Projects"],
+  #projects-heading a {
+    view-transition-name: projects-title;
+  }
+
+  [data-theme-toggle] {
+    view-transition-name: theme-toggle;
+  }
+
+  ::view-transition-group(*) {
+    animation-duration: 320ms;
+    animation-timing-function: var(--ease-out-soft);
+  }
+
+  ::view-transition-old(projects-title),
+  ::view-transition-new(projects-title),
+  ::view-transition-old(site-name),
+  ::view-transition-new(site-name) {
+    animation-duration: 320ms;
+    /* Each name keeps its height while the two cross, so the larger doesn't stretch the smaller. */
+    height: 100%;
+    object-fit: contain;
+    object-position: left center;
+  }
+
   /* While the theme flips, everything takes its new colours at once; only the toggle's icon turns. */
   html.flipping *:not(.theme-icon),
   html.flipping ::before,
@@ -441,22 +476,39 @@
     animation: skeleton-pulse 2.4s ease-in-out infinite;
   }
 
-  /* A placeholder fading out over what arrives in its place (src/lib/leave.ts). */
+  /*
+   * A placeholder fading out over what arrives in its place (src/lib/leave.ts), row by row: each
+   * mostly gone by the time the row taking its place starts to show, so the two never cross at
+   * strength, and never both gone.
+   */
   .leaving {
     position: absolute;
     inset: 0 0 auto;
     pointer-events: none;
-    animation: leave 220ms ease-in both;
+  }
+
+  .leaving > * {
+    animation: leave 120ms ease-out both;
+    animation-delay: calc(min(var(--i, 0), 4) * 35ms);
   }
 
   /*
-   * Rows that arrive with the data rise into place one after another while the placeholders fade,
-   * so the two are never drawn over each other at strength, and every row has begun before the
-   * last placeholder is gone (past the fifth, rows have no placeholder to take over from).
+   * Rows that arrive with the data rise into place one after another, each just after its
+   * placeholder (past the fifth, rows have none to take over from).
    */
   .arrive {
     animation: arrive 420ms var(--ease-out-soft) both;
-    animation-delay: calc(60ms + min(var(--i, 0), 4) * 35ms);
+    animation-delay: calc(70ms + min(var(--i, 0), 4) * 35ms);
+  }
+}
+
+@view-transition {
+  navigation: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
   }
 }
 

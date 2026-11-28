@@ -25,6 +25,7 @@
     ></span>
     <span data-horizon-guide class="horizon-guide" aria-hidden="true" hidden></span>
     <span data-horizon-mark class="horizon-mark" aria-hidden="true" hidden></span>
+    <span class="horizon-bare" aria-hidden="true"></span>
     <span data-horizon-since class="horizon-note text-sm text-muted" aria-hidden="true" hidden></span>
     <span data-horizon-label class="horizon-note text-sm tabular-nums" aria-hidden="true" hidden></span>
   </div>
@@ -148,6 +149,15 @@
     opacity: 0.2;
   }
 
+  /* An app picked out in the key comes forward in ink, whatever its tone, so even the faintest shows. */
+  .horizon-chart :global(path.is-picked:not(.today)) {
+    fill: var(--color-ink);
+  }
+
+  .horizon-chart :global(path.is-picked.today) {
+    stroke: var(--color-ink);
+  }
+
   /* Today's top row, still counting: rings rather than dots (the date below says "so far"). */
   .horizon-chart :global(path.today) {
     stroke-width: 1;
@@ -213,21 +223,57 @@
   }
 
   /*
-   * On a phone, where the page scrolls down to it, a horizon with nothing to stand on it (it
-   * couldn't load, or nothing's running) gives its room up: the key above says why.
+   * On a phone, where the page would scroll down to it, a horizon with nothing to stand on it (it
+   * couldn't load, or nothing's running) gives up all but its ground, which stays at the window's
+   * foot as on the 404 page; the key above says why.
    */
   @media (width < 40rem) {
-    .horizon:is([data-state="error"], [data-state="empty"]) {
+    .horizon:is([data-state="error"], [data-state="empty"]) .horizon-plot {
+      min-height: calc(var(--step) + 6px);
+    }
+
+    /*
+     * The ground it keeps is drawn afresh at the foot (`.horizon-bare`) rather than moved up from
+     * below the fold, where the loading page had it: a mark that arrives, not one that jumps.
+     */
+    .horizon:is([data-state="error"], [data-state="empty"]) .horizon-plot::before {
       display: none;
+    }
+
+    .horizon:is([data-state="error"], [data-state="empty"]) .horizon-bare {
+      display: block;
     }
   }
 
-  /* Today's count, when today is the busiest day: dotted like the busiest day's note, and read alike. */
-  .horizon-axis :global(.horizon-count) {
+  .horizon-bare {
+    display: none;
+    position: absolute;
+    inset: auto 0 6px;
+    height: var(--step);
+    background-image: var(--ground);
+    background-size: var(--step) var(--step);
+    background-repeat: repeat-x;
+    background-position: calc((100cqw - var(--column)) / 2) bottom;
+  }
+
+  /*
+   * "Today so far" reads today when pointed at or tapped. With today's count beside it (today being
+   * the busiest day) it's dotted like the busiest day's note, the chart's sign that it can be read;
+   * while today is read, it comes forward in ink.
+   */
+  [data-horizon-today] {
+    cursor: default;
+    transition: color 150ms;
+  }
+
+  [data-horizon-today].has-count {
     text-decoration: underline dotted;
     text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
     text-underline-offset: 0.25em;
-    cursor: default;
+  }
+
+  [data-horizon-today].is-read {
+    color: var(--color-ink);
   }
 
   [data-horizon-start] {
@@ -272,6 +318,11 @@
 
   [data-horizon-label] {
     color: var(--color-ink);
+  }
+
+  /* The note where counting began arrives as the dates do. */
+  [data-horizon-since] {
+    animation: settle 400ms ease-out both;
   }
 
   /*
