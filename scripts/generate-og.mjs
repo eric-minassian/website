@@ -124,8 +124,8 @@ const html = `<!DOCTYPE html>
 </body>
 </html>`;
 
-async function main() {
-  const browser = await chromium.launch();
+const browser = await chromium.launch();
+try {
   const page = await browser.newPage({
     viewport: { width: 1200, height: 630 },
   });
@@ -135,8 +135,7 @@ async function main() {
     path: join(import.meta.dirname, "..", "public", "og-image.png"),
     type: "png",
   });
+} finally {
   await browser.close();
-  console.log("Generated public/og-image.png (1200x630)");
 }
-
-main();
+console.log("Generated public/og-image.png (1200x630)");

@@ -7,8 +7,8 @@
     "dev": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
+    "lint": "astro sync && oxlint",
+    "lint:fix": "astro sync && oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "og:generate": "node scripts/generate-og.mjs",
@@ -28,6 +28,7 @@
     "astro": "^7.4.13",
     "oxfmt": "^0.80.0",
     "oxlint": "^1.95.0",
+    "oxlint-tsgolint": "^7.0.2009",
     "tailwindcss": "^4.3.5",
     "typescript": "^6.0.3"
   },

@@ -68,7 +68,10 @@ const flipTheme = (): void => {
     applyTheme();
     requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("flipping")));
   };
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches || !document.startViewTransition) {
+  if (
+    matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    !("startViewTransition" in document)
+  ) {
     swap();
   } else {
     document.startViewTransition(swap);

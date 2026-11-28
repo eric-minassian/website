@@ -366,7 +366,6 @@ function swatch(band: number): SVGSVGElement {
   return svg;
 }
 
-/** A count as shown, with what a screen reader hears beside it. */
 /**
  * A count as shown, with what a screen reader hears beside it: a total compactly ("9.1k"), a
  * day's count exactly ("2,844"), and an en dash for a day before the app was live.
@@ -948,7 +947,7 @@ export async function initTraffic(): Promise<void> {
             if (!cut()) break;
           }
         } else if (cut()) {
-          about.title = about.textContent ?? "";
+          about.title = about.textContent;
         } else {
           about.removeAttribute("title");
         }

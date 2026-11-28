@@ -115,31 +115,39 @@ async function resolveAssetPath(requestPath) {
   }
 }
 
+async function serve(request, response) {
+  if (!request.url) {
+    response.writeHead(400);
+    response.end("Missing request URL");
+    return;
+  }
+
+  // The project list the build was pointed at (PROJECTS_URL in lighthouse.yml), instead of the
+  // live platform, so the audit doesn't depend on it.
+  if (request.url === PROJECTS_FIXTURE_PATH) {
+    response.writeHead(200, { "content-type": "application/json" });
+    createReadStream(PROJECTS_FIXTURE).pipe(response);
+    return;
+  }
+
+  const filePath = await resolveAssetPath(request.url);
+  if (!filePath) {
+    response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+    response.end("Not found");
+    return;
+  }
+
+  response.writeHead(200, { "content-type": getContentType(filePath) });
+  createReadStream(filePath).pipe(response);
+}
+
 async function startStaticServer() {
-  const server = createServer(async (request, response) => {
-    if (!request.url) {
-      response.writeHead(400);
-      response.end("Missing request URL");
-      return;
-    }
-
-    // The project list the build was pointed at (PROJECTS_URL in lighthouse.yml), instead of the
-    // live platform, so the audit doesn't depend on it.
-    if (request.url === PROJECTS_FIXTURE_PATH) {
-      response.writeHead(200, { "content-type": "application/json" });
-      createReadStream(PROJECTS_FIXTURE).pipe(response);
-      return;
-    }
-
-    const filePath = await resolveAssetPath(request.url);
-    if (!filePath) {
-      response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
-      response.end("Not found");
-      return;
-    }
-
-    response.writeHead(200, { "content-type": getContentType(filePath) });
-    createReadStream(filePath).pipe(response);
+  const server = createServer((request, response) => {
+    serve(request, response).catch((error) => {
+      console.error(error);
+      if (!response.headersSent) response.writeHead(500);
+      response.end();
+    });
   });
 
   await new Promise((resolve) => {

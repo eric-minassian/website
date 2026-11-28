@@ -1,14 +1,52 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "import"],
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "import", "promise"],
   "categories": {
     "correctness": "error",
-    "suspicious": "warn",
-    "perf": "warn"
+    "suspicious": "error",
+    "perf": "error"
+  },
+  // Type-aware rules run through oxlint-tsgolint; `astro check` stays the type checker, since it
+  // also reads `.astro` files.
+  "options": {
+    "typeAware": true,
+    "reportUnusedDisableDirectives": "error"
   },
   "rules": {
+    // typescript-eslint's recommended-type-checked rules that oxlint files under `pedantic`.
+    "typescript/no-misused-promises": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/only-throw-error": "error",
+    "typescript/prefer-promise-reject-errors": "error",
+    "typescript/require-await": "error",
+    "typescript/restrict-plus-operands": "error",
+    // A few stricter ones the code already keeps to.
+    "typescript/no-deprecated": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-import-type-side-effects": "error",
+    "typescript/prefer-nullish-coalescing": "error",
+    "import/no-cycle": "error",
+    "import/no-duplicates": "error",
     "import/no-unassigned-import": "off",
     "unicorn/require-module-specifiers": "off"
   },
+  "overrides": [
+    {
+      // Untyped JavaScript: every value is `any`, so the type-aware `no-unsafe-*` rules only add noise.
+      "files": ["**/*.js", "**/*.mjs", "**/*.cjs"],
+      "rules": {
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-return": "off"
+      }
+    }
+  ],
   "ignorePatterns": ["dist/**", ".astro/**"]
 }
