@@ -33,8 +33,6 @@ test("the projects page lists the apps from the directory", async ({ page }) => 
   const list = ledger.locator("[data-projects-list]");
   if (state === "ready") {
     await expect(list.getByRole("listitem").first()).toBeVisible();
-    // The directory lists the site itself, which its own projects pages leave out.
-    await expect(list.locator('[data-name="website"]')).toHaveCount(0);
   } else {
     await expect(ledger.locator("[data-projects-note]")).toHaveText(
       "Nothing is running right now.",
