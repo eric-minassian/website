@@ -261,9 +261,11 @@ function dotsOf(bands: Band[], grid: Grid, height: number, d: number, peak: numb
       const band = bandOf(row);
       const ring = today && row === count - 1;
       const r = bands[band]!.radius * scale;
+      // Today's top row, still counting, is one ring a cell, the others' too (two fine rings would
+      // read as a figure of eight).
+      if (ring) return [{ x, y: ground - row * pitch, r: Math.max(1.4, r - 0.5), band, row, ring }];
       return cellOf(bands[band]!, x, ground - row * pitch, r).map((c) => ({
         ...c,
-        r: ring ? Math.max(c.r > 1.4 ? 1.4 : 0.8, c.r - 0.5) : c.r,
         band,
         row,
         ring,
@@ -674,13 +676,20 @@ export async function initTraffic(): Promise<void> {
     // and the weeks, the latest first (nearest the counts), find room on the axis, each clear of
     // the others, inside the column, or go unnamed.
     const kept = [today.getBoundingClientRect()];
-    const fit = (el: HTMLElement, x: number, shifts: number[]): boolean => {
+    // The tall ticks (where counting began, the first app's launch) are named by their own notes
+    // or by none: no other date stands over one, where it would read as naming it.
+    const tall = [
+      ...(since ? [box.left + weekX(grid, 0)] : []),
+      ...(firstLive > 0 && firstLive < days.length ? [box.left + weekX(grid, firstLive)] : []),
+    ];
+    const fit = (el: HTMLElement, x: number, shifts: number[], own?: number): boolean => {
       el.hidden = false;
       const fits = shifts.some((shift) => {
         el.style.translate = `${Math.round(x - offset - shift)}px 0`;
         const at = el.getBoundingClientRect();
         const inside = at.left >= box.left + from - 0.5 && at.right <= box.left + to + 0.5;
-        if (!inside || !kept.every((other) => clear(at, other))) return false;
+        const overTick = tall.some((t) => t !== own && t >= at.left - 3 && t <= at.right + 3);
+        if (!inside || overTick || !kept.every((other) => clear(at, other))) return false;
         kept.push(at);
         return true;
       });
@@ -705,7 +714,7 @@ export async function initTraffic(): Promise<void> {
       } else {
         sinceNote.hidden = true;
         sinceRise = 0;
-        fit(start, x, [0]);
+        fit(start, x, [0], box.left + x);
       }
     } else {
       fit(start, edges.from, [0]);
@@ -718,7 +727,8 @@ export async function initTraffic(): Promise<void> {
       // Ending at its tick, as the note where counting began does; or centred under it, or
       // beginning at it.
       const width = el.offsetWidth;
-      fit(el, weekX(grid, firstLive), [width, width / 2, 0]);
+      const x = weekX(grid, firstLive);
+      fit(el, x, [width, width / 2, 0], box.left + x);
     }
     // Each week is dated in full ("Nov 9", never a bare number beside the counts) where there's
     // room under its tick.

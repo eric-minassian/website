@@ -61,6 +61,7 @@ const placeholders = [
   }
 
   .ledger-head {
+    text-wrap: balance;
     min-height: 1.5em;
     margin-bottom: 0.5rem;
     text-align: right;
@@ -160,6 +161,7 @@ const placeholders = [
   .ledger :global(.spark-below .ledger-spark) {
     grid-column: 1 / -1;
     grid-row: 4;
+    margin-top: 0;
   }
 
   .ledger :global(.ledger-sep) {
@@ -178,6 +180,8 @@ const placeholders = [
     grid-row: 3;
     justify-self: end;
     align-self: baseline;
+    /* The dots' top may reach a hair above the letters' without pushing the line down. */
+    margin-top: -2px;
     position: relative;
     cursor: crosshair;
     touch-action: pan-y;

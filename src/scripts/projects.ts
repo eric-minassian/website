@@ -65,9 +65,9 @@ const dotsFor = (phone: boolean, width: number, meta: number): Dots => {
   const fit = Math.floor(((width - meta - 16) / 30) * 2) / 2;
   const beside = phone && fit >= 4;
   const pitch = beside ? Math.min(5, fit) : 5;
-  // Beside the line, word-sized: standing on its baseline about as tall as its letters, so the line
-  // keeps its place under the description. Alone, or beside a description, about 36px.
-  return { pitch, rows: beside ? 4 : Math.floor(36 / pitch), beside };
+  // Beside the line, word-sized: on its baseline no taller than its letters (about 16px), so the line
+  // keeps the same gap under the description as everywhere. Alone, or beside a description, 36px.
+  return { pitch, rows: Math.floor((beside ? 16.5 : 36) / pitch), beside };
 };
 
 /** Room under a sparkline's ground for the keyboard's mark under a day, px. */
