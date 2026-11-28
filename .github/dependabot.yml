@@ -9,6 +9,12 @@ updates:
     cooldown:
       default-days: 1
     open-pull-requests-limit: 10
+    # A week's minor and patch bumps land as one PR, so one snapshot run covers them; majors
+    # still come one at a time.
+    groups:
+      npm:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -16,3 +22,6 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ["*"]

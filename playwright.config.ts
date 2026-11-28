@@ -11,7 +11,8 @@ export default defineConfig({
   reporter: "html",
   use: {
     baseURL,
-    trace: "on-first-retry",
+    // No retries, so a failure keeps its trace for the uploaded report.
+    trace: "retain-on-failure",
   },
   projects: [
     {
