@@ -13,5 +13,6 @@
   "sortTailwindcss": {
     "stylesheet": "src/styles/globals.css"
   },
+  "astro": true,
   "ignorePatterns": ["dist/**", ".astro/**", "pnpm-lock.yaml"]
 }

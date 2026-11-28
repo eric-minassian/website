@@ -2,9 +2,10 @@
 import { Font } from "astro:assets";
 
 import ThemeToggle from "../components/ThemeToggle.astro";
-import { SITE } from "../lib/site";
 import { getKeptScript } from "../lib/projects";
+import { SITE } from "../lib/site";
 import { getThemeScript } from "../scripts/theme";
+
 import "../styles/globals.css";
 
 interface Props {
@@ -93,13 +94,19 @@ const jsonLd = {
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Eric Minassian, software engineer and tech lead at Amazon" />
+    <meta
+      property="og:image:alt"
+      content="Eric Minassian, software engineer and tech lead at Amazon"
+    />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
-    <meta name="twitter:image:alt" content="Eric Minassian, software engineer and tech lead at Amazon" />
+    <meta
+      name="twitter:image:alt"
+      content="Eric Minassian, software engineer and tech lead at Amazon"
+    />
 
     <meta name="theme-color" content="#f8f5ed" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#1a1917" media="(prefers-color-scheme: dark)" />
@@ -218,29 +225,27 @@ const jsonLd = {
     itemtype={page ? undefined : "https://schema.org/Person"}
   >
     <!-- More air above the masthead on a large window, when there's height to spare. -->
-    <header
-      class="page flex items-center justify-between gap-3 pt-10 sm:pt-16 [@media(height>=40rem)_and_(height<45rem)]:pt-8 [@media(height<40rem)]:pt-6 [@media(width>=64rem)_and_(height>=48rem)]:pt-24"
-    >
-      {
-        page ? (
-          <div class="masthead masthead-path flex min-w-0 flex-wrap items-baseline gap-x-2">
-            <!-- The path ends in its "/", so a narrow line breaks before the page's name, not after the name. -->
-            <span class="flex items-baseline gap-x-2 whitespace-nowrap">
-              <a href="/" class="masthead-home link-quiet tap">
-                <span class="masthead-name">{SITE.name}</span>
-              </a>
-              <span aria-hidden="true" class="masthead-sep text-muted">
-                /
-              </span>
+    <header class="page flex items-center justify-between gap-3 pt-10 sm:pt-16 [@media(height<40rem)]:pt-6 [@media(height>=40rem)_and_(height<45rem)]:pt-8 [@media(width>=64rem)_and_(height>=48rem)]:pt-24">
+      {page ? (
+        <div class="masthead masthead-path flex min-w-0 flex-wrap items-baseline gap-x-2">
+          <!-- The path ends in its "/", so a narrow line breaks before the page's name, not after the name. -->
+          <span class="flex items-baseline gap-x-2 whitespace-nowrap">
+            <a href="/" class="masthead-home link-quiet tap">
+              <span class="masthead-name">{SITE.name}</span>
+            </a>
+            <span aria-hidden="true" class="masthead-sep text-muted">
+              /
             </span>
-            <h1 id="page-heading" data-title={page} tabindex="-1">{page}</h1>
-          </div>
-        ) : (
-          <h1 class="masthead" itemprop="name">
-            <span class="masthead-name">{SITE.name}</span>
+          </span>
+          <h1 id="page-heading" data-title={page} tabindex="-1">
+            {page}
           </h1>
-        )
-      }
+        </div>
+      ) : (
+        <h1 class="masthead" itemprop="name">
+          <span class="masthead-name">{SITE.name}</span>
+        </h1>
+      )}
       <ThemeToggle />
     </header>
     <main class="flex flex-1 flex-col">

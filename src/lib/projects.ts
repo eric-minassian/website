@@ -40,6 +40,18 @@ const isWebUrl = (v: unknown): v is string => {
 };
 const isCounts = (v: unknown, length: number): v is number[] =>
   Array.isArray(v) && v.length === length && v.every((n) => Number.isInteger(n) && n >= 0);
+/** Whether `v` is one of the directory's apps, with a count for each of its `days` days. */
+const isProject = (v: unknown, days: number): v is Project =>
+  isObject(v) &&
+  typeof v.name === "string" &&
+  (v.description === undefined || typeof v.description === "string") &&
+  isWebUrl(v.url) &&
+  (v.source === undefined || isWebUrl(v.source)) &&
+  isTime(v.liveSince) &&
+  isTime(v.lastDeployedAt) &&
+  (v.up === null || typeof v.up === "boolean") &&
+  isCounts(v.pageViews, days) &&
+  isCounts(v.requests, days);
 
 /** The directory's response, checked; throws when it isn't the shape this site reads. */
 export function parseProjects(body: unknown): Projects {
@@ -52,20 +64,11 @@ export function parseProjects(body: unknown): Projects {
     throw new Error("the project directory answered with an unexpected shape");
   }
   const days = body.days;
-  const projects = body.apps.map((app, i): Project => {
-    const ok =
-      isObject(app) &&
-      typeof app.name === "string" &&
-      (app.description === undefined || typeof app.description === "string") &&
-      isWebUrl(app.url) &&
-      (app.source === undefined || isWebUrl(app.source)) &&
-      isTime(app.liveSince) &&
-      isTime(app.lastDeployedAt) &&
-      (app.up === null || typeof app.up === "boolean") &&
-      isCounts(app.pageViews, days.length) &&
-      isCounts(app.requests, days.length);
-    if (!ok) throw new Error(`the project directory's app ${i} has an unexpected shape`);
-    return app as unknown as Project;
+  const projects = body.apps.map((app: unknown, i): Project => {
+    if (!isProject(app, days.length)) {
+      throw new Error(`the project directory's app ${i} has an unexpected shape`);
+    }
+    return app;
   });
   const since =
     isDate(body.countingSince) && body.countingSince > days[0]! ? body.countingSince : undefined;
@@ -96,8 +99,8 @@ const KEEP_MS = 10 * 60_000;
  * the visitor followed a link here (a reload always asks the platform again).
  */
 export function keptProjects(): Projects | null {
-  const [entry] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
-  if (entry?.type === "reload") return null;
+  const [entry] = performance.getEntriesByType("navigation");
+  if (entry instanceof PerformanceNavigationTiming && entry.type === "reload") return null;
   try {
     const kept: unknown = JSON.parse(sessionStorage.getItem(KEPT) ?? "null");
     if (!isObject(kept) || typeof kept.at !== "number" || Date.now() - kept.at > KEEP_MS) {

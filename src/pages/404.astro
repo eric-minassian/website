@@ -10,24 +10,26 @@ const ways = [
 ---
 
 <Layout title={`Page not found – ${SITE.name}`} noindex page="Not found">
-  <div class="page not-found mt-2 mb-16">
+  <div class="not-found page mt-2 mb-16">
     <p class="lead measure">
-      There’s no page at <span data-missing-path class="break-all">this address</span>.
+      There’s no page at{" "}
+      <span data-missing-path class="break-all">
+        this address
+      </span>
+      .
     </p>
     <nav aria-label="Elsewhere on the site" class="elsewhere">
       <ul class="list-none space-y-2 pl-0">
-        {
-          ways.map(({ href, text }) => (
-            <li>
-              <a href={href} class="arrow-link link-quiet tap">
-                {text}
-                <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true">
-                  <path d={ARROW_RIGHT} />
-                </svg>
-              </a>
-            </li>
-          ))
-        }
+        {ways.map(({ href, text }) => (
+          <li>
+            <a href={href} class="arrow-link link-quiet tap">
+              {text}
+              <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true">
+                <path d={ARROW_RIGHT} />
+              </svg>
+            </a>
+          </li>
+        ))}
       </ul>
     </nav>
   </div>

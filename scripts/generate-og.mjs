@@ -139,4 +139,4 @@ async function main() {
   console.log("Generated public/og-image.png (1200x630)");
 }
 
-main();
+await main();

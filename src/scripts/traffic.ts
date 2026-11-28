@@ -1,9 +1,10 @@
-import { fitText } from "../lib/fit";
 // Fills the home page's projects key (ProjectsKey.astro) and raises the traffic horizon
 // (TrafficHorizon.astro): each day's page views as a block of halftone dots, as tall as its count
 // on a linear scale and split by app, the busiest at the bottom in the largest, darkest dots.
 // Pointing at a day, tapping it or stepping through the days with the arrow keys reads out its
 // exact counts, above its block and app by app in the key.
+
+import { fitText } from "../lib/fit";
 import { arrow } from "../lib/icons";
 import { leave } from "../lib/leave";
 import {
@@ -62,21 +63,28 @@ export const ranked = (projects: Project[]): Project[] =>
 export function bandsOf(apps: Project[], max = FILLS.length): Band[] {
   const own = apps.length <= max ? apps : apps.slice(0, max - 1);
   const rest = apps.slice(own.length);
-  const groups = [
-    ...own.map((p) => ({ apps: [p], name: p.name, daily: p.pageViews })),
+  // Busiest first, as ranked, and the others last whatever they add up to: a group isn't an app, so
+  // it never takes the darkest band from one, and the key, its tones and the stack read in one order.
+  return [
+    ...own.map((p, i) => ({
+      apps: [p],
+      name: p.name,
+      daily: p.pageViews,
+      radius: RADIUS[i]!,
+      group: false,
+    })),
     ...(rest.length
       ? [
           {
             apps: rest,
             name: `${rest.length} others`,
             daily: rest[0]!.pageViews.map((_, d) => totalOf(rest.map((p) => p.pageViews[d]!))),
+            radius: RADIUS[own.length]!,
+            group: true,
           },
         ]
       : []),
   ];
-  // Busiest first, as ranked, and the others last whatever they add up to: a group isn't an app, so
-  // it never takes the darkest band from one, and the key, its tones and the stack read in one order.
-  return groups.map((g, i) => ({ ...g, radius: RADIUS[i]!, group: g.apps.length > 1 }));
 }
 
 /** Where a band's dots stand in a cell centred on (x, y): one, or the others' two fine ones. */
@@ -255,7 +263,10 @@ function dotsOf(bands: Band[], grid: Grid, height: number, d: number, peak: numb
       const share = Math.sqrt(Math.max(0.12, (total / peak) * capacity));
       // Never much smaller than half a full dot, so it stands clear of the faint ground.
       const r = Math.max(1.6 * grid.weight, bands[band]!.radius * scale * share);
-      return cellOf(bands[band]!, x, ground, r).map((c) => ({ ...c, band, row: 0, ring: today }));
+      // cellOf's dots are new objects, so they take the rest of a Dot in place.
+      return cellOf(bands[band]!, x, ground, r).map((c) =>
+        Object.assign(c, { band, row: 0, ring: today }),
+      );
     }
     return Array.from({ length: count }, (_, row) => {
       const band = bandOf(row);
@@ -264,12 +275,9 @@ function dotsOf(bands: Band[], grid: Grid, height: number, d: number, peak: numb
       // Today's top row, still counting, is one ring a cell, the others' too (two fine rings would
       // read as a figure of eight).
       if (ring) return [{ x, y: ground - row * pitch, r: Math.max(1.4, r - 0.5), band, row, ring }];
-      return cellOf(bands[band]!, x, ground - row * pitch, r).map((c) => ({
-        ...c,
-        band,
-        row,
-        ring,
-      }));
+      return cellOf(bands[band]!, x, ground - row * pitch, r).map((c) =>
+        Object.assign(c, { band, row, ring }),
+      );
     }).flat();
   });
 }
