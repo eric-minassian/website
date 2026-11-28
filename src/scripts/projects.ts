@@ -332,13 +332,15 @@ export async function initProjects(): Promise<void> {
       spark.style.setProperty("--reach", `${Math.round(reach)}px`);
     }
   };
+  // The rows take their layout first, then the names fit the room it leaves them.
   const redraw = () => {
-    fitNames();
     const dots = dotsNow();
     arrange(dots);
-    if (rows.length === 0 || sizeOf(dots) === drawnAt) return;
-    drawnAt = sizeOf(dots);
-    for (const r of rows) r.resize(dots);
+    if (rows.length > 0 && sizeOf(dots) !== drawnAt) {
+      drawnAt = sizeOf(dots);
+      for (const r of rows) r.resize(dots);
+    }
+    fitNames();
   };
   phone.addEventListener("change", redraw);
   new ResizeObserver(redraw).observe(root);

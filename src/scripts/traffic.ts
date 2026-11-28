@@ -465,7 +465,7 @@ function keyRow(row: Band, band: number, position: number, arrive: boolean): HTM
 
   // What it is: the app's description, or the others' names, each kept whole across a line break.
   const about = document.createElement("span");
-  about.className = "key-about";
+  about.className = row.group ? "key-about key-others" : "key-about";
   if (row.apps.length === 1 && only) {
     about.textContent = only.description ?? "";
   } else {
