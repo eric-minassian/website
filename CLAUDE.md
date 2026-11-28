@@ -7,14 +7,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 pnpm dev                # Start development server (localhost:4321)
 pnpm build              # Type-check and build for production
+pnpm typecheck          # Type-check with astro check
 pnpm preview            # Preview production build
 pnpm lint               # Lint with oxlint
 pnpm lint:fix           # Lint and auto-fix with oxlint
-pnpm fmt                # Format with oxfmt
-pnpm fmt:check          # Check formatting with oxfmt
+pnpm format             # Format with oxfmt
+pnpm format:check       # Check formatting with oxfmt
 pnpm og:generate        # Generate OG image (requires Playwright browsers)
 pnpm test:visual        # Run visual regression tests
 pnpm test:visual:update # Update visual regression snapshots
+pnpm test:e2e           # Test a deployed stage (BASE_URL=https://website.ericminassian.com)
+pnpm exec plat build    # Build what the platform deploys, into .plat/build
 ```
 
 ## Architecture
@@ -45,16 +48,20 @@ Tailwind CSS v4 via Vite plugin. Newsreader is self-hosted through Astro's Fonts
 
 ### Linting & Formatting
 
-[Oxc](https://oxc.rs/) toolchain: `oxlint` for linting (`.oxlintrc.json`) and `oxfmt` for formatting (`.oxfmtrc.json`). Both run in CI via `.github/workflows/lint.yml`.
+[Oxc](https://oxc.rs/) toolchain: `oxlint` for linting (`.oxlintrc.json`) and `oxfmt` for formatting (`.oxfmtrc.json`). Both run in CI in the platform's pipeline (`.github/workflows/platform.yml`), with `pnpm typecheck`.
 
 ### Testing
 
 Playwright visual regression tests in `tests/visual.spec.ts`. Tests capture full-page screenshots of the home page (light/dark/system themes), the projects page (light/dark), and the 404 page, and check the theme toggle, the projects key, horizon and list, including their readouts and their since-counting, failed-load and empty states. Tests answer the platform's directory request with `tests/fixtures/projects.json`, and `PORT` moves Playwright's dev server off 4321. The time zone is pinned and reduced motion skips the fades.
 
+Browser tests of a deployed stage in `e2e/` (own config; `BASE_URL` required), against the live directory: the pages render and their projects load, `/projects` answers with and without its slash, an unknown path gets the 404 page with a 404, and `/_astro/` files are cached as immutable.
+
 ## CI/CD
 
+The site is the app `website` on my platform ([eric-minassian/platform](https://github.com/eric-minassian/platform)), declared in `plat.config.ts`: the static `dist` Astro builds, `www.ericminassian.com` in production.
+
+- `.github/workflows/platform.yml` - The platform's pipeline: typecheck, lint and format check, then a preview per PR (`https://website--pr-<n>.ericminassian.com`, removed when it closes) and production on main branch pushes, each followed by `pnpm test:e2e` against it
 - `.github/workflows/playwright.yml` - Runs visual regression tests on PRs and main branch pushes
-- `.github/workflows/lint.yml` - Runs oxlint and oxfmt checks on PRs and main branch pushes
-- `.github/workflows/deploy.yml` - Deploys to GitHub Pages on main branch pushes
+- `.github/workflows/lighthouse.yml` - Runs Lighthouse against a fixture-backed build on PRs and main branch pushes
 - `.github/workflows/update-snapshots.yml` - Manual workflow to update visual snapshots
 - `.github/dependabot.yml` - Automated weekly dependency updates for npm and GitHub Actions

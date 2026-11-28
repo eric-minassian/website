@@ -31,3 +31,6 @@ pnpm-debug.log*
 
 # lighthouse
 /lighthouse-reports/
+
+# plat build output
+/.plat/
