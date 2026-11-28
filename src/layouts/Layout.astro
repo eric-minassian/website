@@ -3,6 +3,7 @@ import { Font } from "astro:assets";
 
 import ThemeToggle from "../components/ThemeToggle.astro";
 import { SITE } from "../lib/site";
+import { getKeptScript } from "../lib/projects";
 import { getThemeScript } from "../scripts/theme";
 import "../styles/globals.css";
 
@@ -191,6 +192,7 @@ const jsonLd = {
 
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
     <script is:inline set:html={getThemeScript()}></script>
+    <script is:inline set:html={getKeptScript()}></script>
     <!-- Without JavaScript there's no theme to flip and no data to wait for. -->
     <noscript>
       <style>

@@ -53,8 +53,8 @@ const applyTheme = (): void => {
 };
 
 /**
- * Flips the theme with a short crossfade of the whole page, so a flip to light at night isn't a
- * flash (at once where motion is reduced, or the browser can't). Transitions are held off for the
+ * Flips the theme with a short sweep down the page (globals.css), so a flip to light at night isn't
+ * a flash (at once where motion is reduced, or the browser can't). Transitions are held off for the
  * frame of the swap (`flipping` in globals.css), so nothing fades through the new background on its
  * own way to its new colour; the toggle's icon turns.
  */
@@ -71,7 +71,8 @@ const flipTheme = (): void => {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches || !document.startViewTransition) {
     swap();
   } else {
-    document.startViewTransition(swap);
+    // Typed, so the page's own crossing between pages (globals.css) doesn't style it.
+    document.startViewTransition({ update: swap, types: ["theme"] });
   }
 };
 

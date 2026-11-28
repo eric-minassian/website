@@ -4,6 +4,7 @@ import { arrow } from "../lib/icons";
 import { leave } from "../lib/leave";
 import {
   dayName,
+  keptProjects,
   describeViews,
   firstCounted,
   formatCount,
@@ -64,7 +65,9 @@ const dotsFor = (phone: boolean, width: number, meta: number): Dots => {
   const fit = Math.floor(((width - meta - 16) / 30) * 2) / 2;
   const beside = phone && fit >= 4;
   const pitch = beside ? Math.min(5, fit) : 5;
-  return { pitch, rows: Math.floor(36 / pitch), beside };
+  // Beside the line, word-sized: standing on its baseline about as tall as its letters, so the line
+  // keeps its place under the description. Alone, or beside a description, about 36px.
+  return { pitch, rows: beside ? 4 : Math.floor(36 / pitch), beside };
 };
 
 /** Room under a sparkline's ground for the keyboard's mark under a day, px. */
@@ -152,13 +155,20 @@ const firstDayOf = (project: Project, days: string[], counting: number): number 
 const shownTotal = (project: Project, days: string[], counting: number): number =>
   totalOf(project.pageViews.slice(firstDayOf(project, days, counting)));
 
-function row(project: Project, index: number, span: Span, start: Dots, signal: AbortSignal): Row {
+function row(
+  project: Project,
+  index: number,
+  span: Span,
+  start: Dots,
+  signal: AbortSignal,
+  arrive: boolean,
+): Row {
   const { days } = span;
   /** The app's first day; the days from `counting` on can be read, those before it as not live. */
   const from = firstDayOf(project, days, span.from);
   const counting = span.from;
   const last = days.length - 1;
-  const li = element("li", "ledger-row rule-above arrive");
+  const li = element("li", arrive ? "ledger-row rule-above arrive" : "ledger-row rule-above");
   li.style.setProperty("--i", String(index));
   const name = element("span", "ledger-name");
   const out = link(project.url, "", "link-quiet tap");
@@ -308,10 +318,18 @@ export async function initProjects(): Promise<void> {
   /** The rows drawn, and the size of their dots. */
   let rows: Row[] = [];
   let drawnAt = "";
-  /** Names too long for their line end in "…" right before their arrow (whole in its title). */
+  /**
+   * Names too long for their line end in "…" right before their arrow (whole in its title); on a
+   * phone, a day's reading starts where the "Deployed" line it stands in for does.
+   */
   const fitNames = () => {
     for (const text of list.querySelectorAll<HTMLElement>(".ledger-name-text")) {
       fitText(text, text.dataset.name!);
+    }
+    for (const spark of list.querySelectorAll<HTMLElement>(".ledger-spark")) {
+      const li = spark.closest("li")!;
+      const reach = spark.getBoundingClientRect().left - li.getBoundingClientRect().left;
+      spark.style.setProperty("--reach", `${Math.round(reach)}px`);
     }
   };
   const redraw = () => {
@@ -340,8 +358,12 @@ export async function initProjects(): Promise<void> {
     head.classList.remove("arrive");
     note.classList.remove("arrive");
     let state = "ready";
+    let instant = false;
     try {
-      const projects: Projects = await loadProjects();
+      // A directory fetched a moment ago, on the page before, draws at once, rows already in place.
+      const kept = keptProjects();
+      instant = kept !== null;
+      const projects: Projects = kept ?? (await loadProjects());
       const from = firstCounted(projects);
       const { days } = projects;
       // The busiest first by the totals shown, like the home page's key; among equals, the latest
@@ -354,7 +376,7 @@ export async function initProjects(): Promise<void> {
       list.hidden = apps.length === 0;
       // Drawn once to measure the "Deployed" lines, then sized to them.
       const { signal } = drawn;
-      rows = apps.map((p, i) => row(p, i, { days, from }, dotsFor(false, 0, 0), signal));
+      rows = apps.map((p, i) => row(p, i, { days, from }, dotsFor(false, 0, 0), signal, !instant));
       list.replaceChildren(...rows.map((r) => r.li));
       drawnAt = "";
       redraw();
@@ -363,11 +385,11 @@ export async function initProjects(): Promise<void> {
       note.textContent = apps.length
         ? "Each app’s days are scaled to its own busiest one."
         : "Nothing is running right now.";
-      head.classList.add("arrive");
-      note.classList.add("arrive");
+      head.classList.toggle("arrive", !instant);
+      note.classList.toggle("arrive", !instant);
       note.style.setProperty("--i", String(apps.length));
       // Rows take over from the placeholders as they fade; with none to take over, they just go.
-      if (apps.length) leave(placeholder);
+      if (apps.length && !instant) leave(placeholder);
       else placeholder.hidden = true;
       state = apps.length ? "ready" : "empty";
     } catch (error) {

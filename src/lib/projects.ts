@@ -81,13 +81,62 @@ export function parseProjects(body: unknown): Projects {
 /** How long to wait for the directory before showing that it couldn't load. */
 const TIMEOUT_MS = 6_000;
 
+/** Where this browser keeps the directory it last fetched, for the session. */
+const KEPT = "projects";
+
+/**
+ * How long a directory this browser already has stands in for a fresh one: long enough that going
+ * from page to page draws at once, short enough that today's counts stay current.
+ */
+const KEEP_MS = 2 * 60_000;
+
+/**
+ * The directory this browser fetched in the last couple of minutes, checked, if there is one and
+ * the visitor followed a link here (a reload always asks the platform again).
+ */
+export function keptProjects(): Projects | null {
+  const [entry] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+  if (entry?.type === "reload") return null;
+  try {
+    const kept: unknown = JSON.parse(sessionStorage.getItem(KEPT) ?? "null");
+    if (!isObject(kept) || typeof kept.at !== "number" || Date.now() - kept.at > KEEP_MS) {
+      return null;
+    }
+    return parseProjects(kept.body);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Runs in the head before the first paint: when `keptProjects` will have a directory to draw at
+ * once, the page says so (`kept` on the root), and the placeholders that would show for a moment
+ * before it don't.
+ */
+export const getKeptScript = (): string => `
+try {
+  const n = performance.getEntriesByType("navigation")[0];
+  const k = JSON.parse(sessionStorage.getItem("${KEPT}") || "null");
+  if (n?.type !== "reload" && k && Date.now() - k.at <= ${KEEP_MS}) {
+    document.documentElement.classList.add("kept");
+  }
+} catch {}
+`;
+
 export async function loadProjects(): Promise<Projects> {
   const res = await fetch(PROJECTS_URL, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`the project directory answered ${res.status}`);
-  return parseProjects(await res.json());
+  const body: unknown = await res.json();
+  const projects = parseProjects(body);
+  try {
+    sessionStorage.setItem(KEPT, JSON.stringify({ at: Date.now(), body }));
+  } catch {
+    // Storage that's full or off only means the next page fetches the directory again.
+  }
+  return projects;
 }
 
 const day = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });

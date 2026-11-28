@@ -10,11 +10,13 @@ export function fitText(el: HTMLElement, text: string): void {
   if (el.scrollWidth <= room) return;
   let fits = 0;
   let over = text.length;
+  // Cut after a whole letter: no space, hyphen or stop just before the "…".
+  const cut = (n: number) => `${text.slice(0, n).replace(/[\s\-–—_.,:;]+$/, "")}…`;
   while (over - fits > 1) {
     const mid = Math.floor((fits + over) / 2);
-    el.textContent = `${text.slice(0, mid).trimEnd()}…`;
+    el.textContent = cut(mid);
     if (el.scrollWidth <= room) fits = mid;
     else over = mid;
   }
-  el.textContent = `${text.slice(0, fits).trimEnd()}…`;
+  el.textContent = cut(fits);
 }
