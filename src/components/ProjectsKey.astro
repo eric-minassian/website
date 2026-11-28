@@ -23,7 +23,9 @@ const placeholders = [
   <div class="key-head">
     <h2 id="projects-heading" class="section-heading">
       <a href="/projects" class="arrow-link link-quiet tap"
-        >Projects<svg class="arrow" viewBox="0 0 16 16" aria-hidden="true"><path d={ARROW_RIGHT}></path></svg></a
+        ><span class="key-title">Projects</span><svg class="arrow" viewBox="0 0 16 16" aria-hidden="true"
+          ><path d={ARROW_RIGHT}></path></svg
+        ></a
       >
     </h2>
     <p data-traffic-period class="key-period text-sm text-muted" aria-live="polite"></p>
@@ -85,6 +87,7 @@ const placeholders = [
   .key-period {
     margin-left: auto;
     text-align: right;
+    text-wrap: balance;
   }
 
   @container key (width < 21rem) {
@@ -210,6 +213,11 @@ const placeholders = [
 
   /* Pointing at (or focusing) one app in the key quiets the others, here and on the horizon. */
   [data-focus] :global(li.key-row:not(.is-focused)) {
-    opacity: 0.55;
+    opacity: 0.75;
+  }
+
+  /* Its swatch comes forward in ink, as its band does on the horizon. */
+  .projects-key :global(li.key-row.is-focused .key-swatch svg) {
+    fill: var(--color-ink);
   }
 </style>

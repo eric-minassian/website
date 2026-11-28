@@ -140,9 +140,9 @@ test.describe("home page", () => {
     await expect(peak).toHaveText("Nov 17 · 8,436");
     await expect(page.locator("[data-horizon-start]")).toHaveText("Oct 28");
     await key.getByRole("listitem").first().hover();
-    // When that's today, its count joins "Today so far" under it instead.
-    await expect(peak).toBeHidden();
-    await expect(page.locator("[data-horizon-today]")).toHaveText("Today so far · 2,872");
+    // Today's is its count "so far", over "Today" on the axis.
+    await expect(peak).toHaveText("2,872 so far");
+    await expect(page.locator("[data-horizon-today]")).toHaveText("Today");
     await page.mouse.move(0, 0);
     await expect(peak).toHaveText("Nov 17 · 8,436");
     await key.getByRole("link", { name: "Projects" }).click();
@@ -162,9 +162,7 @@ test.describe("home page", () => {
     const column = (await page.locator("[data-horizon-axis] span").last().boundingBox())!;
     await page.mouse.move(column.x + column.width - 2, box.y + box.height / 2);
     // On the chart the short form; the key's caption and the slider's value say it in full.
-    // Today is named on the axis right under it, which comes forward; the reading gives the count.
-    await expect(page.locator("[data-horizon-label]")).toHaveText("3,215");
-    await expect(page.locator("[data-horizon-today]")).toHaveClass(/is-read/);
+    await expect(page.locator("[data-horizon-label]")).toHaveText("Today so far · 3,215");
     await expect(key.getByRole("listitem")).toHaveText([
       /^platform\s*2,872/,
       /^atlas\s*14/,
@@ -187,9 +185,7 @@ test.describe("home page", () => {
     await page.getByRole("region", { name: "Projects" }).getByRole("link").last().focus();
     await page.keyboard.press("Tab");
     await expect(scrub).toBeFocused();
-    // Today is named on the axis right under it, which comes forward; the reading gives the count.
-    await expect(page.locator("[data-horizon-label]")).toHaveText("3,215");
-    await expect(page.locator("[data-horizon-today]")).toHaveClass(/is-read/);
+    await expect(page.locator("[data-horizon-label]")).toHaveText("Today so far · 3,215");
     await expect(scrub).toHaveAttribute("aria-valuetext", "Today so far: 3,215 page views");
     await page.keyboard.press("ArrowLeft");
     await expect(scrub).toHaveAttribute("aria-valuetext", "Nov 25: no page views");
@@ -244,9 +240,7 @@ test.describe("home page on a phone", () => {
     await scrub.scrollIntoViewIfNeeded();
     const box = (await scrub.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width - 2, box.y + box.height / 2);
-    // Today is named on the axis right under it, which comes forward; the reading gives the count.
-    await expect(page.locator("[data-horizon-label]")).toHaveText("3,215");
-    await expect(page.locator("[data-horizon-today]")).toHaveClass(/is-read/);
+    await expect(page.locator("[data-horizon-label]")).toHaveText("Today so far · 3,215");
     // A tap anywhere else puts it away.
     await page.touchscreen.tap(box.x + 4, box.y - 60);
     await expect(page.locator("[data-horizon-label]")).toBeHidden();

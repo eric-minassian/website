@@ -32,7 +32,7 @@
   <div data-horizon-axis class="horizon-axis page text-sm text-muted tabular-nums" aria-hidden="true">
     <span data-horizon-start>&nbsp;</span>
     <span data-horizon-weeks class="horizon-weeks"></span>
-    <span data-horizon-today>Today so far</span>
+    <span data-horizon-today>Today</span>
   </div>
 </div>
 
@@ -205,7 +205,7 @@
     pointer-events: none;
   }
 
-  /* "Today so far" at the right edge; the other dates are placed under their days by the script. */
+  /* "Today" at the right edge; the other dates are placed under their days by the script. */
   .horizon-axis {
     position: relative;
     display: flex;
@@ -256,24 +256,9 @@
     background-position: calc((100cqw - var(--column)) / 2) bottom;
   }
 
-  /*
-   * "Today so far" reads today when pointed at or tapped. With today's count beside it (today being
-   * the busiest day) it's dotted like the busiest day's note, the chart's sign that it can be read;
-   * while today is read, it comes forward in ink.
-   */
+  /* "Today" reads today when pointed at or tapped. */
   [data-horizon-today] {
     cursor: default;
-    transition: color 150ms;
-  }
-
-  [data-horizon-today].has-count {
-    text-decoration: underline dotted;
-    text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
-    text-underline-offset: 0.25em;
-  }
-
-  [data-horizon-today].is-read {
-    color: var(--color-ink);
   }
 
   [data-horizon-start] {
@@ -320,9 +305,15 @@
     color: var(--color-ink);
   }
 
-  /* The note where counting began arrives as the dates do. */
+  /* The note where counting began arrives as the dates do, unless the page drew at once. */
   [data-horizon-since] {
     animation: settle 400ms ease-out both;
+  }
+
+  [data-instant] [data-horizon-since],
+  [data-instant] .horizon-axis {
+    animation: none;
+    transition: none;
   }
 
   /*
@@ -347,7 +338,8 @@
     }
   }
 
-  :global(.no-js) [data-state="loading"] .horizon-plot::after {
+  :global(.no-js) [data-state="loading"] .horizon-plot::after,
+  :global(.kept) [data-state="loading"] .horizon-plot::after {
     display: none;
   }
 

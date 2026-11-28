@@ -155,47 +155,75 @@
   }
 
   /*
-   * A theme flip crossfades the whole page, briefly (theme.ts), rather than each thing fading on
-   * its own: while it does, everything takes its new colours at once and only the toggle's icon
-   * turns.
+   * A theme flip (theme.ts) sweeps the new theme down the page from the top, its edge soft, so no
+   * moment shows both themes' text half-strength over a grey page; everything takes its new
+   * colours at once behind it, and only the toggle's icon turns.
    */
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    /* Quick through the middle, where the two themes' text would both be faint. */
-    animation-duration: 180ms;
-    animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1);
+  html:active-view-transition-type(theme)::view-transition-old(root) {
+    animation: none;
+  }
+
+  html:active-view-transition-type(theme)::view-transition-new(root) {
+    animation: theme-sweep 340ms cubic-bezier(0.45, 0, 0.25, 1) both;
+    /* Twice the page's height, so the soft edge (a sixth of the page) runs from its top to its foot. */
+    mask-image: linear-gradient(black 46%, transparent 54%);
+    mask-size: 100% 200%;
+    mask-repeat: no-repeat;
+  }
+
+  /* The whole page sweeps as one: nothing in it is carried across on its own. */
+  html:active-view-transition-type(theme)
+    :is(.masthead-name, .key-title, #page-heading, [data-theme-toggle]) {
+    view-transition-name: none;
   }
 
   /*
-   * Moving between pages crossfades them the same way, and what the two pages share is carried
-   * across rather than faded: the site's name settles from the home page's title into a subpage's
-   * path, the key's "Projects" rises into the /projects page's name (and back), and the theme
-   * toggle stays where it is. Where motion is reduced, pages simply load.
+   * Moving between pages, the old one fades out and then the new one in, so their texts never lie
+   * over each other, and what the two share is carried across rather than faded: the site's name
+   * settles from the home page's title into a subpage's path, the key's "Projects" rises into the
+   * /projects page's name (and back), and the theme toggle stays where it is. Each name is drawn
+   * once, as it will be, growing or shrinking from where it was. Where motion is reduced, pages
+   * simply load.
    */
   .masthead-name {
     view-transition-name: site-name;
   }
 
   #page-heading[data-title="Projects"],
-  #projects-heading a {
+  .key-title {
     view-transition-name: projects-title;
+  }
+
+  .key-title {
+    display: inline-block;
   }
 
   [data-theme-toggle] {
     view-transition-name: theme-toggle;
   }
 
-  ::view-transition-group(*) {
-    animation-duration: 320ms;
+  html:active-view-transition-type(page)::view-transition-old(root) {
+    animation: 100ms ease-in both page-out;
+  }
+
+  html:active-view-transition-type(page)::view-transition-new(root) {
+    animation: 180ms ease-out 85ms both page-in;
+  }
+
+  html:active-view-transition-type(page)::view-transition-group(*) {
+    animation-duration: 300ms;
     animation-timing-function: var(--ease-out-soft);
   }
 
-  ::view-transition-old(projects-title),
-  ::view-transition-new(projects-title),
-  ::view-transition-old(site-name),
-  ::view-transition-new(site-name) {
-    animation-duration: 320ms;
-    /* Each name keeps its height while the two cross, so the larger doesn't stretch the smaller. */
+  html:active-view-transition-type(page)::view-transition-old(site-name),
+  html:active-view-transition-type(page)::view-transition-old(projects-title) {
+    display: none;
+  }
+
+  html:active-view-transition-type(page)::view-transition-new(site-name),
+  html:active-view-transition-type(page)::view-transition-new(projects-title) {
+    animation: none;
+    /* Scaled from the old name's box to its own, whole, never stretched. */
     height: 100%;
     object-fit: contain;
     object-position: left center;
@@ -477,6 +505,14 @@
   }
 
   /*
+   * A page that draws at once from a directory fetched a moment ago (`kept`, src/lib/projects.ts)
+   * never shows its placeholders, even for the frame before it draws.
+   */
+  .kept :is([data-traffic-placeholder], [data-projects-placeholder]) {
+    visibility: hidden;
+  }
+
+  /*
    * A placeholder fading out over what arrives in its place (src/lib/leave.ts), row by row: each
    * mostly gone by the time the row taking its place starts to show, so the two never cross at
    * strength, and never both gone.
@@ -504,11 +540,34 @@
 
 @view-transition {
   navigation: auto;
+  types: page;
 }
 
 @media (prefers-reduced-motion: reduce) {
   @view-transition {
     navigation: none;
+  }
+}
+
+@keyframes page-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The new theme's mask slides up its tall gradient: transparent over the page, then opaque. */
+@keyframes theme-sweep {
+  from {
+    mask-position: 0 100%;
+  }
+  to {
+    mask-position: 0 0;
   }
 }
 
